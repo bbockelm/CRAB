@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.193 2010/01/20 16:38:16 farinafa Exp $"
-__version__ = "$Revision: 1.193 $"
+__revision__ = "$Id: FatWorker.py,v 1.194 2010/01/20 18:03:26 spiga Exp $"
+__version__ = "$Revision: 1.194 $"
 
 import string
 import sys, os
@@ -265,14 +265,28 @@ class FatWorker(Thread):
                 self.group = self.cfg_params['EDG.group']
         return status
 
+    def SechdulerGlitePlugin(self):
+        from ProdCommon.BossLite.Common.System import executeCommand
+         
+        scheduler = None
+        out, ret =  executeCommand('glite-version')
+        if ret != 0 :
+            slef.log.info('Error checking gLite version')
+        else:
+            if out.strip().startswith('3.1'):
+                scheduler = 'SchedulerGLiteAPI'
+            else:
+                scheduler = 'SchedulerGLite'
+
+        return scheduler
+
     def allocateBossLiteSchedulerSession(self, taskObj):
         """
         Set scheduler specific parameters and allocate the Scheduler Session
         """
         status = 0
 
-        self.bossSchedName = {'GLITE':'SchedulerGLiteAPI',
-                              'GLITECOLL':'SchedulerGLiteAPI',
+        self.bossSchedName = {'GLITE': self.SechdulerGlitePlugin(),
                               'CONDOR_G':'SchedulerCondorG',
                               'GLIDEIN' :'SchedulerGlidein',
                               'ARC':'arc',
@@ -687,6 +701,8 @@ class FatWorker(Thread):
                 tags_tmp = str(taskObj['jobType']).split('"')
                 tags = [str(tags_tmp[1]), str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
+            elif self.bossSchedName == 'SchedulerGLite':
+               ## TODO FILIPPO
             else:
                 continue
 
@@ -699,6 +715,8 @@ class FatWorker(Thread):
                     matched.append(sel)
                 else:
                     unmatched.append(sel)
+            elif self.bossSchedName in ['SchedulerGLite']:
+               ## TODO FILIPPO
             else:
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
