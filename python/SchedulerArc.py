@@ -248,9 +248,9 @@ class SchedulerArc(SchedulerGrid):
         task=common._db.getTask()
         tags = ["APPS/HEP/CMSSW-PA"]
         for s in task['jobType'].split('&&'):
-            if re.match('Member\(".*", .*RunTimeEnvironment', s):
-                rte = re.sub(", .*", "", re.sub("Member\(", "", s))
-                rte = re.sub("\"", "", rte)
+            if re.match(' *Member\(".*", .*RunTimeEnvironment', s):
+                rte = re.sub(" *Member\(\"", "", s)
+                rte = re.sub("\", .*", "", rte)
                 tags.append(rte)
         return tags
 
