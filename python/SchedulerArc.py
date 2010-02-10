@@ -35,7 +35,7 @@ class SchedulerArc(SchedulerGrid):
         Generate shell expression for the 'MonitorJobID' used to identify
         the job at Dashboard; we'll use the arcId.
         """
-        id = 'gsiftp://${NORDUGRID_CE}:2811/jobs/${HOME##*/}'
+        id = 'gsiftp://${NORDUGRID_CE}:2811/jobs/${HOME##*/}' # With ARC version >= 0.8 we could use $GRID_GLOBAL_JOBID
         msg = 'JobID for ML monitoring is created for ARC scheduler: %s' % id
         common.logger.debug(msg)
         return id
