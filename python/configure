@@ -46,6 +46,7 @@ rm simplejson.tgz
 tar zxf pbs_python.tgz 
 rm pbs_python.tgz
 
+chmod +x ProdCommon/BossLite/Scheduler/GLiteStatusQuery.py 
 ## go to $TopDir
 cd ..
 
