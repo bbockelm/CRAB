@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.350 2010/01/21 16:17:13 ewv Exp $"
-__version__ = "$Revision: 1.350 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.353 2010/02/10 21:35:34 spiga Exp $"
+__version__ = "$Revision: 1.353 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -982,7 +982,7 @@ class Cmssw(JobType):
                  '", other.GlueHostApplicationSoftwareRunTimeEnvironment)'
 
         req = req + ' && (other.GlueHostNetworkAdapterOutboundIP)'
-        if ( common.scheduler.name() in ["glitecoll", "glite","glite_slc5"] ):
+        if ( common.scheduler.name() in ["glite"] ):
             ## 25-Jun-2009 SL: patch to use Cream enabled WMS
             if ( self.cfg_params.get('GRID.use_cream',None) ):
                 req += ' && (other.GlueCEStateStatus == "Production" || other.GlueCEStateStatus == "Special")'

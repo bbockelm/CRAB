@@ -113,7 +113,14 @@ class Reporter(Actor):
         msg += "Total Jobs : %s\n" % len(task.getJobs())
         msg += "Luminosity section summary file: %s\n" % lumiFilename
         list_ID={}
-        task = common.scheduler.queryEverything(task['id'])
+
+        # TEMPORARY by Fabio, to be removed 
+        # avoid clashes between glite_slc5 and glite schedulers when a server is used
+        # otherwise, -report with a server requires a local scheduler 
+        if self.cfg_params.get('CRAB.server_name', None) is None:
+            common.logger.debug( "Reporter updating task status")
+            task = common.scheduler.queryEverything(task['id'])
+
         for st in possible_status:
             list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
             if (len(list_ID)>0):

@@ -54,7 +54,10 @@ class ServerConfig:
         # select servers from client version
         compatibleServerList=[]
         for s in serverList:
-            vv=string.split(s[1],'-')
+            #vv=string.split(s[1],'-')
+            if len(s)<2:
+                continue
+            vv=s[1].split('-')
             if len(vv[0])==0: vv[0]='0.0.0'
             if len(vv[1])==0: vv[1]='99.99.99'
             for i in 0,1:

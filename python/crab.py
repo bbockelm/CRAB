@@ -843,8 +843,6 @@ class Crab:
             msg = msg + 'Please specify a scheduler type in the crab cfg file'
             raise CrabException(msg)
         self.scheduler_name = self.cfg_params["CRAB.scheduler"]
-        ### just temporary... will disappear
-        if self.scheduler_name.lower() in ['glitecoll','glite_slc5']: self.scheduler_name='glite'
                                           
 
         klass_name = 'Scheduler' + string.capitalize(self.scheduler_name)

@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.123 2010/01/17 19:05:52 spiga Exp $"
-__version__ = "$Revision: 1.123 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.125 2010/02/09 15:31:56 edelmann Exp $"
+__version__ = "$Revision: 1.125 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -193,7 +193,7 @@ class SchedulerGrid(Scheduler):
         txt += '    source $OSG_GRID/setup.sh \n'
         txt += 'elif [ $NORDUGRID_CE ]; then \n' # We look for $NORDUGRID_CE before $VO_CMS_SW_DIR,
         txt += '    middleware=ARC \n'           # because the latter is defined for ARC too
-        txt += '    echo "SyncCE=$NORDUGRID_CE" >> $RUNTIME_AREA/$repo \n'
+        txt += '    echo "SyncCE=${NORDUGRID_CE}:2811/nordugrid-GE-${QUEUE:-queue}" >> $RUNTIME_AREA/$repo \n'
         txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'

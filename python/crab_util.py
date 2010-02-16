@@ -729,6 +729,19 @@ def setLcgTimeout( ):
     if checkLcgUtils() >= 17: opt=' --connect-timeout 600 '
     return opt
 
+def schedulerGlite():
+
+    scheduler = None
+    err, out = runCommand('glite-version',errorCode=True)
+    if err==0:
+        if out.strip().startswith('3.1'):
+            scheduler = 'SchedulerGLiteAPI'
+        else:
+            scheduler = 'SchedulerGLite'    
+    else:
+        common.logger.info("error detecting glite version ")
+
+    return scheduler
 
 ####################################
 if __name__ == '__main__':
