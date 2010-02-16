@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.32 2009/12/15 23:20:42 riahi Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.35 2010/02/09 14:50:43 farinafa Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import string
 import sys, os
@@ -59,7 +59,9 @@ class RegisterWorker(Thread):
         self.cfg_params = {}
         self.CredAPI = CredentialAPI({'credential':self.configs['credentialType'], 'logger':self.log})
         self.cmdRng = "[]"
-        self.schedName= self.configs['scheduler'].upper()
+
+        self.schedName = self.configs['defaultScheduler'].upper()
+        self.supportedScheds = [] + self.configs['supportedSchedulers']
 
         self.useGlExecDelegation = self.configs['glExecDelegation'] == 'true'
       
@@ -224,8 +226,10 @@ class RegisterWorker(Thread):
             self.cmdRng =  str( cmdXML.getAttribute('Range') )
             self.owner = str( cmdXML.getAttribute('Subject') )
 
-            ## This is to make the scheduler configurable from user
-            #self.schedName = str( cmdXML.getAttribute('Scheduler') ).upper()
+            # Make the scheduler configurable from user with fallback
+            requestedScheduler = str(cmdXML.getAttribute('Scheduler')).upper()
+            if requestedScheduler in self.supportedScheds:
+                self.schedName = requestedScheduler
 
             self.flavour = str( cmdXML.getAttribute('Flavour') )
             self.type = str( cmdXML.getAttribute('Type') )
@@ -287,12 +291,11 @@ class RegisterWorker(Thread):
         dependent.
         Allowed Schedulers Name:
         1) GLITE
-        2) GLITECOLL
-        3) CONDOR_G
-        4) ARC
-        5) LSF
-        6) CAF
-        7) GLIDEIN
+        2) CONDOR_G
+        3) ARC
+        4) LSF
+        5) CAF
+        6) GLIDEIN
         """
         remoteSBlistTemp = []
         self.log.info('Worker %s altering paths'%self.myName)
@@ -310,7 +313,7 @@ class RegisterWorker(Thread):
         self.log.info(str(remoteSBlist))
 
         if len(remoteSBlist) > 0:
-            if self.schedName in ['GLITE','GLITECOLL']:
+            if self.schedName in ['GLITE']:
                 # get TURL for WMS bypass and manage paths
                 self.log.info('Worker %s getting TURL (Scheduler Name %s)  '%(self.myName, self.schedName))
                 turlFileCandidate = remoteSBlist[0]

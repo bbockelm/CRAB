@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.193 2010/01/20 16:38:16 farinafa Exp $"
-__version__ = "$Revision: 1.193 $"
+__revision__ = "$Id: FatWorker.py,v 1.197 2010/02/09 14:50:43 farinafa Exp $"
+__version__ = "$Revision: 1.197 $"
 
 import string
 import sys, os
@@ -28,6 +28,7 @@ from ProdAgentDB.Config import defaultConfig as dbConfig
 from ProdCommon.BossLite.API.BossLiteAPI import BossLiteAPI
 from ProdCommon.BossLite.API.BossLiteAPISched import BossLiteAPISched
 
+from ProdCommon.BossLite.Common.System import executeCommand
 from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger
 from ProdCommon.BossLite.Common.Exceptions import BossLiteError
 
@@ -80,7 +81,7 @@ class FatWorker(Thread):
         self.cpCmd = self.configs['cpCmd']
         self.rfioServer = self.configs['rfioServer']
 
-        self.defaultSchedName = self.configs['defaultScheduler'].upper()
+        self.schedName = self.configs['defaultScheduler'].upper()
         self.supportedScheds = [] + self.configs['supportedSchedulers']
 
         self.seEl = SElement(self.configs['SEurl'], self.configs['SEproto'], self.configs['SEport'])
@@ -231,8 +232,6 @@ class FatWorker(Thread):
             requestedScheduler = str(cmdXML.getAttribute('Scheduler')).upper()
             if requestedScheduler in self.supportedScheds:
                 self.schedName = requestedScheduler
-            else:
-                self.schedName = self.defaultSchedName
      
             ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
@@ -265,14 +264,26 @@ class FatWorker(Thread):
                 self.group = self.cfg_params['EDG.group']
         return status
 
+    def SchedulerGlitePlugin(self):
+        scheduler = None
+        out, ret =  executeCommand('glite-version')
+        if ret != 0 :
+            self.log.info('Error checking gLite version')
+        else:
+            if out.strip().startswith('3.1'):
+                scheduler = 'SchedulerGLiteAPI'
+            else:
+                scheduler = 'SchedulerGLite'
+
+        return scheduler
+
     def allocateBossLiteSchedulerSession(self, taskObj):
         """
         Set scheduler specific parameters and allocate the Scheduler Session
         """
         status = 0
 
-        self.bossSchedName = {'GLITE':'SchedulerGLiteAPI',
-                              'GLITECOLL':'SchedulerGLiteAPI',
+        self.bossSchedName = {'GLITE': self.SchedulerGlitePlugin(),
                               'CONDOR_G':'SchedulerCondorG',
                               'GLIDEIN' :'SchedulerGlidein',
                               'ARC':'arc',
@@ -683,7 +694,7 @@ class FatWorker(Thread):
                 requirements.append(schedParam)
             elif self.bossSchedName == 'SchedulerLsf':
                 requirements.append( self.sched_parameter_Lsf(id_job, taskObj) )
-            elif self.bossSchedName == 'SchedulerGLiteAPI':
+            elif self.bossSchedName in ['SchedulerGLiteAPI', 'SchedulerGLite'] :
                 tags_tmp = str(taskObj['jobType']).split('"')
                 tags = [str(tags_tmp[1]), str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
@@ -699,7 +710,11 @@ class FatWorker(Thread):
                     matched.append(sel)
                 else:
                     unmatched.append(sel)
-            else:
+            elif self.bossSchedName in ['SchedulerGLite']:
+                sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements)
+                if len(sites) > 0: matched.append(sel)
+                else: unmatched.append(sel)
+            else :
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
                     seList = distinct_dests[sel]
@@ -711,6 +726,7 @@ class FatWorker(Thread):
                 sites = self.blSchedSession.getSchedulerInterface().lcgInfo(tags, voTags, seList=cleanedList, blacklist=self.ce_blackL, whitelist=self.ce_whiteL)
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
+                
             sel += 1
 
         # all done and matched, go on with the submission
