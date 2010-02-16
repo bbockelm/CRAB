@@ -129,7 +129,8 @@ if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
 fi
 
 #CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
-CMS_SERVER="https://cmsweb.cern.ch/crabconf"
+CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
+# "https://cmsweb.cern.ch/crabconf"
 
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
 echo "*** Downloading to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball"
