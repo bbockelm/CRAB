@@ -61,7 +61,14 @@ done
 
 LCGCA_RPM="lcg-CA"
 
-GRIDFTP_RPM="glite-initscript-globus-gridftp"
+GRIDFTP_RPM="
+glite-initscript-globus-gridftp
+vdt_globus_data_server
+vdt_globus_essentials
+vdt_globus_sdk
+"
+# don't know if the sdk is actually needed, but Daniele highlighted some 
+# missing dependencies with GSI tunneling libs. Then I make'em explicit
 
 LCAS_LCMAPS_RPM="
 glite-security-lcas-lcmaps-gt4-interface
@@ -73,6 +80,10 @@ VOMS_RPM="glite-security-voms-api-c glite-security-voms-api-cpp"
 
 GRIDSITE_RPM="gridsite-shared"
 
+### List of Packages used as YUM arguments
+
+INSTALL_PACKLIST="$LCGCA_RPM $GRIDFTP_RPM $LCAS_LCMAPS_RPM $VOMS_RPM $GRIDSITE_RPM"
+UNINSTALL_PACKLIST="vdt_globus_data_server glite-security-lcas glite-security-lcmaps"
 
 ##################
 ### Installation & Configuration
@@ -118,12 +129,15 @@ if ! [ -e /etc/yum.repos.d/glite-CREAM.repo ]; then
     wget -O /etc/yum.repos.d/glite-CREAM.repo $YUM_REPO/glite-CREAM.repo
 fi
 
+# don't know if really needed, but could help with missing dependencies found by Daniele
+if ! [ -e /etc/yum.repos.d/glite-UI.repo ]; then
+    echo "Downloading glite-UI.repo into /etc/yum.repos.d/glite-UI.repo"
+    wget -O /etc/yum.repos.d/glite-UI.repo $YUM_REPO/glite-UI.repo
+fi
+
 ### install packages
-
-PACKLIST="$LCGCA_RPM $GRIDFTP_RPM $LCAS_LCMAPS_RPM $VOMS_RPM $GRIDSITE_RPM"
-
 echo "*** Installing packages :";
-if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
+if ! yum $YUMOPTIONS $INSTALL_PACKLIST 2>&1; then
     echo Exiting $0
     exit 1
 fi
@@ -184,7 +198,7 @@ fi
 echo "*** Creating mapfiles"
 #/etc/grid-security/grid-mapfile
 if ! [ -e /etc/grid-security/grid-mapfile ]; then
-    if cp $MYTESTAREA/GFTP_CFGfiles/grid-mapfile  /etc/grid-security/; then
+    if cp $MYTESTAREA/GFTP_CFGfiles/grid-mapfile /etc/grid-security/; then
         echo "*** /etc/grid-security/grid-mapfile created";
     fi
 fi
@@ -195,6 +209,15 @@ if ! [ -e /etc/grid-security/groupmapfile ]; then
         echo "*** /etc/grid-security/groupmapfile created";
     fi
 fi
+
+#TODO check if auth_level 0 is fine wrt LCAS/LCMAPS and if gridft.conf location is fine
+# or should refer to env variable $GLOBUS_LOCATION  
+mkdir -p /opt/globus/etc/
+echo "*** Setting gridftp.conf configuration file"
+cat > /opt/globus/etc/gridftp.conf <<EOF
+auth_level 0
+connections_max 180
+EOF
 
 echo "*** GridFTP installation completed"
 echo ""
@@ -240,9 +263,8 @@ fi
 
 # NOTE: by removing a pkg all the pkgs relying on i will be automatically removed 
 YUMOPTIONS="remove "
-PACKLIST="vdt_globus_data_server glite-security-lcas glite-security-lcmaps"
  
-if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
+if ! yum $YUMOPTIONS $UNINSTALL_PACKLIST 2>&1; then
     echo "===> Yum package removal failed. Exiting ..." 
     exit 1
 fi
