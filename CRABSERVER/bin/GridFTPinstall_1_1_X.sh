@@ -61,7 +61,23 @@ done
 
 LCGCA_RPM="lcg-CA"
 
-GRIDFTP_RPM="glite-initscript-globus-gridftp"
+GRIDFTP_RPM="
+glite-initscript-globus-gridftp
+"
+
+# don't know if the these are actually needed, but Daniele highlighted some 
+# missing dependencies with GSI tunneling libs. Then I make'em explicit.
+# TODO Remove once we are sure they are unnecessary
+# excluded (as in UI repo, not in CREAM ones): vdt_globus_sdk
+EXPLICIT_DEPS_RPM="
+gpt
+vdt_globus_data_server
+vdt_globus_essentials
+glite-security-lcas-interface
+glite-security-lcas
+glite-security-lcmaps
+"
+GRIDFTP_RPM="$GRIDFTP_RPM $EXPLICIT_DEPS_RPM"
 
 LCAS_LCMAPS_RPM="
 glite-security-lcas-lcmaps-gt4-interface
@@ -73,6 +89,10 @@ VOMS_RPM="glite-security-voms-api-c glite-security-voms-api-cpp"
 
 GRIDSITE_RPM="gridsite-shared"
 
+### List of Packages used as YUM arguments
+
+INSTALL_PACKLIST="$LCGCA_RPM $GRIDFTP_RPM $LCAS_LCMAPS_RPM $VOMS_RPM $GRIDSITE_RPM"
+UNINSTALL_PACKLIST="vdt_globus_data_server glite-security-lcas glite-security-lcmaps"
 
 ##################
 ### Installation & Configuration
@@ -119,11 +139,8 @@ if ! [ -e /etc/yum.repos.d/glite-CREAM.repo ]; then
 fi
 
 ### install packages
-
-PACKLIST="$LCGCA_RPM $GRIDFTP_RPM $LCAS_LCMAPS_RPM $VOMS_RPM $GRIDSITE_RPM"
-
 echo "*** Installing packages :";
-if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
+if ! yum $YUMOPTIONS $INSTALL_PACKLIST 2>&1; then
     echo Exiting $0
     exit 1
 fi
@@ -134,7 +151,7 @@ CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
 
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
 echo "*** Downloading to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball"
-if ! wget --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz $CMS_SERVER/GridFTPinstall.tar.gz; then
+if ! wget --user-agent='' --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz $CMS_SERVER/GridFTPinstall.tar.gz; then
     echo Exiting from $0
     exit 1
 fi
@@ -153,12 +170,17 @@ mkdir -p /etc/grid-security/gridmapdir/
 for i in {0..9}; do
     for j in {0..9}; do
         for k in {0..9}; do
-            echo -n "cms$i$j$k "
-            /usr/sbin/useradd -g cms -m cms$i$j$k
-            touch /etc/grid-security/gridmapdir/cms$i$j$k
+            id=$i$j$k
+            echo -n "cms$id "
+            echo "cms$id:x:1$id:cms::/home/cms$id:/bin/bash" >> $MYTESTAREA/GFTP_CFGfiles/cmsnewusers
+            # /usr/sbin/useradd -g cms -m cms$id
+            touch /etc/grid-security/gridmapdir/cms$id
         done
     done
 done
+/usr/sbin/newusers $MYTESTAREA/GFTP_CFGfiles/cmsnewusers
+echo ""
+
 
 echo "*** Configuring LCAS-LCMAPS"
 if ! /opt/glite/sbin/gt4-interface-install.sh install; then
@@ -184,7 +206,7 @@ fi
 echo "*** Creating mapfiles"
 #/etc/grid-security/grid-mapfile
 if ! [ -e /etc/grid-security/grid-mapfile ]; then
-    if cp $MYTESTAREA/GFTP_CFGfiles/grid-mapfile  /etc/grid-security/; then
+    if cp $MYTESTAREA/GFTP_CFGfiles/grid-mapfile /etc/grid-security/; then
         echo "*** /etc/grid-security/grid-mapfile created";
     fi
 fi
@@ -195,6 +217,15 @@ if ! [ -e /etc/grid-security/groupmapfile ]; then
         echo "*** /etc/grid-security/groupmapfile created";
     fi
 fi
+
+#TODO check if auth_level 0 is fine wrt LCAS/LCMAPS and if gridft.conf location is fine
+# or should refer to env variable $GLOBUS_LOCATION  
+mkdir -p /opt/globus/etc/
+echo "*** Setting gridftp.conf configuration file"
+cat > /opt/globus/etc/gridftp.conf <<EOF
+auth_level 0
+connections_max 180
+EOF
 
 echo "*** GridFTP installation completed"
 echo ""
@@ -240,18 +271,20 @@ fi
 
 # NOTE: by removing a pkg all the pkgs relying on i will be automatically removed 
 YUMOPTIONS="remove "
-PACKLIST="vdt_globus_data_server glite-security-lcas glite-security-lcmaps"
  
-if ! yum $YUMOPTIONS $PACKLIST 2>&1; then
+if ! yum $YUMOPTIONS $UNINSTALL_PACKLIST 2>&1; then
     echo "===> Yum package removal failed. Exiting ..." 
     exit 1
 fi
 
 # extract group-cms users:
 echo "*** Removing cmsXXX user"; echo -n "found users: "
-USER_LIST=`
- cat /etc/passwd | awk -F\: '{print $1 }'  | xargs groups | awk -F\: '{print $1 }' | grep ^cms
-`
+if [ -e $MYTESTAREA/GFTP_CFGfiles/cmsnewusers ]; then
+    USER_LIST=`cat $MYTESTAREA/GFTP_CFGfiles/cmsnewusers | awk -F\: '{print $1}'`
+else
+    USER_LIST=`cat /etc/passwd | awk -F\: '{print $1 }'  | xargs groups | awk -F\: '{print $1 }' | grep ^cms`
+fi
+
 for uu in $USER_LIST; do 
     echo -n "$uu "
     userdel -r $uu 
