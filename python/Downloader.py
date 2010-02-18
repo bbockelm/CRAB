@@ -19,7 +19,7 @@ class Downloader:
             try:
                 os.mkdir(cachepath)
             except:
-                common.loggin.info('Warning cannot create %s. Using current directory'%cachepath)
+                common.logger.info('Warning cannot create %s. Using current directory'%cachepath)
                 cachepath=os.getcwd() 
        
         if not logger: logger = common.logger 
