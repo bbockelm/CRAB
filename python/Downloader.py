@@ -8,7 +8,13 @@ class Downloader:
         ## if not already defined set default CachePath to $HOME/.cms_crab   
         if cachepath =='':
             import os
-            cachepath='%s/.cms_crab'%os.getenv('HOME')
+            if os.getenv('CMS_CRAB_CACHE_DIR'):
+                cachepath ='%s/.cms_crab'%os.getenv('CMS_CRAB_CACHE_DIR') 
+            elif os.getenv('HOME'):
+                cachepath='%s/.cms_crab'%os.getenv('HOME')
+            else:
+                cachepath = '/tmp/crab_cache_' + pwd.getpwuid(os.getuid())[0]
+ 
         if not os.path.isdir(cachepath):
             try:
                 os.mkdir(cachepath)
