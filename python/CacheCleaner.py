@@ -17,7 +17,8 @@ class CacheCleaner(Actor):
     def run(self):
         common.logger.debug("CacheCleaner::run() called")
         try:
-            sitedbCache= '%s/.cms_sitedbcache'%os.getenv('HOME')
+            sitedbCache= self.findSiteDBcache()
+          #  sitedbCache= '%s/.cms_sitedbcache'%os.getenv('HOME')
             if os.path.isdir(sitedbCache):
                cmd = 'rm -f  %s/*'%sitedbCache
                cmd_out = runCommand(cmd)
@@ -31,7 +32,8 @@ class CacheCleaner(Actor):
 
            # Crab  cache 
         try: 
-            crabCache= '%s/.cms_crab'%os.getenv('HOME')
+            crabCache= self.findCRABcache()
+         #   crabCache= '%s/.cms_crab'%os.getenv('HOME')
             if os.path.isdir(crabCache):
                cmd = 'rm -f  %s/*'%crabCache
                cmd_out = runCommand(cmd)
@@ -43,3 +45,30 @@ class CacheCleaner(Actor):
             common.logger.debug( str(e))
             common.logger.debug( traceback.format_exc() )
         return
+
+    def findSiteDBcache(self):
+
+        sitedbCache = None
+ 
+        if os.getenv('CMS_SITEDB_CACHE_DIR'):
+            sitedbCache = os.getenv('CMS_SITEDB_CACHE_DIR') + '/.cms_sitedbcache'
+        elif os.getenv('HOME'):
+            sitedbCache = os.getenv('HOME') + '/.cms_sitedbcache'
+        else:
+            sitedbCache = '/tmp/sitedbjson_' + pwd.getpwuid(os.getuid())[0]
+
+        return sitedbCache
+
+
+    def findCRABcache(self):
+
+        crabCache = None
+
+        if os.getenv('CMS_CRAB_CACHE_DIR'):
+            crabCache ='%s/.cms_crab'%os.getenv('CMS_CRAB_CACHE_DIR') 
+        elif os.getenv('HOME'):
+            crabCache ='%s/.cms_crab'%os.getenv('HOME')
+        else:
+            crabCache  = '/tmp/crab_cache_' + pwd.getpwuid(os.getuid())[0]
+
+        return crabCache
