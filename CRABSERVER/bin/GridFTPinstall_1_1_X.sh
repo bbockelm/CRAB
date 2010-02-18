@@ -63,12 +63,21 @@ LCGCA_RPM="lcg-CA"
 
 GRIDFTP_RPM="
 glite-initscript-globus-gridftp
+"
+
+# don't know if the these are actually needed, but Daniele highlighted some 
+# missing dependencies with GSI tunneling libs. Then I make'em explicit.
+# TODO Remove once we are sure they are unnecessary
+# excluded (as in UI repo, not in CREAM ones): vdt_globus_sdk
+EXPLICIT_DEPS_RPM="
+gpt
 vdt_globus_data_server
 vdt_globus_essentials
-vdt_globus_sdk
+glite-security-lcas-interface
+glite-security-lcas
+glite-security-lcmaps
 "
-# don't know if the sdk is actually needed, but Daniele highlighted some 
-# missing dependencies with GSI tunneling libs. Then I make'em explicit
+GRIDFTP_RPM="$GRIDFTP_RPM $EXPLICIT_DEPS_RPM"
 
 LCAS_LCMAPS_RPM="
 glite-security-lcas-lcmaps-gt4-interface
@@ -129,12 +138,6 @@ if ! [ -e /etc/yum.repos.d/glite-CREAM.repo ]; then
     wget -O /etc/yum.repos.d/glite-CREAM.repo $YUM_REPO/glite-CREAM.repo
 fi
 
-# don't know if really needed, but could help with missing dependencies found by Daniele
-if ! [ -e /etc/yum.repos.d/glite-UI.repo ]; then
-    echo "Downloading glite-UI.repo into /etc/yum.repos.d/glite-UI.repo"
-    wget -O /etc/yum.repos.d/glite-UI.repo $YUM_REPO/glite-UI.repo
-fi
-
 ### install packages
 echo "*** Installing packages :";
 if ! yum $YUMOPTIONS $INSTALL_PACKLIST 2>&1; then
@@ -148,7 +151,7 @@ CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
 
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
 echo "*** Downloading to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball"
-if ! wget --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz $CMS_SERVER/GridFTPinstall.tar.gz; then
+if ! wget --user-agent='' --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz $CMS_SERVER/GridFTPinstall.tar.gz; then
     echo Exiting from $0
     exit 1
 fi
@@ -167,12 +170,17 @@ mkdir -p /etc/grid-security/gridmapdir/
 for i in {0..9}; do
     for j in {0..9}; do
         for k in {0..9}; do
-            echo -n "cms$i$j$k "
-            /usr/sbin/useradd -g cms -m cms$i$j$k
-            touch /etc/grid-security/gridmapdir/cms$i$j$k
+            id=$i$j$k
+            echo -n "cms$id "
+            echo "cms$id:x:1$id:cms::/home/cms$id:/bin/bash" >> $MYTESTAREA/GFTP_CFGfiles/cmsnewusers
+            # /usr/sbin/useradd -g cms -m cms$id
+            touch /etc/grid-security/gridmapdir/cms$id
         done
     done
 done
+/usr/sbin/newusers $MYTESTAREA/GFTP_CFGfiles/cmsnewusers
+echo ""
+
 
 echo "*** Configuring LCAS-LCMAPS"
 if ! /opt/glite/sbin/gt4-interface-install.sh install; then
@@ -271,9 +279,12 @@ fi
 
 # extract group-cms users:
 echo "*** Removing cmsXXX user"; echo -n "found users: "
-USER_LIST=`
- cat /etc/passwd | awk -F\: '{print $1 }'  | xargs groups | awk -F\: '{print $1 }' | grep ^cms
-`
+if [ -e $MYTESTAREA/GFTP_CFGfiles/cmsnewusers ]; then
+    USER_LIST=`cat $MYTESTAREA/GFTP_CFGfiles/cmsnewusers | awk -F\: '{print $1}'`
+else
+    USER_LIST=`cat /etc/passwd | awk -F\: '{print $1 }'  | xargs groups | awk -F\: '{print $1 }' | grep ^cms`
+fi
+
 for uu in $USER_LIST; do 
     echo -n "$uu "
     userdel -r $uu 
