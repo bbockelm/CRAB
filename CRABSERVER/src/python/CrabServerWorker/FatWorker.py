@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.197 2010/02/09 14:50:43 farinafa Exp $"
-__version__ = "$Revision: 1.197 $"
+__revision__ = "$Id: FatWorker.py,v 1.194.2.1 2010/02/16 11:21:15 spiga Exp $"
+__version__ = "$Revision: 1.194.2.1 $"
 
 import string
 import sys, os
@@ -30,7 +30,7 @@ from ProdCommon.BossLite.API.BossLiteAPISched import BossLiteAPISched
 
 from ProdCommon.BossLite.Common.System import executeCommand
 from ProdCommon.BossLite.Common.BossLiteLogger import BossLiteLogger
-from ProdCommon.BossLite.Common.Exceptions import BossLiteError
+from ProdCommon.BossLite.Common.Exceptions import BossLiteError, SchedulerError, TimeOut
 
 from ProdCommon.Storage.SEAPI.SElement import SElement
 from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
@@ -289,15 +289,17 @@ class FatWorker(Thread):
                               'ARC':'arc',
                               'LSF':'SchedulerLsf',
                               'CAF':'SchedulerLsf'}[self.schedName]
-        schedulerConfig = {'name': self.bossSchedName, 'user_proxy':taskObj['user_proxy']}
+        schedulerConfig = {'name': self.bossSchedName, 
+                           'user_proxy':taskObj['user_proxy'],
+                           'timeout':180}
 
         self.log.info('Allocating %s scheduler' % schedulerConfig['name'] )
-        if schedulerConfig['name'] in ['SchedulerGLiteAPI']:
+        if schedulerConfig['name'] in ['SchedulerGLiteAPI','SchedulerGLite']:
             schedulerConfig['config'] = self.configs['serviceFile']
-            ##self.wdir + '/glite_wms_%s.conf' % self.configs['rb'] ## TODO
             schedulerConfig['skipWMSAuth'] = 1
             if self.wmsEndpoint:
                 schedulerConfig['service'] = self.wmsEndpoint
+            if schedulerConfig['name']=='SchedulerGLite':schedulerConfig['timeout'] = 600
         elif schedulerConfig['name'] in ['SchedulerGlidein', 'SchedulerCondorG']:
             condorTemp = os.path.join(self.wdir, self.taskName+'_spec')
             self.log.info('Condor will use %s for temporary files' % condorTemp)
@@ -441,15 +443,19 @@ class FatWorker(Thread):
         self.log.info('Worker %s Delegating Proxy for task %s.'%(self.myName,self.taskName))
         try:
             self.blSchedSession.getSchedulerInterface().delegateProxy()
-        except BossLiteError, e:
+        except SchedulerError, e:
             logMsg = "Worker %s. Problem Delegating Proxy for task %s. "%(self.myName, self.taskName)
             logMsg += str(e.description())
+            self.log.info( logMsg )
+        except TimeOut, e:
+            logMsg  = "Worker %s. Problem Delegating Proxy for task %s. \n"%(self.myName, self.taskName) 
+            logMsg += str(e)+'\n'
+            logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
             self.log.info( logMsg )
         except Exception, ee:
             logMsg = "Worker %s. Unexpected exception Delegating Proxy for task %s. "%(self.myName, self.taskName)
             logMsg += str(ee.description())
             self.log.info( logMsg )
-
         for ii in matched:
             sub_bulk = []
             bulk_window = 200
@@ -474,7 +480,7 @@ class FatWorker(Thread):
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
                         self.log.info("Worker submitted sub collection # %s "%count)
                         count += 1
-                    except BossLiteError, e:
+                    except SchedulerError, e:
                         logMsg = "Worker %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
                         logMsg += str(e.description())
                         self.log.info( logMsg )
@@ -483,6 +489,21 @@ class FatWorker(Thread):
                             self.preLog(logMsg, str(e.description()), 0, errorTrace)
                         except Exception, ee:
                             self.log.error("Problem logging information: [%s]"%str(ee))
+                    except TimeOut, e:
+                        logMsg = "Worker %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
+                        logMsg += str(e)+'\n'
+                        logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
+                        self.log.info( logMsg )
+                        errorTrace = str( BossLiteLogger( task, e ) )
+                        try:
+                            self.preLog(logMsg, str(e.description()), 0, errorTrace)
+                        except Exception, ee:
+                            self.log.error("Problem logging information: [%s]"%str(ee))
+                    except Exception, ee:
+                        logMsg = "Worker %s. Unexpected exception submitting task %s collection %s. "%(self.myName, self.taskName, count)
+                        logMsg += str(ee.description())
+                        self.log.info( logMsg )
+
                     ## could be loaded just the sub_list jobs...
                     task = self.blDBsession.load( task['id'], sub_jobs[ii] )
                     # check if submitted
@@ -514,16 +535,29 @@ class FatWorker(Thread):
 
                 try:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
-                except BossLiteError, e:
-                    logMsg = "Worker %s. Problem submitting task %s jobs. "%(self.myName, self.taskName)
+                except SchedulerError, e:
+                    logMsg = "Worker %s. Problem submitting task %s. "%(self.myName, self.taskName)
                     logMsg += str(e.description())
                     self.log.info( logMsg )
                     errorTrace = str( BossLiteLogger( task, e ) )
-                    self.log.info(errorTrace)
                     try:
                         self.preLog(logMsg, str(e.description()), 0, errorTrace)
                     except Exception, ee:
                         self.log.error("Problem logging information: [%s]"%str(ee))
+                except TimeOut, e:
+                    logMsg = "Worker %s. Problem submitting task %s. "%(self.myName, self.taskName)
+                    logMsg += str(e)+'\n'
+                    logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
+                    self.log.info( logMsg )
+                    errorTrace = str( BossLiteLogger( task, e ) )
+                    try:
+                        self.preLog(logMsg, str(e.description()), 0, errorTrace)
+                    except Exception, ee:
+                        self.log.error("Problem logging information: [%s]"%str(ee))
+                except Exception, ee:
+                    logMsg = "Worker %s. Unexpected exception submitting task %s. "%(self.myName, self.taskName)
+                    logMsg += str(ee.description())
+                    self.log.info( logMsg )
 
                 # check if submitted
                 self.log.info("Worker %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
@@ -711,7 +745,21 @@ class FatWorker(Thread):
                 else:
                     unmatched.append(sel)
             elif self.bossSchedName in ['SchedulerGLite']:
-                sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements)
+                try: 
+                    sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements)
+                except SchedulerError, e:
+                    logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
+                    logMsg += str(e.description())
+                    self.log.info( logMsg )
+                except TimeOut, e:
+                    logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
+                    logMsg += str(e)+'\n'
+                    logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
+                    self.log.info( logMsg )
+                except Exception, ee:
+                    logMsg = "Worker %s. Unexpected exception performing List Match for task %s. "%(self.myName, self.taskName)
+                    logMsg += str(ee.description())
+                    self.log.info( logMsg )
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
             else :
