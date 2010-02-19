@@ -33,6 +33,7 @@ class JobXml:
         self.SCHEDID        = "sched_id"
         self.ENDED          = "ended" 
         self.ACTION         = 'action'
+        self.JOBSUBISSION   = "submission"         
 
         self.jobid      = ""
         self.status     = ""
@@ -45,13 +46,14 @@ class JobXml:
         self.sId        = ""
         self.ended      = ""
         self.action     = ""
+        self.jobsubmission = ""
         
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "", act = "" ):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "", act = "", jsub= "" ):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
@@ -61,6 +63,7 @@ class JobXml:
         self.sId        = sId
         self.ended      = ended
         self.action     = act
+        self.jobsubmission = jsub
 
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
@@ -75,9 +78,11 @@ class JobXml:
         jobrep.setAttribute(self.SCHEDID, str(self.sId))
         jobrep.setAttribute(self.ENDED, str(self.ended))
         jobrep.setAttribute(self.ACTION, str(self.action))
+        jobrep.setAttribute(self.JOBSUBISSION, str(self.jobsubmission))
 
         self.report = jobrep
         return self
+
 
     #------------------------------------------------------------------------
     def getJobTagName(self):

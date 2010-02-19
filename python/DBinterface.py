@@ -394,12 +394,9 @@ class DBinterface:
 
                 job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
-            #if str( rForJ.getAttribute('resubmit') ).isdigit():
-            #    job['submissionNumber'] = int(rForJ.getAttribute('resubmit'))
-            #    job.runningJob['submission'] =  int(rForJ.getAttribute('resubmit'))
+                # Needed for unique naming of the output    
+                job.runningJob['submission'] =  int(rForJ.getAttribute('submission'))
           
-            # TODO cleared='0' field, how should it be handled/mapped in BL? #Fabio
-
         common.bossSession.updateDB( task_new )
         return
 
