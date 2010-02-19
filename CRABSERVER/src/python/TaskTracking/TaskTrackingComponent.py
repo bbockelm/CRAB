@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.161 2009/12/03 13:56:56 farinafa Exp $"
-__version__ = "$Revision: 1.161 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.163 2010/02/19 15:13:34 farinafa Exp $"
+__version__ = "$Revision: 1.163 $"
 
 import os
 import time
@@ -754,6 +754,7 @@ class TaskTrackingComponent:
                 sid = ttutil.getListEl(dictReportTot[singleJob], 9)
                 end = ttutil.getListEl(dictReportTot[singleJob], 8)
                 act = ttutil.getListEl(dictReportTot[singleJob], 10)
+                jsub = dictReportTot[singleJob][11]
                 """
                 J = JobXml()
                 J.initialize( \
@@ -767,7 +768,8 @@ class TaskTrackingComponent:
                               ttutil.getListEl(dictReportTot[singleJob], 6), \
                               ttutil.getListEl(dictReportTot[singleJob], 9), \
                               ttutil.getListEl(dictReportTot[singleJob], 8), \
-                              ttutil.getListEl(dictReportTot[singleJob], 10) \
+                              ttutil.getListEl(dictReportTot[singleJob], 10), \
+                              dictReportTot[singleJob][11] \
                             )
                 c.addJob( J )
 
@@ -916,6 +918,10 @@ class TaskTrackingComponent:
             if jobbe.runningJob['destination'] != None and \
                jobbe.runningJob['destination'] != '':
                 site  = jobbe.runningJob['destination'].split(":")[0]
+
+            # For unique naming of the output
+            jsub  = str(jobbe.runningJob['submission'])
+
             del jobbe
 
             resubmitting, MaxResub, Resub, internalstatus = \
@@ -923,10 +929,10 @@ class TaskTrackingComponent:
             vect = []
             if eec == "NULL" and jec == "NULL":
                 vect = [ sstat, "", "", 0, Resub, site, \
-                         stato, joboff, resubmitting, sId, action ]
+                         stato, joboff, resubmitting, sId, action, jsub ]
             else:
                 vect = [ sstat, eec, jec, 0, Resub, site, \
-                         stato, joboff, resubmitting, sId, action ]
+                         stato, joboff, resubmitting, sId, action, jsub ]
 
             if action in ["SubSuccess", "KillFailed"]:
                 if stato in ["E"]:  #["SD","E","DA"]:
