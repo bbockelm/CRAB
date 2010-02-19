@@ -11,7 +11,7 @@ from ProdCommon.BossLite.DbObjects.Job import Job
 from ProdCommon.BossLite.DbObjects.Task import Task
 from ProdCommon.BossLite.DbObjects.RunningJob import RunningJob
 
-from ProdCommon.BossLite.Common.Exceptions import  SchedulerError
+from ProdCommon.BossLite.Common.Exceptions import  SchedulerError, TimeOut
 from ProdCommon.BossLite.API.BossLiteAPISched import  BossLiteAPISched
 
 class Boss:
@@ -52,12 +52,20 @@ class Boss:
 
         self.schedulerConfig = common.scheduler.realSchedParams(cfg_params)
         self.schedulerConfig['name'] =  SchedMap[(self.schedulerName).lower()]
-        self.schedulerConfig['timeout'] = 180
+        self.schedulerConfig['timeout'] = self.setBliteTimeout()
         self.schedulerConfig['skipProxyCheck'] = True 
         self.schedulerConfig['logger'] = common.logger()
 
         self.session = None
+        print self.schedulerConfig
         return
+     
+    def setBliteTimeout(self):
+
+        timeout = 180
+        if schedulerGlite()=='SchedulerGLite': timeout = 600
+
+        return timeout
 
     def schedSession(self):
         '''
@@ -113,8 +121,17 @@ class Boss:
             ## passing list for white-listing and black-listing
             sites = self.schedSession().getSchedulerInterface().lcgInfo(tags, voTags, seList=dest, blacklist=blackL, whitelist=whiteL, full=isFull)
         except SchedulerError, err :
-            common.logger.info("Warning: List Match operation failed with message: " +str(err))
-            common.logger.debug( "List Match failed: " +str(traceback.format_exc()))
+            msg = "List Match operation failed with message: " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "List Match operation failed with message: " +str(e)
+            common.logger.debug( "List Match failed: PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing List Match : " +str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
 
         return sites
 
@@ -131,10 +148,17 @@ class Boss:
             msg+= 'Collection ID : ' +str(collId)
             common.logger.debug(msg)
         except SchedulerError, err :
-            common.logger.info("Submit: " +str(err))
-            common.logger.debug("Submit: " +str(traceback.format_exc()))
-            raise CrabException('Submit: '+str(err))
-
+            msg = "Submission Failed with message: " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "Submission failed with message: " +str(e)
+            common.logger.debug( "Submission: PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing Submission operation : "+str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
         return
 
     def delegateProxy(self): 
@@ -154,9 +178,17 @@ class Boss:
         try:
             statusRes =  self.schedSession().query( str(taskid))
         except SchedulerError, err :
-            common.logger.info("Status Query : " +str(err))
-            common.logger.debug( "Status Query : " +str(traceback.format_exc()))
-            raise CrabException('Status Query : '+str(err))
+            msg = "Status Query failed with message : " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "Status Query failed with message: " +str(e)
+            common.logger.debug( "Status Query failed : PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing Status Query operation : "+str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
 
         return statusRes
 
@@ -167,9 +199,17 @@ class Boss:
         try:
             task = self.schedSession().getOutput( taskId, jobRange, outdir )
         except SchedulerError, err :
-            common.logger.info("GetOutput : " +str(err))
-            common.logger.debug( "GetOutput : " +str(traceback.format_exc()))
-            raise CrabException('GetOutput : '+str(err))
+            msg = "GetOutput failed with message : " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "GetOutput failed with message: " +str(e)
+            common.logger.debug( "Status Query failed : PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing GetOutput operation : "+str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
 
         return task
 
@@ -181,9 +221,17 @@ class Boss:
         try:
             self.schedSession().kill( task, list)
         except SchedulerError, err :
-            common.logger.info("Kill: " +str(err))
-            common.logger.debug( "Kill: " +str(traceback.format_exc()))
-            raise CrabException('Kill: '+str(err))
+            msg = "Kill opertation failed with message : " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "Kill operation failed with message: " +str(e)
+            common.logger.debug( "Status Query failed : PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing Kill operation : "+str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
         return
 
     def LoggingInfo(self,list_id,outfile):
@@ -194,9 +242,18 @@ class Boss:
         try:
             self.schedSession().postMortem(1,list_id,outfile)
         except SchedulerError, err :
-            common.logger.info("logginginfo: " +str(err))
-            common.logger.debug( "logginginfo: " +str(traceback.format_exc()))
-            raise CrabException('logginginfo: '+str(err))
+            msg = "LoggingInfo opertation failed with message : " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "LoggingInfo operation failed with message: " +str(e)
+            common.logger.debug( "Status Query failed : PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing LoggingInfo operation: "+str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+
         return
 
     def writeJDL(self, taskId,jobsList,req):
@@ -206,9 +263,17 @@ class Boss:
         try:
             jdl = self.schedSession().jobDescription( taskId,jobsList,req )
         except SchedulerError, err :
-            common.logger.info("writeJDL: " +str(err))
-            common.logger.debug( "writeJDL: " +str(traceback.format_exc()))
-            raise CrabException('writeJDL: '+str(err))
+            msg = "Write JDL opertation failed with message : " +str(err)
+            common.logger.debug(msg) 
+            raise CrabException(msg)
+        except TimeOut, e:
+            msg = "Write JDL operation failed with message: " +str(e)
+            common.logger.debug( "Status Query failed : PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() ) 
+            raise CrabException(msg)
+        except Exception, e:
+            msg = "Unexpected exception executing Write JDL operation: "+str(traceback.format_exc())
+            common.logger.debug(msg) 
+            raise CrabException(msg)
 
         return jdl
 
