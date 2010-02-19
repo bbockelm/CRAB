@@ -57,7 +57,6 @@ class Boss:
         self.schedulerConfig['logger'] = common.logger()
 
         self.session = None
-        print self.schedulerConfig
         return
      
     def setBliteTimeout(self):
