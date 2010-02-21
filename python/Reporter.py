@@ -2,6 +2,7 @@ import os, common, string
 from Actor import *
 from crab_util import *
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
+from LumiList import LumiList
 
 try: # FUTURE: Python 2.6, prior to 2.6 requires simplejson
     import json
@@ -63,7 +64,7 @@ class Reporter(Actor):
         eventsRequired=0
         filesRead=0
         filesRequired=0
-        runsAndLumis = {}
+        lumis = []
         for job in task.getJobs():
             if (job.runningJob['applicationReturnCode']>0 or job.runningJob['wrapperReturnCode']>0): continue
             # get FJR filename
@@ -74,10 +75,8 @@ class Reporter(Actor):
                 for inputFile in inputFiles:
                     # Accumulate the list of lum sections run over
                     for run in inputFile.runs.keys():
-                        if not runsAndLumis.has_key(run):
-                            runsAndLumis[run] = set()
                         for lumi in inputFile.runs[run]:
-                            runsAndLumis[run].add(lumi)
+                            lumis.append((run, lumi))
                     filesRead+=1
                     eventsRead+=int(inputFile['EventsRead'])
                 #print jobReport[0].inputFiles,'\n'
@@ -86,21 +85,10 @@ class Reporter(Actor):
                 #print 'no FJR avaialble for job #%s'%job['jobId']
             #print "--------------------------"
 
-        # Sort, compact, and write the list of successful lumis
-        compactList = {}
+        # Compact and write the list of successful lumis
 
-        for run in runsAndLumis.keys():
-            lastLumi = -1000
-            compactList[run] = []
-
-            lumiList = list(runsAndLumis[run])
-            lumiList.sort()
-            for lumi in lumiList:
-                if lumi != lastLumi + 1: # Break in sequence from last lumi
-                    compactList[run].append([lumi,lumi])
-                else:
-                    compactList[run][len(compactList[run])-1][1] = lumi
-                lastLumi = lumi
+        lumiList = LumiList(lumis = lumis)
+        compactList = lumiList.getCompactList()
 
         lumiFilename = task['outputDirectory'] + 'lumiSummary.json'
         lumiSummary = open(lumiFilename, 'w')
