@@ -14,8 +14,8 @@ echo "CRABDIR = $CRABdir"
 CRABtag=$tag
 DBSAPItag="DBS_2_0_9_patch_4"
 DLSAPItag="DLS_1_1_2"
-PRODCOMMONtag="PRODCOMMON_0_12_17_CRAB_8"
-WMCOREtag="WMCORE_0_1_1_pre20"
+PRODCOMMONtag="PRODCOMMON_0_12_18_CRAB_2"
+WMCOREtag="WMCORE_0_1_1_pre21"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
 export CVSROOT=${CVSrepo}"/CMSSW"
@@ -53,27 +53,27 @@ cd external
 
 ## download crablib TEMPORARY HACK
 echo ">> downloading crablib from CRAB web page"
-wget --no-check-certificate $repo_url/crablib.tgz
+wget --user-agent="" --no-check-certificate $repo_url/crablib.tgz
 
 ## download pbs_python
 echo ">> downloading pbs_python from CRAB web page"
-wget --no-check-certificate $repo_url/pbs_python.tgz
+wget --user-agent="" --no-check-certificate $repo_url/pbs_python.tgz
 
 ## download sqlite
 echo ">> downloading sqlite from CRAB web page"
-wget --no-check-certificate $repo_url/sqlite.tgz
+wget --user-agent="" --no-check-certificate $repo_url/sqlite.tgz
 
 ## download py2-sqlite
 echo ">> downloading py2-sqlite from CRAB web page"
-wget --no-check-certificate  $repo_url/py2-pysqlite.tgz
+wget --user-agent="" --no-check-certificate  $repo_url/py2-pysqlite.tgz
 
 ## download pyOpenSSL
 echo ">> downloading pyOpenSSL CRAB web page"
-wget --no-check-certificate  $repo_url/pyOpenSSL-0.6-python2.4.tar.gz
+wget --user-agent="" --no-check-certificate  $repo_url/pyOpenSSL-0.6-python2.4.tar.gz
 
 ## download simplejson
 echo ">> downloading simplejson CRAB web page"
-wget --no-check-certificate  $repo_url/simplejson.tgz
+wget --user-agent="" --no-check-certificate  $repo_url/simplejson.tgz
 
 ## download DBS API
 echo ">> downloading DBS API tag ${DBSAPItag} from CVS DBS/Clients/PythonAPI"

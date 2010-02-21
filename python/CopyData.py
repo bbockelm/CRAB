@@ -1,6 +1,3 @@
-__revision__ = "$Id: CopyData.py,v 1.23 2009/12/15 10:56:36 fanzago Exp $"
-__version__  = "$Revision: 1.23 $"
-
 from Actor import *
 from crab_util import *
 from crab_exceptions import *

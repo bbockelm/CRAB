@@ -2,9 +2,6 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.124 2010/01/20 13:20:14 spiga Exp $"
-__version__ = "$Revision: 1.124 $"
-
 from Scheduler import Scheduler
 from crab_exceptions import *
 from crab_util import *

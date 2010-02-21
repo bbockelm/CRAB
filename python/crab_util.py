@@ -166,10 +166,14 @@ def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/"
     compare current release with allowed releases
     format of allowed release:  ['2.6.5','2.6.6','2.7.*']
     """
+    result=[]
     match_result = False
     from Downloader import Downloader
     blacklist = Downloader(url)
-    result =eval(blacklist.config(fileName))
+    try: 
+        result =eval(blacklist.config(fileName))
+    except:
+        common.logger.info("ERROR: Problem reading allowed releases file...") 
     current_dot = current.split('.')
     for version in result:
         if version.find('.') != -1:
