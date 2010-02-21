@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.194.2.1 2010/02/16 11:21:15 spiga Exp $"
-__version__ = "$Revision: 1.194.2.1 $"
+__revision__ = "$Id: FatWorker.py,v 1.194.2.2 2010/02/19 16:27:29 spiga Exp $"
+__version__ = "$Revision: 1.194.2.2 $"
 
 import string
 import sys, os
@@ -454,7 +454,7 @@ class FatWorker(Thread):
             self.log.info( logMsg )
         except Exception, ee:
             logMsg = "Worker %s. Unexpected exception Delegating Proxy for task %s. "%(self.myName, self.taskName)
-            logMsg += str(ee.description())
+            logMsg +=  traceback.format_exc()
             self.log.info( logMsg )
         for ii in matched:
             sub_bulk = []
@@ -501,7 +501,7 @@ class FatWorker(Thread):
                             self.log.error("Problem logging information: [%s]"%str(ee))
                     except Exception, ee:
                         logMsg = "Worker %s. Unexpected exception submitting task %s collection %s. "%(self.myName, self.taskName, count)
-                        logMsg += str(ee.description())
+                        logMsg +=  traceback.format_exc()
                         self.log.info( logMsg )
 
                     ## could be loaded just the sub_list jobs...
@@ -556,7 +556,7 @@ class FatWorker(Thread):
                         self.log.error("Problem logging information: [%s]"%str(ee))
                 except Exception, ee:
                     logMsg = "Worker %s. Unexpected exception submitting task %s. "%(self.myName, self.taskName)
-                    logMsg += str(ee.description())
+                    logMsg +=  traceback.format_exc()
                     self.log.info( logMsg )
 
                 # check if submitted
@@ -758,7 +758,7 @@ class FatWorker(Thread):
                     self.log.info( logMsg )
                 except Exception, ee:
                     logMsg = "Worker %s. Unexpected exception performing List Match for task %s. "%(self.myName, self.taskName)
-                    logMsg += str(ee.description())
+                    logMsg +=  traceback.format_exc()
                     self.log.info( logMsg )
                 if len(sites) > 0: matched.append(sel)
                 else: unmatched.append(sel)
