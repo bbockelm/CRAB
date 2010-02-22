@@ -228,6 +228,7 @@ class SchedulerArc(SchedulerGrid):
         txt += '#\n\n'
 
         txt += 'func_exit() { \n'
+
         txt += self.wsExitFunc_common()
 
         txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
@@ -245,12 +246,20 @@ class SchedulerArc(SchedulerGrid):
 
 
     def tags(self):
+        """ Figure out which runtime environments we need. """
+        tags = []
         task=common._db.getTask()
-        tags = ["APPS/HEP/CMSSW-PA"]
         for s in task['jobType'].split('&&'):
-            if re.match(' *Member\(".*", .*RunTimeEnvironment', s):
+            if re.search('Member\(".*", .*RunTimeEnvironment', s):
+                # Found an RTE; extract its name
                 rte = re.sub(" *Member\(\"", "", s)
                 rte = re.sub("\", .*", "", rte)
+                if re.search('VO-cms-CMSSW_', rte):
+                    # If it's a CMSSW RTE, convert it's name from
+                    # VO-cms-CMSSW_x_y_z to APPS/HEP/CMSSW-x.y.z
+                    rte = re.sub("VO-cms-", "APPS/HEP/", rte)
+                    rte = re.sub("_", "-", rte, 1)
+                    rte = re.sub("_", ".", rte)
                 tags.append(rte)
         return tags
 
