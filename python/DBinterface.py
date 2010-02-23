@@ -394,8 +394,9 @@ class DBinterface:
 
                 job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
-                # Needed for unique naming of the output    
-                job.runningJob['submission'] =  int(rForJ.getAttribute('submission'))
+                # Needed for unique naming of the output.
+                # GIVES PROBLEMS. FIX in >=2_7_2    
+                #job.runningJob['submission'] =  int(rForJ.getAttribute('submission'))
           
         common.bossSession.updateDB( task_new )
         return
