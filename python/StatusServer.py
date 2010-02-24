@@ -47,13 +47,27 @@ class StatusServer(Status):
 
         # align back data and print
         reportXML = None
+        useFallback = False
+ 
         try:
             handledXML += "="*( len(handledXML)%8 )  
             reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
+            common.logger.debug("WARNING: Problem while decompressing fresh status from the server. Use HTTP fallback")
+            common.logger.debug( traceback.format_exc() )
+            useFallback = True 
+
+        try:
+            if useFallback:
+                import urllib
+                xmlStatusURL  = 'http://%s:8888/visualog/'%self.server_name
+                xmlStatusURL += '?taskname=%s&logtype=Xmlstatus'%common._db.queryTask('name')
+                common.logger.debug("Accessing URL for status fallback: %s"%xmlStatusURL)
+                reportXML = ''.join(urllib.urlopen(xmlStatusURL).readlines())
+        except Exception, e:
             common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
-            common.logger.debug("WARNING: Problem while decompressing fresh status from the server.")
-            common.logger.debug( str(e))
+            common.logger.debug("WARNING: Problem also with HTTP status fallback.")
+            common.logger.debug( str(e) )
             common.logger.debug( traceback.format_exc() )
             return
 
@@ -70,7 +84,7 @@ class StatusServer(Status):
             common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
             common.logger.debug("WARNING: Problem while retrieving fresh status from the server.")
             common.logger.debug( str(e))
-            common.logger.debug( traceback.format_exc() ) 
+            common.logger.debug( traceback.format_exc() )
             return
 
         return 

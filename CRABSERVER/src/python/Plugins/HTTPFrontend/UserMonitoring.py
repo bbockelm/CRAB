@@ -127,11 +127,10 @@ class TaskLogVisualizer:
         if taskname == 'ListAllTaskDir':
             return  self.listAllDir()
 
-        if logtype == 'Status': filename = "xmlReportFile.xml"         
-        elif logtype == 'Logging': filename =  "internalog.xml" 
+        if logtype in ['Status', 'Xmlstatus']: filename = "xmlReportFile.xml"         
+        elif logtype == 'Logging': filename =  "internalog.xml"
        
         filepath = os.path.join(dbox, (self.taskname + "_spec"),filename)
-        
         
         errhtml = "<html><body><h2>Internal server logging for task: " + str(self.taskname) + "</h2>\n "
         if not os.path.exists( filepath ):
@@ -139,7 +138,13 @@ class TaskLogVisualizer:
             errhtml += "<tr>  not existing in this CrabServer. Please check the Task ID. </tr>\n"
             return errhtml
            # raise Exception("Logging info file %s not existing"% filepath)
-  
+ 
+        if logtype == 'Xmlstatus':
+            f = open(filepath, 'r')
+            xmlreport = ''.join(f.readlines())
+            f.close() 
+            return xmlreport
+ 
         html = self.showHtml( logtype ,filepath ) 
             
         html += "</table>\n"
