@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.34 2010/02/09 13:16:07 spiga Exp $"
-__version__ = "$Revision: 1.34 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.35 2010/02/09 14:50:43 farinafa Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import string
 import sys, os
@@ -432,7 +432,7 @@ class RegisterWorker(Thread):
                     if fileFound == True: break
                     checkCount -= 1
                     self.log.info("Worker %s. Checking file %s"%(self.myName, remoteFile))
-                    time.sleep(10)
+                    time.sleep( 20*2**(3-checkCount) )
                     pass
 
                 if fileFound == False:
