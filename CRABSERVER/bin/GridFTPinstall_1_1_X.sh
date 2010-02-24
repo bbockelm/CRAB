@@ -77,7 +77,6 @@ vdt_globus_essentials
 glite-security-lcas-interface
 glite-security-lcas
 glite-security-lcmaps
-gridsite-shared
 "
 GRIDFTP_RPM="$GRIDFTP_RPM $EXPLICIT_DEPS_RPM"
 
