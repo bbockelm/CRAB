@@ -70,18 +70,20 @@ glite-initscript-globus-gridftp
 # TODO Remove once we are sure they are unnecessary
 # excluded (as in UI repo, not in CREAM ones): vdt_globus_sdk
 EXPLICIT_DEPS_RPM="
+fetch-crl
 gpt
 vdt_globus_data_server
 vdt_globus_essentials
 glite-security-lcas-interface
 glite-security-lcas
 glite-security-lcmaps
+gridsite-shared
 "
 GRIDFTP_RPM="$GRIDFTP_RPM $EXPLICIT_DEPS_RPM"
 
 LCAS_LCMAPS_RPM="
 glite-security-lcas-lcmaps-gt4-interface
-glite-security-lcas-plugins-voms glite-security-lcas-plugins-check-executable
+glite-security-lcas-plugins-voms glite-security-lcas-plugins-basic glite-security-lcas-plugins-check-executable
 glite-security-lcmaps-plugins-basic glite-security-lcmaps-plugins-voms glite-security-lcmaps-plugins-verify-proxy
 "
 
@@ -217,15 +219,6 @@ if ! [ -e /etc/grid-security/groupmapfile ]; then
         echo "*** /etc/grid-security/groupmapfile created";
     fi
 fi
-
-#TODO check if auth_level 0 is fine wrt LCAS/LCMAPS and if gridft.conf location is fine
-# or should refer to env variable $GLOBUS_LOCATION  
-mkdir -p /opt/globus/etc/
-echo "*** Setting gridftp.conf configuration file"
-cat > /opt/globus/etc/gridftp.conf <<EOF
-auth_level 0
-connections_max 180
-EOF
 
 echo "*** GridFTP installation completed"
 echo ""
