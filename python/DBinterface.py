@@ -350,6 +350,12 @@ class DBinterface:
                 if r.getAttribute('id') in [ id, 'all']:
                     rForJ = r
                     break
+
+            # check if rForJ is None
+            if rForJ is None:
+                common.logger.debug( "Missing XML element for job %s, skip update status"%str(id) )
+                continue
+             
             ## Check the submission number and create new running jobs on the client side
             if rForJ.getAttribute('resubmit') != 'None' and (rForJ.getAttribute('status') not in ['Cleared','Killed','Done','Done (Failed)','Not Submitted', 'Cancelled by user']) :
                 if int(job.runningJob['submission']) < int(rForJ.getAttribute('resubmit')) + 1:
@@ -394,8 +400,9 @@ class DBinterface:
 
                 job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
-                # Needed for unique naming of the output    
-                #job.runningJob['submission'] =  int(rForJ.getAttribute('submission'))
+                # Needed for unique naming of the output.
+                # GIVES PROBLEMS. FIX in >=2_7_2    
+                #job.runningJob['submission'] =  str(rForJ.getAttribute('submission'))
           
         common.bossSession.updateDB( task_new )
         return
