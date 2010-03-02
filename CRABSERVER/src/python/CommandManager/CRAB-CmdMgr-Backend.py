@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.37 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.37 2009/10/29 18:01:44 farinafa Exp $"
+__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.38 2009/11/30 02:24:34 riahi Exp $"
 
 import threading
 import os
@@ -406,12 +406,12 @@ class CRAB_AS_beckend:
             self.log.debug( traceback.format_exc() )
             return
 
-        dataset, feeder = self.getWorkflowParameterFromXml(self.wdir, taskName)
+        dataset, feeder, processing, startrun = self.getWorkflowParameterFromXml(self.wdir, taskName)
 
         # CRAB sends a message to the WorkflowManager to remove the workflow from management
         self.myThread.transaction.begin()
         WFManagerdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
-                dataset + ':' + feeder }
+                dataset + ':' + feeder + ':' + processing + ':' + startrun}
 
         WFManagerSent = pickle.dumps(WFManagerdict)
         msg = {'name' : 'RemoveWorkflowFromManagement', \
@@ -430,10 +430,12 @@ class CRAB_AS_beckend:
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
             dataset = self.cfg_params['CMSSW.datasetpath']
             feeder = self.cfg_params.get('feeder','Feeder')
+            processing = self.cfg_params.get('processing','bulk')
+            startrun = self.cfg_params.get('startrun','None') 
 
         except Exception, e:
             return None,None
-        return dataset, feeder
+        return dataset, feeder, processing, startrun
 
 ################################
 
