@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.125 2010/02/09 15:31:56 edelmann Exp $"
-__version__ = "$Revision: 1.125 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.1 2010/02/16 16:40:57 spiga Exp $"
+__version__ = "$Revision: 1.124.2.1 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -66,10 +66,10 @@ class SchedulerGrid(Scheduler):
         elif int(removeBList) == 0 and blackAnaOps:
             self.EDG_ce_black_list = blackAnaOps
         if self.EDG_ce_black_list:
-            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',')
+            self.EDG_ce_black_list = str(self.EDG_ce_black_list).split(',')
 
         self.EDG_ce_white_list = cfg_params.get('GRID.ce_white_list',None)
-        if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
+        if (self.EDG_ce_white_list): self.EDG_ce_white_list = str(self.EDG_ce_white_list).split(',')
 
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
 
@@ -332,7 +332,7 @@ class SchedulerGrid(Scheduler):
 
     def tags(self):
         task=common._db.getTask()
-        tags_tmp=string.split(task['jobType'],'"')
+        tags_tmp=str(task['jobType']).split('"')
         tags=[str(tags_tmp[1]),str(tags_tmp[3])]
         return tags
 
