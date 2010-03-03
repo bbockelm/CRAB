@@ -223,9 +223,14 @@ class cmscp:
             print '\t tfc %s '%tfc
             print "\t self.params['inputFilesList'] %s \n"%self.params['inputFilesList']
                 
-        if (str(self.params['lfn']).find("/store/") != -1):
-            temp = str(self.params['lfn']).split("/store/")
-            self.params['lfn']= "/store/temp/" + temp[1]
+        #if (str(self.params['lfn']).find("/store/") != -1):
+        #    temp = str(self.params['lfn']).split("/store/")
+        #    self.params['lfn']= "/store/temp/" + temp[1]
+        if (str(self.params['lfn']).find("/store/") == 0):
+            temp = str(self.params['lfn']).replace("/store/","/store/temp/",1)
+            self.params['lfn']= temp
+        
+        if ( self.params['lfn'][-1] != '/' ) : self.params['lfn'] = self.params['lfn'] + '/'
             
         file_backup=[]
         for input in self.params['inputFilesList']:
