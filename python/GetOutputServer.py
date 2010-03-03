@@ -31,9 +31,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         self.copyTout= setLcgTimeout()
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.copyTout= ' '
-
-        self.retryCount = 3  
-
+  
         return
 
 
@@ -126,18 +124,8 @@ class GetOutputServer( GetOutput, StatusServer ):
 
             # try to do the copy
             copy_res = None
-
             try:
-
-                #added retry mechanism for TimeOut exceptions
-                timedOut = False
-                while (self.retryCount > 0):
-                    try:
-                        copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
-                    except TimeOut, e: timedOut = True
-                    if timedOut == False: break
-                    self.retryCount -= 1
-
+                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
                 msg += str(ex)
@@ -166,16 +154,7 @@ class GetOutputServer( GetOutput, StatusServer ):
                 dest = destFiles[i]
                 common.logger.debug( "retrieving "+ str(source) +" to "+ str(dest) )
                 try:
-
-                    #added retry mechanism for TimeOut exceptions
-                    timedOut = False
-                    while (self.retryCount > 0):
-                        try:
-                            sbi.copy( source, dest , opt=self.copyTout)
-                        except TimeOut, e: timedOut = True
-                        if timedOut == False: break
-                        self.retryCount -= 1
-
+                    sbi.copy( source, dest , opt=self.copyTout)
                     if i < len(filesToRetrieve):
                         filesAndJodId[ filesToRetrieve[i] ] = dest
                 except Exception, ex:
