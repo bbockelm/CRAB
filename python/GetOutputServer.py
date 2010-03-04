@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.48 2009/11/11 13:13:47 mcinquil Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.48.2.2 2010/03/03 10:31:33 farinafa Exp $"
+__version__ = "$Revision: 1.48.2.2 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -125,7 +125,7 @@ class GetOutputServer( GetOutput, StatusServer ):
             # try to do the copy
             copy_res = None
             try:
-                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
+                copy_res = sbi.copy( sourcesList, destsList, opt="tout=300")
             except Exception, ex:
                 msg = "WARNING: Unable to retrieve output file %s \n" % osbFiles[i]
                 msg += str(ex)
