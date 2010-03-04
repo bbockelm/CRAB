@@ -231,12 +231,8 @@ def runCommand(command, printout=0, timeout=None,errorCode=False):
 
     # playing with fd
     fd = p.stdout.fileno()
-    fde = p.stderr.fileno()
-
     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
     fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
-    flags = fcntl.fcntl(fde, fcntl.F_GETFL)
-    fcntl.fcntl(fde, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     # return values
     timedOut = False
@@ -244,18 +240,14 @@ def runCommand(command, printout=0, timeout=None,errorCode=False):
 
     while 1:
         (r, w, e) = select.select([fd], [], [], timeout)
-        read = '' 
-        readerr = '' 
-        if fd in r :
-            read = p.stdout.read()
-        if fde in r:
-            readerr = p.stderr.read()
-        if fd not in r and fde not in r:
+
+        if fd not in r :
             timedOut = True
             break
-        if read != '' or readerr != '' :
-            if read != '': outc.append( read )
-            if readerr != '':errc.append( readerr )
+
+        read = p.stdout.read()
+        if read != '' :
+            outc.append( read )
         else :
             break
 
