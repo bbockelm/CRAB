@@ -227,23 +227,21 @@ class Publisher(Actor):
             else:
                 if  self.skipOcheck==0:
                     if int(file['TotalEvents']) != 0:
-                        #file.lumisections = {}
-                        # lumi info are now in run hash
-                        file.runs = {}
+                        ### Fede to insert also run and lumi info in DBS
+                        #file.runs = {}
                         for ds in file.dataset:
                             ### Fede for production
                             if (ds['PrimaryDataset'] == 'null'):
-                                #ds['PrimaryDataset']=procdataset
                                 ds['PrimaryDataset']=self.userprocessedData
                         filestopublish.append(file)
                     else:
                         self.noEventsFiles.append(file['LFN'])
                 else:
-                    file.runs = {}
+                    ### Fede to insert also run and lumi info in DBS
+                    #file.runs = {}
                     for ds in file.dataset:
                         ### Fede for production
                         if (ds['PrimaryDataset'] == 'null'):
-                            #ds['PrimaryDataset']=procdataset
                             ds['PrimaryDataset']=self.userprocessedData
                     filestopublish.append(file)
        
@@ -259,7 +257,9 @@ class Publisher(Actor):
         # insert files
         Blocks=None
         try:
-            Blocks=dbswriter.insertFiles(jobReport)
+            ### FEDE added insertDetectorData = True to propagate in DBS info about run and lumi 
+            Blocks=dbswriter.insertFiles(jobReport, insertDetectorData = True)
+            #Blocks=dbswriter.insertFiles(jobReport)
             common.logger.debug("--->>> Inserting file in blocks = %s"%Blocks)
         except DBSWriterError, ex:
             common.logger.debug("--->>> Insert file error: %s"%ex)
@@ -308,14 +308,12 @@ class Publisher(Actor):
                     
             # close the blocks
             common.logger.log(10-1, "BlocksList = %s"%BlocksList)
-            # dbswriter = DBSWriter(self.DBSURL,level='ERROR')
             dbswriter = DBSWriter(self.DBSURL)
             
             for BlockName in BlocksList:
                 try:   
                     closeBlock=dbswriter.manageFileBlock(BlockName,maxFiles= 1)
                     common.logger.log(10-1, "closeBlock %s"%closeBlock)
-                    #dbswriter.dbs.closeBlock(BlockName)
                 except DBSWriterError, ex:
                     common.logger.info("Close block error %s"%ex)
 
