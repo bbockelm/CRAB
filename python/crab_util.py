@@ -4,7 +4,7 @@
 #
 ###########################################################################
 
-import string, sys, os, time
+import string, sys, os, time, signal
 import ConfigParser, re, select, fcntl
 import statvfs
 from subprocess import Popen, PIPE, STDOUT
@@ -263,7 +263,7 @@ def runCommand(command, printout=0, timeout=None,errorCode=False):
                 'Warning: an error occurred killing subprocess [%s]' \
                 % str(err) )
 
-        raise TimeOut( command, ''.join(outc), timeout, start, stop )
+        raise CrabException( command, ''.join(outc), timeout, start, stop )
 
     try:
         p.wait()
