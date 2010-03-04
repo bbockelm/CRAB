@@ -4,9 +4,12 @@ from crab_util import *
 import common
 import Scram
 from Splitter import JobSplitter
+from Downloader import Downloader
 
 from IMProv.IMProvNode import IMProvNode
+from IMProv.IMProvLoader import loadIMProvFile
 import os, string, glob
+from xml.dom import pulldom
 
 class Cmssw(JobType):
     def __init__(self, cfg_params, ncjobs,skip_blocks, isNew):
@@ -65,7 +68,7 @@ class Cmssw(JobType):
             As CMSSW versions are dropped we can drop more code:
             2.x dropped: drop check for lumi range setting
             """
-
+        self.checkCMSSWVersion()
         ### collect Data cards
 
         ### Temporary: added to remove input file control in the case of PU
@@ -524,7 +527,6 @@ class Cmssw(JobType):
 
         add an entry to the xml file
         """
-        from IMProv.IMProvLoader import loadIMProvFile
         ## load xml
         improvDoc = loadIMProvFile(self.argsFile)
         entrname= 'Job'
@@ -1206,3 +1208,47 @@ class Cmssw(JobType):
 
         if list : return self.output_file
         return txt
+
+    def checkCMSSWVersion(self, url = "https://cmstags.cern.ch/cgi-bin/CmsTC/", fileName = "ReleasesXML"):
+        """
+        compare current CMSSW release and arch with allowed releases
+        """
+
+        downloader = Downloader(url)
+        goodRelease = False
+
+        try:
+            result = downloader.config(fileName)
+        except:
+            common.logger.info("ERROR: Problem reading file of allowed CMSSW releases.")
+
+        try:
+            events = pulldom.parseString(result)
+
+            arch     = None
+            release  = None
+            relType  = None
+            relState = None
+            for (event, node) in events:
+                if event == pulldom.START_ELEMENT:
+                    if node.tagName == 'architecture':
+                        arch = node.attributes.getNamedItem('name').nodeValue
+                    if node.tagName == 'project':
+                        relType = node.attributes.getNamedItem('type').nodeValue
+                        relState = node.attributes.getNamedItem('state').nodeValue
+                        if relType == 'Production' and relState == 'Announced':
+                            release = node.attributes.getNamedItem('label').nodeValue
+                if self.executable_arch == arch and self.version == release:
+                    goodRelease = True
+                    return goodRelease
+
+            if not goodRelease:
+                msg = "WARNING: %s on %s is not a supported release. " % \
+                        (self.version, self.executable_arch)
+                msg += "Submission may fail."
+                common.logger.info(msg)
+        except:
+            common.logger.info("Problems parsing file of allowed CMSSW releases.")
+
+        return goodRelease
+
