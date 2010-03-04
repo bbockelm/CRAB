@@ -80,7 +80,7 @@ class PostMortemServer(PostMortem):
             try:
                 copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
             except Exception, ex:
-                msg = "WARNING: Unable to retrieve logging info file %s \n" % osbFiles[i]
+                msg = "WARNING: Unable to retrieve logging" #ainfo file %s \n" % osbFiles[i]
                 msg += str(ex)
                 common.logger.debug(msg)
                 import traceback
