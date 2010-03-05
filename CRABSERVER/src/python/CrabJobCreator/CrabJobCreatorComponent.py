@@ -4,7 +4,7 @@
 _CrabJobCreatorComponent_
 
 """
-__version__ = "$Revision: 1.3 $"
+__version__ = "$Revision: 1.4 $"
 __revision__ = "$Id: CrabJobCreatorComponent.py,\
                 v 1.2 2009/10/13 15:19:38 riahi Exp $"
 
@@ -217,6 +217,7 @@ class DBCoreWMObject:
     """
     def __init__(self):
         self.dialect = "MySQL"
+        self.connectUrl = "mysql://root@localhost/wmbs"
 
 class ConfigWMObject:
     """
