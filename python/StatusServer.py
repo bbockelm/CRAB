@@ -51,7 +51,7 @@ class StatusServer(Status):
             handledXML += "="*( len(handledXML)%8 )  
             reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
-            common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
+            common.logger.info("WARNING: Error getting the status from server. Please issue crab -status again")
             common.logger.debug("WARNING: Problem while decompressing fresh status from the server.")
             common.logger.debug( str(e))
             common.logger.debug( traceback.format_exc() )
@@ -61,7 +61,7 @@ class StatusServer(Status):
             reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
         except ExpatError, experr:
-            common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
+            common.logger.info("WARNING: Error extracting status report. Please issue crab -status again")
             common.logger.debug("ERROR: %s"%str(experr))
             common.logger.debug( str(experr))
             common.logger.debug( traceback.format_exc() )
