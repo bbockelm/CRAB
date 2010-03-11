@@ -99,6 +99,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         
         self.getListSubscription = WMBSdao(classname = "Subscriptions.ListIncomplete")
 
+
     def taskExtension(self, jobGroups):
         """
         Extension work
@@ -108,8 +109,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         for dest in jobGroups:
             dlsDest.extend(dest.getLocationsForJobs())
-
-        logging.info("DEST GOT %s" %dlsDest)
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -130,16 +129,12 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             return 
 
         # Reconstruct command structures
-        logging.info("Parsing XML")
-
         if not self.parseCommandXML() == 0:
             self.markTaskAsNotSubmitted( 'all' )
             return
 
         self.pathFile = self.config['CacheDir'] \
       + '/'+ self.taskToComplete['name']+'_spec/arguments.xml'
-
-        logging.info("Creating XML")
 
         # Create argument.xml
         try:
@@ -177,48 +172,53 @@ class CrabJobCreatorPoller(BaseWorkerThread):
           'dlsDestination': dlsDest , 'closed' :'N'} 
 
         jobCounter = 0
+        groupNumber = 0
         jobNumber = len(self.taskToComplete.getJobs())
         logging.info(" This task has already %s jobs" %jobNumber)
 
-        for jI in jobGroups[0].jobs:
+        for jG in jobGroups:
 
-            jobCounter += 1
+             for jI in jobGroups[jobGroups.index(jG)].jobs:
 
-            if eval(self.cmdRng) and jobCounter > max(eval(self.cmdRng)):
-                continue
+                  jobCounter += 1
+
+                  if eval(self.cmdRng) and jobCounter > max(eval(self.cmdRng)):
+                      continue
   
-            tempDict["outputFiles"] = []
-            tempDict["outputFiles"].extend(['out_files_'+\
-                   str((jobGroups[0].jobs).index(jI)+1+jobNumber)+'.tgz','crab_fjr_'+\
-                   str((jobGroups[0].jobs).index(jI)+1+jobNumber)+'.xml','.BrokerInfo'])
-            tempDict["name"] = self.taskToComplete['name']+ \
-                   '_job'+str((jobGroups[0].jobs).index(jI)+1+jobNumber)
-            tempDict["standardError"] = 'CMSSW_'+ str((jobGroups[0].jobs).\
-                    index(jI)+1)+'.stderr'
-            tempDict["standardOutput"] = 'CMSSW_'+str((jobGroups[0].jobs).\
-                    index(jI)+1)+'.stdout'
-            tempDict["jobId"] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
-            tempDict["wmbsJobId"] = jI['id']
-            tempDict['arguments'] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
-            tempDict['taskId'] =  self.taskToComplete['id']
-            rjAttrs[tempDict["name"]] = attrtemp
-            rjAttrs[tempDict["name"]]['jobId'] = \
-              (jobGroups[0].jobs).index(jI) + 1 + jobNumber
+                  tempDict["outputFiles"] = []
+                  tempDict["outputFiles"].extend(['out_files_'+\
+                         str((jobGroups[jobGroups.index(jG)].jobs).index(jI)+1+jobNumber+groupNumber)+'.tgz','crab_fjr_'+\
+                         str((jobGroups[jobGroups.index(jG)].jobs).index(jI)+1+jobNumber+groupNumber)+'.xml','.BrokerInfo'])
+                  tempDict["name"] = self.taskToComplete['name']+ \
+                         '_job'+str((jobGroups[jobGroups.index(jG)].jobs).index(jI)+1+jobNumber+groupNumber)
+                  tempDict["standardError"] = 'CMSSW_'+ str((jobGroups[jobGroups.index(jG)].jobs).\
+                          index(jI)+1)+'.stderr'
+                  tempDict["standardOutput"] = 'CMSSW_'+str((jobGroups[jobGroups.index(jG)].jobs).\
+                          index(jI)+1)+'.stdout'
+                  tempDict["jobId"] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
+                  tempDict["wmbsJobId"] = jI['id']
+                  tempDict['arguments'] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
+                  tempDict['taskId'] =  self.taskToComplete['id']
+                  rjAttrs[tempDict["name"]] = attrtemp
+                  rjAttrs[tempDict["name"]]['jobId'] = \
+                    (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
 
-            logging.debug("THE JOB DICT is %s" %tempDict)
+                  logging.info("THE JOB DICT is %s" %tempDict)
  
-            job = Job( tempDict )
-            subn = int( job['submissionNumber'] )
-            if subn > 0 :
-                job['submissionNumber'] = subn - 1
-            else :
-                job['submissionNumber'] = subn
+                  job = Job( tempDict )
+                  subn = int( job['submissionNumber'] )
+                  if subn > 0 :
+                      job['submissionNumber'] = subn - 1
+                  else :
+                      job['submissionNumber'] = subn
 
-            if jobNumber > 0 :
-                self.taskToComplete.appendJob(job)
+                  if jobNumber > 0 :
+                      self.taskToComplete.appendJob(job)
 
-            else:
-                self.taskToComplete.addJob(job)
+                  else:
+                      self.taskToComplete.addJob(job)
+                    
+             groupNumber+=len(jobGroups[jobGroups.index(jG)].jobs) 
 
         # Fill running job information
         for job in self.taskToComplete.jobs:
@@ -258,40 +258,47 @@ class CrabJobCreatorPoller(BaseWorkerThread):
         self.listArguments = []
         tempArg = {}
 
+        newgroupNumber=0             
+        for jG in jobGroups:
 
-        logging.info("JG %s" %jobGroups[0].jobs)
-             
-        for jI in jobGroups[0].jobs:
+            for jI in jobGroups[jobGroups.index(jG)].jobs:
+                tempArg['JobID'] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + newgroupNumber
+                tempArg['InputFiles'] = "" 
+                tempArg['MaxEvents'] = 0
 
-            tempArg['JobID'] = (jobGroups[0].jobs).index(jI) + 1 + jobNumber
-            tempArg['InputFiles'] = "" 
-            tempArg['MaxEvents'] = 0
-
-            for lfnFile in jI.getFiles(type = "lfn"):
-
-                if type(jI['input_files'])==Fileset:     
+                if type(jI['input_files'])==Fileset:
 
                     for inputFile in jI['input_files'].files:
                         tempArg['MaxEvents'] += inputFile['events']
                         logging.info("increm. max event %s" %tempArg['MaxEvents'])
-                    
+                        lfnFile=inputFile['lfn']
+
+                        if tempArg['InputFiles']:
+                            tempArg['InputFiles'] += "," + lfnFile
+                        else:
+                            tempArg['InputFiles'] = lfnFile
+
+
                 else:
+                    for lfnFile in jI.getFiles(type = "lfn"):
 
-                    if not jI["mask"].getMaxEvents():
-                        tempArg['MaxEvents'] += jI['input_files'][(jI.getFiles(type = "lfn")).index(lfnFile)]['events']
-                    else:
-                        tempArg['MaxEvents'] = jI["mask"].getMaxEvents()
+                        if not jI["mask"].getMaxEvents():
+                            tempArg['MaxEvents'] += jI['input_files'][(jI.getFiles(type = "lfn")).index(lfnFile)]['events']
+                        else:
+                            tempArg['MaxEvents'] = jI["mask"].getMaxEvents()
 
-                if tempArg['InputFiles']:
-                    tempArg['InputFiles'] += "," + lfnFile  
-                else:
-                    tempArg['InputFiles'] = lfnFile 
+                        if tempArg['InputFiles']:
+                            tempArg['InputFiles'] += "," + lfnFile  
+                        else:
+                            tempArg['InputFiles'] = lfnFile 
 
-            tempArg['SkipEvents'] = 0
+                tempArg['SkipEvents'] = 0
   
-            if jI['mask']['FirstEvent']:tempArg['SkipEvents'] = jI['mask']['FirstEvent']
-            self.listArguments.append(tempArg)
-            tempArg = {}
+                if jI['mask']['FirstEvent']:tempArg['SkipEvents'] = jI['mask']['FirstEvent']
+                self.listArguments.append(tempArg)
+                tempArg = {}
+
+            newgroupNumber+=len(jobGroups[jobGroups.index(jG)].jobs)
 
         # Add entry in xml file
         self.addEntry()
@@ -331,7 +338,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                     tmp.append(i)
 
             self.cmdRng = tmp
-            logging.debug("Try to submit %s" %self.cmdRng)   
 
         #Send the payload only of the Rng not null
         if self.cmdRng:
@@ -671,7 +677,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                     continue 
 
                 # Number of job 0 or number of job > limit- exit and try again next time 
-                if len(jobGroups[0].jobs)==0 or len(jobGroups[0].jobs) >= 1000:
+                if len(jobGroups)==0 or len(jobGroups[0].jobs)==0 or len(jobGroups[0].jobs) >= 1000:
                     continue 
 
                 # Add jobgroup to the list of subscriptions to process  
