@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.32.2.1 2010/02/05 16:05:29 ewv Exp $"
-__version__ = "$Revision: 1.32.2.1 $"
+__revision__ = "$Id: Splitter.py,v 1.33 2010/02/21 12:47:19 spiga Exp $"
+__version__ = "$Revision: 1.33 $"
 
 import common
 from crab_exceptions import *
@@ -699,6 +699,7 @@ class JobSplitter:
                 firstFile = True
                 # Collect information from all the files
                 for jobFile in job.getFiles():
+                    doFile = False
                     if firstFile:  # Get locations from first file in the job
                         for loc in jobFile['locations']:
                             locations.append(loc)
@@ -707,9 +708,12 @@ class JobSplitter:
                     for lumiList in jobFile['runs']:
                         theRun = lumiList.run
                         for theLumi in list(lumiList):
-                            lumis.append( (theRun, theLumi) )
-
-                    lfns.append(jobFile['lfn'])
+                            lumisCreated += 1
+                            if lumisCreated <= self.totalNLumis:
+                                doFile = True
+                                lumis.append( (theRun, theLumi) )
+                    if doFile:
+                        lfns.append(jobFile['lfn'])
                 fileString = ','.join(lfns)
                 lumiLister = LumiList(lumis = lumis)
                 lumiString = lumiLister.getCMSSWString()
@@ -717,7 +721,6 @@ class JobSplitter:
 
                 jobDestination.append(locations)
                 jobCount += 1
-                lumisCreated += len(lumis)
                 common.logger.debug('Job %s will run on %s files and %s lumis '
                     % (jobCount, len(lfns), len(lumis) ))
 
