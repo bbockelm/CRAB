@@ -5,6 +5,7 @@ from crab_exceptions import *
 from WorkSpace import *
 from urlparse import urlparse 
 from LFNBaseName import *
+from crab_util import getUserName
 
 class PhEDExDatasvcInfo:
     def __init__( self , cfg_params=None, config=None ):
@@ -107,31 +108,33 @@ class PhEDExDatasvcInfo:
                 SE = self.SE[self.sched]
             else: 
                 url = 'http://'+endpoint.split('://')[1]
-                # python > 2.4
-                # SE = urlparse(url).hostname 
                 scheme, host, path, params, query, fragment = urlparse(url)
-             #   SE = host.split(':')[0]
                 SE = self.getAuthoritativeSE()
                 SE_PATH = endpoint.split(host)[1]
-            USER = (query.split('user')[1]).split('/')[1]
+            ### fede ###
+            #USER = (query.split('user')[1]).split('/')[1]
         else:
-            #### to test #####
+           #### to test #####
            # url = 'http://'+endpoint.split('://')[1]
            # scheme, host, path, params, query, fragment = urlparse(url)
            # SE = host.split(':')[0]
            # SE_PATH = endpoint.split(host)[1]
             SE = self.node
             SE_PATH = self.user_se_path + self.user_remote_dir 
-            if self.lfn.find('user'):
-                try:
-                    USER = (self.lfn.split('user')[1]).split('/')[1]
-                except:
-                    pass
-            if self.lfn.find('group'):
-                try:
-                    USER = (self.lfn.split('group')[1]).split('/')[1]
-                except:
-                    pass
+            ### fede ###
+            #if self.lfn.find('user'):
+            #    try:
+            #        USER = (self.lfn.split('user')[1]).split('/')[1]
+            #    except:
+            #        pass
+        ### fede ###    
+        if self.lfn.find('group') != -1:
+            try:
+                USER = (self.lfn.split('group')[1]).split('/')[1]
+            except:
+                pass
+        else:
+            USER = getUserName()
         return SE, SE_PATH, USER 
    
 
