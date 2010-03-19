@@ -75,7 +75,12 @@ class Publisher(Actor):
                 self.dataset_to_import.append(dataset)
         ###        
             
-        #self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
+        self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
+        
+        ### fede import parent dataset is compulsory ###
+        if ( int(self.import_all_parents) == 0 ):
+            common.logger.info("WARNING: The option USER.publish_with_import_all_parents=0 has been deprecated. The import of parents is compulsory and done by default")
+        ############
         self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
     
         self.SEName=''
