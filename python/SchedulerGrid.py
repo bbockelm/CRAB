@@ -269,7 +269,9 @@ class SchedulerGrid(Scheduler):
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             cmscp_args = ' --destination $endpoint --inputFileList $file_list'
-            cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
+            ### FEDE FOR MULTIOUT 
+            #cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
+            cmscp_args +=' --middleware $middleware --se_name $SE --for_lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             if self.space_tocken:
                 cmscp_args +=' --option space_tocken=%s'%str(self.space_tocken)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
@@ -284,6 +286,15 @@ class SchedulerGrid(Scheduler):
                 txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'fi\n'
                 txt += 'echo "#####################################"\n'
+            #### FEDE FOR MULTIOUT 
+            txt += 'if [ -f resultCopyFile ] ;then\n'
+            txt += '    cat resultCopyFile\n'
+            txt += '    pwd\n'
+            txt += 'else\n'
+            txt += '    echo "resultCopyFile file not found"\n'
+            txt += '    StageOutExitStatus=60307\n'
+            txt += 'fi\n'
+            ################################
 
             txt += 'if [ -f cmscpReport.sh ] ;then\n'
             txt += '    cat cmscpReport.sh\n'
