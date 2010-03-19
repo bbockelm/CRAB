@@ -250,30 +250,39 @@ class GetOutput(Actor):
                 
         #### Filling BOSS DB with SE name and LFN, for edm and not_edm files ####        
         lfns=[]
+        pfns=[]
         if (len(jobReport.files) != 0):
             for f in jobReport.files:
                 if f['LFN']:
                     lfns.append(f['LFN'])
+                ### FEDE for MULTI PUBB    
                 ### FEDE to have the endpoint in the boss db ###    
                 #if f['SEName']:    
                 #    codeValue["storage"] = f['SEName']
-                if f['PFN']:    
-                    codeValue["storage"] = os.path.dirname(f['PFN'])+'/' 
+                if f['PFN']:
+                    pfns.append(os.path.dirname(f['PFN'])+'/')
+                    #codeValue["storage"] = os.path.dirname(f['PFN'])+'/' 
                 ##########    
                     
         if (len(jobReport.analysisFiles) != 0):
             for aFile in jobReport.analysisFiles:
                 if aFile['LFN']:
                     lfns.append(aFile['LFN'])
+                ### FEDE for MULTI PUBB    
                 ### FEDE to have the endpoint in the boss db ###    
                 #if aFile['SEName']:    
                 #    codeValue["storage"] = aFile['SEName']
                 if aFile['PFN']:   
-                    codeValue["storage"] = os.path.dirname(aFile['PFN'])+'/'
+                    pfns.append(os.path.dirname(aFile['PFN'])+'/')
+                    #codeValue["storage"] = os.path.dirname(aFile['PFN'])+'/'
                 #########    
                     
-        if not codeValue.has_key('storage'):
-            codeValue["storage"] = ''
+        ### FEDE for MULTI PUBB    
+        #if not codeValue.has_key('storage'):
+        #    codeValue["storage"] = ''
+        #else:
+        codeValue["storage"] = pfns 
+        
         codeValue["lfn"] = lfns
          
         return codeValue
