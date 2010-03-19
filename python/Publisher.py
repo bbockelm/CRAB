@@ -18,18 +18,17 @@ from DBSAPI.dbsApi import DbsApi
 class Publisher(Actor):
     def __init__(self, cfg_params):
         """
-        Publisher class: 
+        Publisher class:
 
         - parses CRAB FrameworkJobReport on UI
         - returns <file> section of xml in dictionary format for each xml file in crab_0_xxxx/res directory
         - publishes output data on DBS and DLS
         """
-
         self.cfg_params=cfg_params
-       
+
         if not cfg_params.has_key('USER.publish_data_name'):
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
-        self.userprocessedData = cfg_params['USER.publish_data_name'] 
+        self.userprocessedData = cfg_params['USER.publish_data_name']
         self.processedData = None
 
         if (not cfg_params.has_key('USER.copy_data') or int(cfg_params['USER.copy_data']) != 1 ) or \
@@ -53,19 +52,19 @@ class Publisher(Actor):
         self.DBSURL=cfg_params['USER.dbs_url_for_publication']
         common.logger.info('<dbs_url_for_publication> = '+self.DBSURL)
         if (self.DBSURL == "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet") or (self.DBSURL == "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"):
-            msg = "You can not publish your data in the globalDBS = " + self.DBSURL + "\n" 
+            msg = "You can not publish your data in the globalDBS = " + self.DBSURL + "\n"
             msg = msg + "Please write your local one in the [USER] section 'dbs_url_for_publication'"
             raise CrabException(msg)
-            
+
         self.content=file(self.pset).read()
         self.resDir = common.work_space.resDir()
-        
+
         self.dataset_to_import=[]
-        
+
         self.datasetpath=cfg_params['CMSSW.datasetpath']
         if (self.datasetpath.upper() != 'NONE'):
             self.dataset_to_import.append(self.datasetpath)
-        
+
         ### Added PU dataset
         tmp = cfg_params.get('CMSSW.dataset_pu',None)
         if tmp :
@@ -73,24 +72,31 @@ class Publisher(Actor):
             for dataset in datasets:
                 dataset=string.strip(dataset)
                 self.dataset_to_import.append(dataset)
-        ###        
-            
-        #self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
+        ###
+
+
+        self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
+        
+        ### fede import parent dataset is compulsory ###
+        if ( int(self.import_all_parents) == 0 ):
+            common.logger.info("WARNING: The option USER.publish_with_import_all_parents=0 has been deprecated. The import of parents is compulsory and done by default")
+        ############
+        
         self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
-    
+
         self.SEName=''
         self.CMSSW_VERSION=''
         self.exit_status=''
         self.time = time.strftime('%y%m%d_%H%M%S',time.localtime(time.time()))
-        self.problemFiles=[]  
+        self.problemFiles=[]
         self.noEventsFiles=[]
         self.noLFN=[]
-        
+
     def importParentDataset(self,globalDBS, datasetpath):
         """
         """
         dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
-        
+
         try:
             #if (self.import_all_parents==1):
             common.logger.info("--->>> Importing all parents level")
@@ -131,14 +137,20 @@ class Publisher(Actor):
         """
         """
         try:
+            ### fjr content as argument 
             jobReport = readJobReport(file)[0]
             self.exit_status = '0'
         except IndexError:
             self.exit_status = '1'
-            msg = "Error: Problem with "+file+" file"  
+            msg = "Error: Problem with "+file+" file"
             common.logger.info(msg)
             return self.exit_status
 
+        #print "###################################################"
+        #print "len(jobReport.files) = ", len(jobReport.files)
+        #print "jobReport.files = ", jobReport.files
+        #print "###################################################"
+        
         if (len(self.dataset_to_import) != 0):
            for dataset in self.dataset_to_import:
                common.logger.info("--->>> Importing parent dataset in the dbs: " +dataset)
@@ -147,65 +159,90 @@ class Publisher(Actor):
                    common.logger.info('Problem with parent '+ dataset +' import from the global DBS '+self.globalDBS+ 'to the local one '+self.DBSURL)
                    self.exit_status='1'
                    return self.exit_status
-               else:    
+               else:
                    common.logger.info('Import ok of dataset '+dataset)
-            
-        #// DBS to contact
-        dbswriter = DBSWriter(self.DBSURL)                        
-        try:   
-            fileinfo= jobReport.files[0]
-            self.exit_status = '0'
-        except IndexError:
+
+        
+        if (len(jobReport.files) <= 0) :
             self.exit_status = '1'
-            msg = "Error: No EDM file to publish in xml file"+file+" file"  
+            msg = "Error: No EDM file to publish in xml file"+file+" file"
             common.logger.info(msg)
             return self.exit_status
+        else:
+            print " fjr contains some files to publish" 
 
-        datasets=fileinfo.dataset 
-        common.logger.log(10-1,"FileInfo = " + str(fileinfo))
-        common.logger.log(10-1,"DatasetInfo = " + str(datasets))
-        if len(datasets)<=0:
-           self.exit_status = '1'
-           msg = "Error: No info about dataset in the xml file "+file
-           common.logger.info(msg)
-           return self.exit_status
-        for dataset in datasets:
-            #### for production data
-            self.processedData = dataset['ProcessedDataset']
-            if (dataset['PrimaryDataset'] == 'null'):
-                #dataset['PrimaryDataset'] = dataset['ProcessedDataset']
-                dataset['PrimaryDataset'] = self.userprocessedData
-            #else: # add parentage from input dataset
-            elif self.datasetpath.upper() != 'NONE':
-                dataset['ParentDataset']= self.datasetpath
-    
-            dataset['PSetContent']=self.content
-            cfgMeta = {'name' : self.pset , 'Type' : 'user' , 'annotation': 'user cfg', 'version' : 'private version'} # add real name of user cfg
-            common.logger.info("PrimaryDataset = %s"%dataset['PrimaryDataset'])
-            common.logger.info("ProcessedDataset = %s"%dataset['ProcessedDataset'])
-            common.logger.info("<User Dataset Name> = /"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER")
-            self.dataset_to_check="/"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER"
-            
-            common.logger.log(10-1,"--->>> Inserting primary: %s processed : %s"%(dataset['PrimaryDataset'],dataset['ProcessedDataset']))
-            
-            primary = DBSWriterObjects.createPrimaryDataset( dataset, dbswriter.dbs)
-            common.logger.log(10-1,"Primary:  %s "%primary)
-            
-            algo = DBSWriterObjects.createAlgorithm(dataset, cfgMeta, dbswriter.dbs)
-            common.logger.log(10-1,"Algo:  %s "%algo)
+        #### datasets creation in dbs
+        #// DBS to contact write and read of the same dbs
+        dbsReader = DBSReader(self.DBSURL,level='ERROR')
+        dbswriter = DBSWriter(self.DBSURL)
+        #####
 
-            processed = DBSWriterObjects.createProcessedDataset(primary, algo, dataset, dbswriter.dbs)
-            common.logger.log(10-1,"Processed:  %s "%processed)
-            
-            common.logger.log(10-1,"Inserted primary %s processed %s"%(primary,processed))
-            
+        self.published_datasets = [] 
+        for fileinfo in jobReport.files:
+            #print "--->>> nel for fileinfo = ", fileinfo
+            datasets_info=fileinfo.dataset
+            #print "--->>> nel for datasets_info = ", datasets_info
+            if len(datasets_info)<=0:
+                self.exit_status = '1'
+                msg = "Error: No info about dataset in the xml file "+file
+                common.logger.info(msg)
+                return self.exit_status
+            else:
+                for dataset in datasets_info:
+                    #### for production data
+                    self.processedData = dataset['ProcessedDataset']
+                    if (dataset['PrimaryDataset'] == 'null'):
+                        dataset['PrimaryDataset'] = self.userprocessedData
+                    elif self.datasetpath.upper() != 'NONE':
+                        dataset['ParentDataset']= self.datasetpath
+
+                    dataset['PSetContent']=self.content
+                    cfgMeta = {'name' : self.pset , 'Type' : 'user' , 'annotation': 'user cfg', 'version' : 'private version'} # add real name of user cfg
+                    common.logger.info("PrimaryDataset = %s"%dataset['PrimaryDataset'])
+                    common.logger.info("ProcessedDataset = %s"%dataset['ProcessedDataset'])
+                    common.logger.info("<User Dataset Name> = /"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER")
+                    
+                    self.dataset_to_check="/"+dataset['PrimaryDataset']+"/"+dataset['ProcessedDataset']+"/USER"
+
+
+                    self.published_datasets.append(self.dataset_to_check)
+
+                    common.logger.log(10-1,"--->>> Inserting primary: %s processed : %s"%(dataset['PrimaryDataset'],dataset['ProcessedDataset']))
+                    
+                    #### check if dataset already exists in the DBS
+                    result = dbsReader.matchProcessedDatasets(dataset['PrimaryDataset'], 'USER', dataset['ProcessedDataset'])
+                    #print "result = ",result
+                    if (len(result) != 0):
+                       result = dbsReader.listDatasetFiles(self.dataset_to_check)
+                    #if (len(result) == 0):
+                       #print "len nulla"
+                    #else:
+                       #print "len non nulla"
+                    #   result = dbsReader.listDatasetFiles(self.dataset_to_check)
+                       #print "result = ", result
+
+                    primary = DBSWriterObjects.createPrimaryDataset( dataset, dbswriter.dbs)
+                    common.logger.log(10-1,"Primary:  %s "%primary)
+                    print "primary = ", primary 
+
+                    algo = DBSWriterObjects.createAlgorithm(dataset, cfgMeta, dbswriter.dbs)
+                    common.logger.log(10-1,"Algo:  %s "%algo)
+
+                    processed = DBSWriterObjects.createProcessedDataset(primary, algo, dataset, dbswriter.dbs)
+                    common.logger.log(10-1,"Processed:  %s "%processed)
+                    print "processed = ", processed 
+
+                    common.logger.log(10-1,"Inserted primary %s processed %s"%(primary,processed))
+                    #######################################################################################
+                
         common.logger.log(10-1,"exit_status = %s "%self.exit_status)
-        return self.exit_status    
+        return self.exit_status
 
     def publishAJobReport(self,file,procdataset):
         """
            input:  xml file, processedDataset
         """
+        print "--->>> in publishAJobReport : "
         common.logger.debug("FJR = %s"%file)
         try:
             jobReport = readJobReport(file)[0]
@@ -240,18 +277,21 @@ class Publisher(Actor):
                     ### Fede to insert also run and lumi info in DBS
                     #file.runs = {}
                     for ds in file.dataset:
-                        ### Fede for production
+                        ### For production
                         if (ds['PrimaryDataset'] == 'null'):
                             ds['PrimaryDataset']=self.userprocessedData
                     filestopublish.append(file)
-       
+
+        ### only good files will be published 
         jobReport.files = filestopublish
+        print "------>>> filestopublish = ", filestopublish
         for file in filestopublish:
             common.logger.debug("--->>> LFN of file to publish =  " + str(file['LFN']))
+            print "--->>> LFN of file to publish = ", str(file['LFN'])
         ### if all files of FJR have number of events = 0
         if (len(filestopublish) == 0):
             return None
-           
+            
         #// DBS to contact
         dbswriter = DBSWriter(self.DBSURL)
         # insert files
@@ -259,7 +299,6 @@ class Publisher(Actor):
         try:
             ### FEDE added insertDetectorData = True to propagate in DBS info about run and lumi 
             Blocks=dbswriter.insertFiles(jobReport, insertDetectorData = True)
-            #Blocks=dbswriter.insertFiles(jobReport)
             common.logger.debug("--->>> Inserting file in blocks = %s"%Blocks)
         except DBSWriterError, ex:
             common.logger.debug("--->>> Insert file error: %s"%ex)
@@ -269,49 +308,57 @@ class Publisher(Actor):
         """
         parse of all xml file on res dir and creation of distionary
         """
-        
+
         file_list = glob.glob(self.resDir+"crab_fjr*.xml")
-        
+
         ## Select only those fjr that are succesfull
         if (len(file_list)==0):
-            common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
+            common.logger.info("--->>> "+self.resDir+" empty: no fjr files in the res dir to publish on DBS")
             self.exit_status = '1'
             return self.exit_status
 
         good_list=[]
+        
         for fjr in file_list:
             reports = readJobReport(fjr)
             if len(reports)>0:
+               ### with backup-copy the wrapper_exit_code is 60308 --> failed 
                if reports[0].status == "Success":
                   good_list.append(fjr)
+
         file_list=good_list
+        print "fjr ok for publication are good_list = ", good_list
         ##
-        common.logger.log(10-1, "file_list = "+str(file_list))
+        common.logger.log(10-1, "fjr with FrameworkJobReport Status='Success', file_list = "+str(file_list))
         common.logger.log(10-1, "len(file_list) = "+str(len(file_list)))
-            
+
         if (len(file_list)>0):
             BlocksList=[]
             common.logger.info("--->>> Start dataset publication")
+            ### primo fjr trovato
             self.exit_status=self.publishDataset(file_list[0])
+            #sys.exit()
             if (self.exit_status == '1'):
-                return self.exit_status 
+                return self.exit_status
             common.logger.info("--->>> End dataset publication")
 
 
             common.logger.info("--->>> Start files publication")
+
+            ### file_list composed by only fjr 'success' :
             for file in file_list:
                 Blocks=self.publishAJobReport(file,self.processedData)
                 if Blocks:
                     for x in Blocks: # do not allow multiple entries of the same block
                         if x not in BlocksList:
                            BlocksList.append(x)
-                    
+
             # close the blocks
             common.logger.log(10-1, "BlocksList = %s"%BlocksList)
             dbswriter = DBSWriter(self.DBSURL)
-            
+
             for BlockName in BlocksList:
-                try:   
+                try:
                     closeBlock=dbswriter.manageFileBlock(BlockName,maxFiles= 1)
                     common.logger.log(10-1, "closeBlock %s"%closeBlock)
                 except DBSWriterError, ex:
@@ -330,15 +377,17 @@ class Publisher(Actor):
                 for lfn in self.problemFiles:
                     common.logger.info("------ LFN: %s"%lfn)
             common.logger.info("--->>> End files publication")
-           
-            self.cfg_params['USER.dataset_to_check']=self.dataset_to_check
-            from InspectDBS import InspectDBS
-            check=InspectDBS(self.cfg_params)
-            check.checkPublication()
-            return self.exit_status
 
+            #### for MULTI PUBLICATION added for ####
+            for dataset_to_check in self.published_datasets:
+                self.cfg_params['USER.dataset_to_check']=dataset_to_check
+                from InspectDBS import InspectDBS
+                check=InspectDBS(self.cfg_params)
+                check.checkPublication()
+                
+            return self.exit_status
+            
         else:
             common.logger.info("--->>> No valid files to publish on DBS. Your jobs do not report exit codes = 0")
             self.exit_status = '1'
             return self.exit_status
-    
