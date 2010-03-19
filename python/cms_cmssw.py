@@ -5,6 +5,10 @@ import common
 import Scram
 from Splitter import JobSplitter
 from Downloader import Downloader
+try: 
+    import json
+except:
+    import simplejson as json
 
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvLoader import loadIMProvFile
@@ -20,6 +24,8 @@ class Cmssw(JobType):
         self.NumEvents=0
         self._params = {}
         self.cfg_params = cfg_params
+        ### FOR MULTI PUBLICATION ###
+        self.var_filter=''
 
         ### Temporary patch to automatically skip the ISB size check:
         self.server = self.cfg_params.get('CRAB.server_name',None) or \
@@ -209,48 +215,6 @@ class Cmssw(JobType):
                 raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
             else:
                 self.processedDataset = cfg_params['USER.publish_data_name']
-        """
-            #### check of length of datasetname to publish ####
-                common.logger.debug("test 100 char limit on datasetname")
-                print "test 100 char limit on datasetname"
-                ###
-                len_file = 0
-                print "self.output_file = ", self.output_file
-                for file in self.output_file:
-                    length = len(file)
-                    if length > len_file:
-                        len_file = length
-                print "len_file = ", len_file
-                common.logger.debug("len_file = " + str(len_file))
-                ###
-                user = getUserName()
-                len_user_name = len(user)
-                common.logger.debug("user = " + user)
-                print "len_user_name = ", len_user_name
-                common.logger.debug("len_user_name = " + str(len_user_name))
-
-                len_processedDataset = len(self.processedDataset)
-                common.logger.debug("processedDataset " + self.processedDataset)
-                common.logger.debug("len_processedDataset = " + str(len_processedDataset))
-                print "len_processedDataset = ", len_processedDataset
-
-                if (self.datasetPath != None ):
-                   len_primary = len(self.primaryDataset)
-                   common.logger.debug("primaryDataset = " + self.primaryDataset)
-                   common.logger.debug("len_primary = " + str(len_primary))
-                   if (len_primary > 100):
-                       raise CrabException("Warning: primary datasetname has to be < 100 characters")
-                                               #500 - len_user_name - len_primary - 32 - 9 - 7 - output
-                   #if (len_processedDataset > (59 - len_user_name - len_primary)):
-                   if (len_processedDataset > ( 450 - len_user_name - len_primary - len_file)):
-                      #raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str(59 - len_user_name - len_primary) + " characters")
-                      raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str(450 - len_user_name - len_primary -len_file) + " characters")
-                else:
-                   #if (len_processedDataset > (59 - len_user_name) / 2):
-                   #    raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str((59 - len_user_name) / 2) + " characters")
-                   if (len_processedDataset > (450 - len_user_name -len_file) / 2):
-                       raise CrabException("Warning: publication name too long. USER.publish_data_name has to be < " + str((450 - len_user_name - len_file) / 2) + " characters")
-        """
 
         self.conf = {}
         self.conf['pubdata'] = None
@@ -335,7 +299,23 @@ class Cmssw(JobType):
                     pass
                 pass
             # If present and requested, add PoolOutputModule to output files
-            edmOutput = PsetEdit.getPoolOutputModule()
+            ### FOR MULTI PUBLICATION
+            
+            edmOutputDict = PsetEdit.getPoolOutputModule()
+            print "edmOutputDict = ", edmOutputDict
+            filter_dict = {}
+            for key in edmOutputDict.keys():
+                filter_dict[key]=edmOutputDict[key]['dataset']
+            print "filter_dict = ", filter_dict
+
+            #### FOR MULTI PUBLICATION 
+            #### in CMSSW.sh: export var_filter
+
+            self.var_filter = json.dumps(filter_dict)
+            print "(test) var_filter for multipublication = ", self.var_filter
+
+            edmOutput = edmOutputDict.keys()
+            print "edmOutput = ", edmOutput
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
                 if edmOutput:
                     for outputFile in edmOutput:
@@ -498,21 +478,6 @@ class Cmssw(JobType):
         common._db.updateJob_(listID,listField)
         return
 
-   # def zipXMLfile(self):
-
-    #    import tarfile
-    #    try:
-    #        tar = tarfile.open(self.tarNameWithPath, "a")
-    #        tar.add(self.argsFile, os.path.basename(self.argsFile))
-    #        tar.close()
-    #    except IOError, exc:
-    #        msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
-    #        msg += str(exc)
-    #        raise CrabException(msg)
-    #    except tarfile.TarError, exc:
-    #        msg = 'Could not add %s to %s \n'%(self.argsFile,self.tarNameWithPath)
-    #        msg += str(exc)
-    #        raise CrabException(msg)
 
     def CreateXML(self):
         """
@@ -761,8 +726,6 @@ class Cmssw(JobType):
         # Prepare job-specific part
         job = common.job_list[nj]
         if (self.datasetPath):
-            #self.primaryDataset = self.datasetPath.split("/")[1]
-            #DataTier = self.datasetPath.split("/")[2]
             txt += '\n'
             txt += 'DatasetPath='+self.datasetPath+'\n'
 
@@ -771,7 +734,6 @@ class Cmssw(JobType):
             txt += 'ApplicationFamily=cmsRun\n'
 
         else:
-            #self.primaryDataset = 'null'
             txt += 'DatasetPath=MCDataTier\n'
             txt += 'PrimaryDataset=null\n'
             txt += 'DataTier=null\n'
@@ -787,6 +749,10 @@ class Cmssw(JobType):
             txt += 'echo "IncrementSeeds:<$IncrementSeeds>"\n'
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
+            if self.var_filter:
+                print "self.var_filter = ",self.var_filter
+                txt += "export var_filter="+"'"+self.var_filter+"'\n"
+                txt += 'echo $var_filter'
         else:
             txt += '\n'
             if self.AdditionalArgs: txt += 'export AdditionalArgs=\"%s\"\n'%(self.AdditionalArgs)
@@ -846,8 +812,6 @@ class Cmssw(JobType):
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
                 txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
-        # txt += 'mv $RUNTIME_AREA/ProdCommon/ . \n'
-        # txt += 'mv $RUNTIME_AREA/IMProv/ . \n'
 
         txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
@@ -1061,25 +1025,26 @@ class Cmssw(JobType):
         if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
 
-
-            txt += 'if [ $StageOutExitStatus -eq 0 ] || [ $StageOutExitStatus -eq 60308 ] ; then\n'
-            txt += '    FOR_LFN=$LFNBaseName\n'
-            txt += 'else\n'
-            txt += '    FOR_LFN=/copy_problems/ \n'
-            txt += 'fi\n'
+            ### FEDE not more necessary, we are using json file
+            #txt += 'if [ $StageOutExitStatus -eq 0 ] || [ $StageOutExitStatus -eq 60308 ] ; then\n'
+            #txt += '    FOR_LFN=$LFNBaseName\n'
+            #txt += 'else\n'
+            #txt += '    FOR_LFN=/copy_problems/ \n'
+            #txt += 'fi\n'
 
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            txt += 'echo "SE = $SE"\n'
-            #### FEDE changing SE_PATH with the endpoint
-            txt += 'echo "endpoint = $endpoint"\n'
-            txt += 'SE_PATH=$endpoint\n'
-            txt += 'echo "SE_PATH = $endpoint"\n'
-            txt += 'echo "FOR_LFN = $FOR_LFN" \n'
+            #txt += 'echo "SE = $SE"\n'
+            #txt += 'echo "endpoint = $endpoint"\n'
+            #txt += 'SE_PATH=$endpoint\n'
+            #txt += 'echo "SE_PATH = $endpoint"\n'
+            #txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
+            ### removing some arguments 
+            #args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $OutUniqueID for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
+            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml json $RUNTIME_AREA/resultCopyFile n_job $OutUniqueID PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH'
 
-            args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $OutUniqueID for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             if (self.publish_data == 1):
                 txt += 'ProcessedDataset='+self.processedDataset+'\n'
                 txt += 'echo "ProcessedDataset = $ProcessedDataset"\n'
