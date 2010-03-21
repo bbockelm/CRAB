@@ -100,7 +100,7 @@ class PhEDExDatasvcInfo:
         '''
         SE = ''
         SE_PATH = ''
-        USER = ''
+        USER = getUserName()
         if self.usePhedex: 
             if self.protocol == 'direct':
                 query=endpoint
@@ -111,8 +111,6 @@ class PhEDExDatasvcInfo:
                 scheme, host, path, params, query, fragment = urlparse(url)
                 SE = self.getAuthoritativeSE()
                 SE_PATH = endpoint.split(host)[1]
-            ### fede ###
-            #USER = (query.split('user')[1]).split('/')[1]
         else:
            #### to test #####
            # url = 'http://'+endpoint.split('://')[1]
@@ -121,22 +119,12 @@ class PhEDExDatasvcInfo:
            # SE_PATH = endpoint.split(host)[1]
             SE = self.node
             SE_PATH = self.user_se_path + self.user_remote_dir 
-            ### fede ###
-            #if self.lfn.find('user'):
-            #    try:
-            #        USER = (self.lfn.split('user')[1]).split('/')[1]
-            #    except:
-            #        pass
-        ### fede ###    
-        if self.lfn.find('group') != -1:
-            try:
-                USER = (self.lfn.split('group')[1]).split('/')[1]
-            except:
-                pass
-        else:
-            USER = getUserName()
+            if self.lfn.find('group') != -1:
+                try:
+                    USER = (self.lfn.split('group')[1]).split('/')[1]
+                except:
+                    pass
         return SE, SE_PATH, USER 
-   
 
     def getLFN(self):
         """
