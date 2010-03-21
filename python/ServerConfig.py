@@ -38,7 +38,7 @@ class ServerConfig:
         """
         common.logger.debug('getting serverlist from web')
         # get a list of available servers 
-        serverListFileName ='AvalableServerList'
+        serverListFileName ='AvailableServerList'
  
         serverListFile = self.downloader.config(serverListFileName)
  
@@ -48,7 +48,7 @@ class ServerConfig:
             raise CrabException(msg)
         # clean up empty lines and comments
         serverList=[]
-        [serverList.append(string.split(string.strip(it))) for it in serverListFile if (it.strip() and not it.strip()[0]=="#")]
+        [serverList.append(string.split(string.strip(it))) for it in serverListFile.split('\n') if (it.strip() and not it.strip()[0]=="#")]
         common.logger.debug('All avaialble servers: '+str(serverList))
  
         # select servers from client version
@@ -68,7 +68,7 @@ class ServerConfig:
             if vv[0]<=common.prog_version and common.prog_version<=vv[1] and common.scheduler.name()==string.lower(s[2]):
                 compatibleServerList.append(s[0])
  
-        common.logger.debug('All avaialble servers compatible with %s: '%common.prog_version_str +str(serverList))
+        common.logger.debug('All avaialble servers compatible with %s: '%common.prog_version_str +str(compatibleServerList))
         if len(compatibleServerList)==0: 
             msg = "No compatible server available with client version %s\n"%common.prog_version_str
             msg += "Exiting"
