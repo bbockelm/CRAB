@@ -100,7 +100,8 @@ class Cmssw(JobType):
         if self.datasetPath:
             self.ads = len(self.datasetPath.split("/")) > 4
         self.lumiMask = self.cfg_params.get('CMSSW.lumi_mask',None)
-
+        self.lumiParams = self.cfg_params.get('CMSSW.total_number_of_lumis',None) or \
+                          self.cfg_params.get('CMSSW.lumis_per_job',None)
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
             common.logger.info('Warning: Analysis dataset support is incomplete in CMSSW 2_x.')
@@ -281,7 +282,7 @@ class Cmssw(JobType):
                     self.algo = 'NoInput'
                     self.conf['managedGenerators']=self.managedGenerators
                     self.conf['generator']=self.generator
-            elif self.ads or self.lumiMask:
+            elif self.ads or self.lumiMask or self.lumiParams:
                 self.algo = 'LumiBased'
             elif splitByRun ==1:
                 self.algo = 'RunBased'

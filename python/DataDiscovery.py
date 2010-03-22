@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.40.2.1 2010/02/05 16:05:29 ewv Exp $"
-__version__ = "$Revision: 1.40.2.1 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.41 2010/02/21 12:47:19 spiga Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -133,8 +133,11 @@ class DataDiscovery:
         if (self.cfg_params.has_key('CMSSW.runselection')):
             runselection = parseRange2(self.cfg_params['CMSSW.runselection'])
 
-        ## check if lumiMask is set
+        ## check if various lumi parameters are set
         self.lumiMask = self.cfg_params.get('CMSSW.lumi_mask',None)
+        self.lumiParams = self.cfg_params.get('CMSSW.total_number_of_lumis',None) or \
+                          self.cfg_params.get('CMSSW.lumis_per_job',None)
+
         lumiList = None
         if self.lumiMask:
             lumiList = LumiList(filename=self.lumiMask)
@@ -171,7 +174,7 @@ class DataDiscovery:
                 # asked retry the list of parent for the given child
                 if useparent==1:
                     parList = [x['LogicalFileName'] for x in file['ParentList']]
-                if self.ads or self.lumiMask:
+                if self.ads or self.lumiMask or self.lumiParams:
                     fileLumis = [ (x['RunNumber'], x['LumiSectionNumber'])
                                  for x in file['LumiList'] ]
                 self.parent[filename] = parList
@@ -219,13 +222,13 @@ class DataDiscovery:
     def queryDbs(self,api,path=None,runselection=None,useParent=None):
 
         allowedRetriveValue = ['retrive_block', 'retrive_run']
-        if self.ads or self.lumiMask:
+        if self.ads or self.lumiMask or self.lumiParams:
             allowedRetriveValue.append('retrive_lumi')
         if useParent == 1: allowedRetriveValue.append('retrive_parent')
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
             if len(runselection) <=0 :
-                if useParent==1 or self.splitByRun==1 or self.ads or self.lumiMask:
+                if useParent==1 or self.splitByRun==1 or self.ads or self.lumiMask or self.lumiParams:
                     if self.ads:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
                     else :
