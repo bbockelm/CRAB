@@ -493,11 +493,11 @@ The number of events to be accessed by each job. Since a job cannot cross the bo
 
 =item B<total_number_of_lumis *>
 
-The number of luminosity blocks to be processed. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to run on an analysis dataset.
+The number of luminosity blocks to be processed. To access all available lumis, use I<-1>. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to split jobs by lumi section.
 
 =item B<lumis_per_job*>
 
-The number of luminosity blocks to be accessed by each job. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
+The number of luminosity blocks to be accessed by each job. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
 
 =item B<number_of_jobs *>
 
