@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.33 2010/02/21 12:47:19 spiga Exp $"
-__version__ = "$Revision: 1.33 $"
+__revision__ = "$Id: Splitter.py,v 1.34 2010/03/12 20:27:52 ewv Exp $"
+__version__ = "$Revision: 1.34 $"
 
 import common
 from crab_exceptions import *
@@ -85,7 +85,7 @@ class JobSplitter:
             settings += 1
 
         if settings != 2:
-            msg = 'When running on analysis datasets you must specify two and only two of:\n'
+            msg = 'When splitting by lumi section you must specify two and only two of:\n'
             msg += '  number_of_jobs, lumis_per_job, total_number_of_lumis'
             raise CrabException(msg)
         if self.limitNJobs and self.limitJobLumis:
@@ -709,7 +709,8 @@ class JobSplitter:
                         theRun = lumiList.run
                         for theLumi in list(lumiList):
                             lumisCreated += 1
-                            if lumisCreated <= self.totalNLumis:
+                            if (not self.limitTotalLumis) or \
+                               (lumisCreated <= self.totalNLumis):
                                 doFile = True
                                 lumis.append( (theRun, theLumi) )
                     if doFile:
