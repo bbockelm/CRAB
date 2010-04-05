@@ -628,7 +628,9 @@ class Cmssw(JobType):
             ### CMSSW ParameterSet
             if not self.pset is None:
                 cfg_file = common.work_space.jobDir()+self.configFilename()
+                pickleFile = common.work_space.jobDir()+self.configFilename() + '.pkl'
                 tar.add(cfg_file,self.configFilename())
+                tar.add(pickleFile,self.configFilename() + '.pkl')
 
             try:
                 crab_cfg_file = common.work_space.shareDir()+'/crab.cfg'
@@ -779,8 +781,10 @@ class Cmssw(JobType):
             txt += 'ApplicationFamily=MCDataTier\n'
         if self.pset != None:
             pset = os.path.basename(job.configFilename())
+            pkl  = os.path.basename(job.configFilename()) + '.pkl'
             txt += '\n'
             txt += 'cp  $RUNTIME_AREA/'+pset+' .\n'
+            txt += 'cp  $RUNTIME_AREA/'+pkl+' .\n'
 
             txt += 'PreserveSeeds='  + ','.join(self.preserveSeeds)  + '; export PreserveSeeds\n'
             txt += 'IncrementSeeds=' + ','.join(self.incrementSeeds) + '; export IncrementSeeds\n'

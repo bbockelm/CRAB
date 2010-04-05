@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.25.2.1 2009/11/09 22:23:38 ewv Exp $"
-__version__ = "$Revision: 1.25.2.1 $"
+__revision__ = "$Id: writeCfg.py,v 1.26 2009/12/14 22:33:54 ewv Exp $"
+__version__ = "$Revision: 1.26 $"
 
 import getopt
 import imp
@@ -207,12 +207,18 @@ def main(argv) :
         randSvc.populate(*preserveSeedList)
 
     # Write out new config file
+    pklFileName = outFileName + '.pkl'
     outFile = open(outFileName,"w")
     outFile.write("import FWCore.ParameterSet.Config as cms\n")
     outFile.write("import pickle\n")
-    outFile.write("pickledCfg=\"\"\"%s\"\"\"\n" % pickle.dumps(cmsProcess))
-    outFile.write("process = pickle.loads(pickledCfg)\n")
+    outFile.write("process = pickle.load(open('%s', 'rb'))\n" % pklFileName)
     outFile.close()
+
+    pklFile = open(pklFileName,"wb")
+    myPickle = pickle.Pickler(pklFile)
+    myPickle.dump(cmsProcess)
+    pklFile.close()
+
     if (debug):
         print "writeCfg output (May not be exact):"
         print "import FWCore.ParameterSet.Config as cms"
