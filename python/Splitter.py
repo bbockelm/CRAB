@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.31 2009/12/15 13:19:13 spiga Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: Splitter.py,v 1.35 2010/03/22 15:29:42 ewv Exp $"
+__version__ = "$Revision: 1.35 $"
 
 import common
 from crab_exceptions import *
@@ -13,6 +13,7 @@ from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+from LumiList import LumiList
 
 class JobSplitter:
     def __init__( self, cfg_params,  args ):
@@ -84,7 +85,7 @@ class JobSplitter:
             settings += 1
 
         if settings != 2:
-            msg = 'When running on analysis datasets you must specify two and only two of:\n'
+            msg = 'When splitting by lumi section you must specify two and only two of:\n'
             msg += '  number_of_jobs, lumis_per_job, total_number_of_lumis'
             raise CrabException(msg)
         if self.limitNJobs and self.limitJobLumis:
@@ -698,6 +699,7 @@ class JobSplitter:
                 firstFile = True
                 # Collect information from all the files
                 for jobFile in job.getFiles():
+                    doFile = False
                     if firstFile:  # Get locations from first file in the job
                         for loc in jobFile['locations']:
                             locations.append(loc)
@@ -706,16 +708,20 @@ class JobSplitter:
                     for lumiList in jobFile['runs']:
                         theRun = lumiList.run
                         for theLumi in list(lumiList):
-                            lumis.append( (theRun, theLumi) )
-
-                    lfns.append(jobFile['lfn'])
+                            lumisCreated += 1
+                            if (not self.limitTotalLumis) or \
+                               (lumisCreated <= self.totalNLumis):
+                                doFile = True
+                                lumis.append( (theRun, theLumi) )
+                    if doFile:
+                        lfns.append(jobFile['lfn'])
                 fileString = ','.join(lfns)
-                lumiString = compressLumiString(lumis)
+                lumiLister = LumiList(lumis = lumis)
+                lumiString = lumiLister.getCMSSWString()
                 list_of_lists.append([fileString, str(-1), str(0), lumiString])
 
                 jobDestination.append(locations)
                 jobCount += 1
-                lumisCreated += len(lumis)
                 common.logger.debug('Job %s will run on %s files and %s lumis '
                     % (jobCount, len(lfns), len(lumis) ))
 
@@ -744,44 +750,4 @@ class JobSplitter:
                      'ForScript'            : self.jobSplittingForScript
                      }
         return SplitAlogs
-
-
-
-def compressLumiString(lumis):
-    """
-    Turn a list of 2-tuples of run/lumi numbers into a list of the format
-    R1:L1,R2:L2-R3:L3 which is acceptable to CMSSW LumiBlockRange variable
-    """
-
-    lumis.sort()
-    parts = []
-    startRange = None
-    endRange = None
-
-    for lumiBlock in lumis:
-        if not startRange: # This is the first one
-            startRange = lumiBlock
-            endRange = lumiBlock
-        elif lumiBlock == endRange: # Same Lumi (different files?)
-            pass
-        elif lumiBlock[0] == endRange[0] and lumiBlock[1] == endRange[1] + 1: # This is a continuation
-            endRange = lumiBlock
-        else: # This is the start of a new range
-            part = ':'.join(map(str, startRange))
-            if startRange != endRange:
-                part += '-' + ':'.join(map(str, endRange))
-            parts.append(part)
-            startRange = lumiBlock
-            endRange = lumiBlock
-
-    # Put out what's left
-    if startRange:
-        part = ':'.join(map(str, startRange))
-        if startRange != endRange:
-            part += '-' + ':'.join(map(str, endRange))
-        parts.append(part)
-
-    output = ','.join(parts)
-    return output
-
 

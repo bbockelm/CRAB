@@ -477,6 +477,10 @@ The python ParameterSet to be used.
 
 These parameters are passed to the python config file, as explained in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideAboutPythonConfigFile#Passing_Command_Line_Arguments_T
 
+=item B<lumi_mask *>
+
+The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below.
+
 =item I<Of the following three parameter exactly two must be used, otherwise CRAB will complain.>
 
 =item B<total_number_of_events *>

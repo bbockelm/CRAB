@@ -7,8 +7,8 @@ This class can also handle ranges of events as the structure is identical
 or could be subclassed renaming a function or two.
 """
 
-__revision__ = "$Id: cms_cmssw.py,v 1.350 2010/01/21 16:17:13 ewv Exp $"
-__version__ = "$Revision: 1.350 $"
+__revision__ = "$Id: LumiList.py,v 1.2 2010/02/22 14:43:56 ewv Exp $"
+__version__ = "$Revision: 1.2 $"
 
 try: # FUTURE: Python 2.6, prior to 2.6 requires simplejson
     import json
@@ -85,7 +85,7 @@ class LumiList(object):
         """
         filteredList = []
         for (run, lumi) in lumiList:
-            runsInLumi = self.compactList[str(run)]
+            runsInLumi = self.compactList.get(str(run), [[0,-1]])
             for (first, last) in runsInLumi:
                 if lumi >= first and lumi <= last:
                     filteredList.append((run, lumi))
@@ -136,6 +136,8 @@ class LumiList(object):
 
         output = ','.join(parts)
         return output
+
+
 
 # Unit test code
 '''
@@ -224,7 +226,9 @@ class LumiListTest(unittest.TestCase):
         }
 
         completeList = zip([1]*150, range(1, 150)) + \
-                       zip([2]*150, range(1, 150))
+                       zip([2]*150, range(1, 150)) + \
+                       zip([3]*150, range(1, 150)) 
+
         smallList    = zip([1]*50,  range(1, 10)) + zip([2]*50, range(50, 70))
         overlapList  = zip([1]*150, range(30, 40)) + \
                        zip([2]*150, range(60, 80))
