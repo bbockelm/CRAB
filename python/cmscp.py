@@ -344,7 +344,7 @@ class cmscp:
                 self.createDir( Destination_SE, Destination_SE.protocol )
             except OperationException, ex:
                 for filetocopy in list_file:
-                    results.update( self.updateReport(filetocopy, '-1', str(ex)))
+                    results.update( self.updateReport(filetocopy, '60316', str(ex)))
                 return results
                 #return self.updateReport('', '60316', str(ex))
             ## when the client commands are not found (wrong env or really missing)
