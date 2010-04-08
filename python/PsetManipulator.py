@@ -41,7 +41,8 @@ class PsetManipulator:
 
         self.cfg = CfgInterface(self.cmsProcess)
         try: # Quiet the output
-            self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
+            if self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery.value() < 100:
+                self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
         except AttributeError:
             pass
 
