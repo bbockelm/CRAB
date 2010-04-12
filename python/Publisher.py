@@ -169,7 +169,8 @@ class Publisher(Actor):
             common.logger.info(msg)
             return self.exit_status
         else:
-            print " fjr contains some files to publish" 
+            msg = "fjr contains some files to publish" 
+            common.logger.debug(msg)
 
         #### datasets creation in dbs
         #// DBS to contact write and read of the same dbs
@@ -179,9 +180,7 @@ class Publisher(Actor):
 
         self.published_datasets = [] 
         for fileinfo in jobReport.files:
-            #print "--->>> nel for fileinfo = ", fileinfo
             datasets_info=fileinfo.dataset
-            #print "--->>> nel for datasets_info = ", datasets_info
             if len(datasets_info)<=0:
                 self.exit_status = '1'
                 msg = "Error: No info about dataset in the xml file "+file
@@ -211,15 +210,8 @@ class Publisher(Actor):
                     
                     #### check if dataset already exists in the DBS
                     result = dbsReader.matchProcessedDatasets(dataset['PrimaryDataset'], 'USER', dataset['ProcessedDataset'])
-                    #print "result = ",result
                     if (len(result) != 0):
                        result = dbsReader.listDatasetFiles(self.dataset_to_check)
-                    #if (len(result) == 0):
-                       #print "len nulla"
-                    #else:
-                       #print "len non nulla"
-                    #   result = dbsReader.listDatasetFiles(self.dataset_to_check)
-                       #print "result = ", result
 
                     primary = DBSWriterObjects.createPrimaryDataset( dataset, dbswriter.dbs)
                     common.logger.log(10-1,"Primary:  %s "%primary)
@@ -242,7 +234,6 @@ class Publisher(Actor):
         """
            input:  xml file, processedDataset
         """
-        print "--->>> in publishAJobReport : "
         common.logger.debug("FJR = %s"%file)
         try:
             jobReport = readJobReport(file)[0]
@@ -284,10 +275,10 @@ class Publisher(Actor):
 
         ### only good files will be published 
         jobReport.files = filestopublish
-        print "------>>> filestopublish = ", filestopublish
+        #print "------>>> filestopublish = ", filestopublish
         for file in filestopublish:
             common.logger.debug("--->>> LFN of file to publish =  " + str(file['LFN']))
-            print "--->>> LFN of file to publish = ", str(file['LFN'])
+            #print "--->>> LFN of file to publish = ", str(file['LFN'])
         ### if all files of FJR have number of events = 0
         if (len(filestopublish) == 0):
             return None
@@ -327,7 +318,7 @@ class Publisher(Actor):
                   good_list.append(fjr)
 
         file_list=good_list
-        print "fjr ok for publication are good_list = ", good_list
+        #print "fjr ok for publication are good_list = ", good_list
         ##
         common.logger.log(10-1, "fjr with FrameworkJobReport Status='Success', file_list = "+str(file_list))
         common.logger.log(10-1, "len(file_list) = "+str(len(file_list)))
