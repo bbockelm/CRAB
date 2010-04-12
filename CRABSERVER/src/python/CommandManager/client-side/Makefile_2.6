@@ -1,13 +1,13 @@
 #
 # CRAB-Proxy makefile
-# $Id: Makefile_2.6,v 1.1 2009/12/18 14:00:27 farinafa Exp $
+# $Id: Makefile_2.6,v 1.2 2009/12/18 14:23:29 farinafa Exp $
 # Fabio Farina 2007/12/10 
 
 .PHONY:all install
 
 # Things for python 2.6 
-PYHOME = /afs/cern.ch/cms/sw/slc5_ia32_gcc434/external/python/2.6.4-cms
-BOOST_HOME = /afs/cern.ch/cms/sw/slc5_ia32_gcc434/external/boost/1.40.0-cms
+PYHOME = /afs/cern.ch/cms/sw/slc5_amd64_gcc434/external/python/2.6.4-cms2
+BOOST_HOME = /afs/cern.ch/cms/sw/slc5_amd64_gcc434/external/boost/1.40.0-cms3
 
 boost_cflags = -g -pthread -fPIC -I/usr/include/libxml2 \
 	       -DBOOST_PYTHON_DYNAMIC_LIB -I$(BOOST_HOME)/include \
