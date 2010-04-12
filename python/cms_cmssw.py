@@ -302,20 +302,19 @@ class Cmssw(JobType):
             ### FOR MULTI PUBLICATION
             
             edmOutputDict = PsetEdit.getPoolOutputModule()
-            print "edmOutputDict = ", edmOutputDict
+            common.logger.debug("(test) edmOutputDict = "+edmOutputDict)
             filter_dict = {}
             for key in edmOutputDict.keys():
                 filter_dict[key]=edmOutputDict[key]['dataset']
-            print "filter_dict = ", filter_dict
+            common.logger.debug("(test) filter_dict for multipublication =  "+filter_dict)
 
             #### FOR MULTI PUBLICATION 
             #### in CMSSW.sh: export var_filter
 
             self.var_filter = json.dumps(filter_dict)
-            print "(test) var_filter for multipublication = ", self.var_filter
+            common.logger.debug("(test) var_filter for multipublication =  "+self.var_filter)
 
             edmOutput = edmOutputDict.keys()
-            print "edmOutput = ", edmOutput
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
                 if edmOutput:
                     for outputFile in edmOutput:
@@ -750,7 +749,7 @@ class Cmssw(JobType):
 
             txt += 'mv -f ' + pset + ' ' + psetName + '\n'
             if self.var_filter:
-                print "self.var_filter = ",self.var_filter
+                #print "self.var_filter = ",self.var_filter
                 txt += "export var_filter="+"'"+self.var_filter+"'\n"
                 txt += 'echo $var_filter'
         else:
