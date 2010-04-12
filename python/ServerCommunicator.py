@@ -22,7 +22,10 @@ from Downloader import Downloader
 if (sys.version_info[0] + .1 * sys.version_info[1]) < 2.6 : 
     from CRAB_Server_API import CRAB_Server_Session as C_AS_Session
 else:
-    from CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
+    try:
+        from CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
+    except:
+        from lib26x.CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
 
 class ServerCommunicator:
     """

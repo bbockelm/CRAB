@@ -97,8 +97,10 @@ export CRABPY2_PYSQLITE_REVISION="1008"
 export CRABPY2_PYSQLITE_ROOT=\$CRABPYSQLITE/\$CRABPY2_PYSQLITE_VERSION
 
 
-export PYTHON_VERSION=2.3.4 
-export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
+export PYTHON_VERSION=`python -V 2>&1 | sed -e 's/Python //' -e 's/\..\d*$//'` # drop last version digit
+export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python\${PYTHON_VERSION}/site-packages:\$PYTHONPATH
+# export PYTHON_VERSION=2.3.4 
+# export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
 ## partially hardcoded path for python version "2.4"
 ## need to do something like:
 #export PYTHONPATH=\${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
@@ -173,8 +175,10 @@ setenv CRABPY2_PYSQLITE_ROOT \$CRABPYSQLITE/\$CRABPY2_PYSQLITE_VERSION
 
 setenv LD_LIBRARY_PATH \$CRABPY2_PYSQLITE_ROOT/lib:\$LD_LIBRARY_PATH
 
-setenv PYTHON_VERSION 2.3.4 
-setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
+setenv PYTHON_VERSION `python -V 2>&1 | sed -e 's/Python //' -e 's/\..\d*$//'` # drop last version digit
+setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python\${PYTHON_VERSION}/site-packages:\$PYTHONPATH
+# setenv PYTHON_VERSION 2.3.4 
+# setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python2.4/site-packages:\$PYTHONPATH
 ## partially hardcoded path for python version "2.4"
 ## need to do something like:
 #setenv PYTHONPATH \${CRABPY2_PYSQLITE_ROOT}/lib/python`echo $PYTHON_VERSION | cut -f1,2 -d.`/site-packages:\${PYTHONPATH}
