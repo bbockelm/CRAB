@@ -84,7 +84,7 @@ class SubmitterServer( Submitter ):
     def moveISB_SEAPI(self):
         ## get task info from BL ##
         common.logger.debug("Task name: " + self.taskuuid)
-        isblist = common._db.queryTask('globalSandbox').split(',')
+        isblist = str(common._db.queryTask('globalSandbox')).split(',')
         common.logger.debug("List of ISB files: " +str(isblist) )
 
         # init SE interface
@@ -204,25 +204,8 @@ class SubmitterServer( Submitter ):
                     common.logger.debug(str(ex))
                     msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
                     msg +="Project "+ self.taskuuid +" not Submitted \n"    
-                    raise CrabException(msg)                                
-        """
-        for filetocopy in isblist:
-            source = os.path.abspath(filetocopy)
-            dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
-            common.logger.debug("Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
-            try:
-                sbi.copy( source, dest, opt=self.copyTout)
-            except AuthorizationException, ex:
-                common.logger.debug(str(ex.detail))
-                msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
-                msg +="Project "+ self.taskuuid +" not Submitted \n"
-                raise CrabException(msg)
-            except Exception, ex:
-                common.logger.debug(str(ex))
-                msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
-                msg +="Project "+ self.taskuuid +" not Submitted \n"
-                raise CrabException(msg)
-        """
+                    raise CrabException(msg)
+
         ## if here then project submitted ##
         msg = 'Project '+ self.taskuuid +' files successfully submitted to the supporting storage element.\n'
         common.logger.debug(msg)
