@@ -793,7 +793,7 @@ Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<
 
 =back
 
-B<[LSF]> or B<[CAF]> or B<[PBS]>
+B<[LSF]> or B<[CAF]> or B<[PBS]> or B<[SGE]> 
 
 =over 4
 
@@ -804,6 +804,10 @@ The LSF/PBS queue you want to use: if none, the default one will be used. For CA
 =item B<resource>
 
 The resources to be used within a LSF/PBS queue. Again, for CAF, the right one is selected.
+
+=item B<group>
+
+The physics GROUP which the user belong to ( it is for example PHYS_SUSY etc...). By specifying that the LSF accounting and fair share per sub-group is done properly.
 
 =back
 

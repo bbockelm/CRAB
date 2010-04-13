@@ -27,7 +27,21 @@ class SchedulerCaf(SchedulerLsf) :
         SchedulerLsf.configure(self, cfg_params)
         self.queue = cfg_params.get(self.name().upper()+'.queue','cmscaf1nw')
         self.res = cfg_params.get(self.name().upper()+'.resource','"type==SLC5_64 || type==SLC4_64"')
+        self.group = cfg_params.get(self.name().upper()+'.group', None)
         self.pool = cfg_params.get('USER.storage_pool','cmscafuser')
+
+    def sched_parameter(self,i,task):
+        """
+        Returns parameter scheduler-specific, to use with BOSS .
+        """
+        sched_param= ''
+
+        if (self.queue):
+            sched_param += '-q '+self.queue +' '
+        if (self.res): sched_param += ' -R '+self.res +' '
+        if (self.group): sched_param += ' -G '+str(self.group).upper() +' '
+        return sched_param
+
 
 #    def wsSetupEnvironment(self):
 #        """

@@ -313,6 +313,7 @@ class ServerCommunicator:
 
         miniCfg['CAF.queue'] = self.cfg_params.get('CAF.queue','cmscaf1nw')
         miniCfg['CAF.resources'] = self.cfg_params.get('CAF.resource', 'cmscaf')
+        miniCfg['CAF.group'] = self.cfg_params.get('CAF.group', None)
         ## JDL requirements specific data. Scheduler dependant
         miniCfg['EDG.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
         miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
