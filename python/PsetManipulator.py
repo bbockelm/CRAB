@@ -41,7 +41,8 @@ class PsetManipulator:
 
         self.cfg = CfgInterface(self.cmsProcess)
         try: # Quiet the output
-            self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
+            if self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery.value() < 100:
+                self.cfg.data.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
         except AttributeError:
             pass
 
@@ -64,21 +65,18 @@ class PsetManipulator:
         Write out modified CMSSW.py
         """
 
-        pklFileName=common.work_space.jobDir()+name+".pkl"
-        pklFile = open(pklFileName,"w")
+        pklFileName = common.work_space.jobDir() + name + ".pkl"
+        pklFile = open(pklFileName, "wb")
         myPickle = pickle.Pickler(pklFile)
         myPickle.dump(self.cmsProcess)
         pklFile.close()
-        pklFile = open(pklFileName,"rb")
-        outFile = open(common.work_space.jobDir()+name,"w")
+
+        outFile = open(common.work_space.jobDir()+name, "w")
         outFile.write("import FWCore.ParameterSet.Config as cms\n")
         outFile.write("import pickle\n")
-        outFile.write("pickledCfg=\"\"\"")
-        outFile.write(pklFile.read())
-        outFile.write("\"\"\"\n")
-        outFile.write("process = pickle.loads(pickledCfg)\n")
-        pklFile.close()
+        outFile.write("process = pickle.load(open('%s', 'rb'))\n" % (name + ".pkl"))
         outFile.close()
+
 
         return
 
