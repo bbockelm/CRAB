@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.35 2010/03/22 15:29:42 ewv Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Splitter.py,v 1.36 2010/04/09 13:17:52 ewv Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import common
 from crab_exceptions import *
@@ -708,10 +708,10 @@ class JobSplitter:
                     for lumiList in jobFile['runs']:
                         theRun = lumiList.run
                         for theLumi in list(lumiList):
-                            lumisCreated += 1
                             if (not self.limitTotalLumis) or \
                                (lumisCreated <= self.totalNLumis):
                                 doFile = True
+                                lumisCreated += 1
                                 lumis.append( (theRun, theLumi) )
                     if doFile:
                         lfns.append(jobFile['lfn'])
