@@ -483,29 +483,29 @@ These parameters are passed to the python config file, as explained in https://t
 
 =item B<lumi_mask *>
 
-The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below.
+Default is I<none>. The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below.
 
-=item I<Of the following three parameter exactly two must be used, otherwise CRAB will complain.>
+=item I<Of the following five parameter exactly two must be used and one cannot mix lumi and event settings.>
 
 =item B<total_number_of_events *>
 
-The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>.
+No default. The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>.
 
 =item B<events_per_job*>
 
-The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
+No default. The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
 
 =item B<total_number_of_lumis *>
 
-The number of luminosity blocks to be processed. To access all available lumis, use I<-1>. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to split jobs by lumi section.
+No default. The number of luminosity sections to be processed. To access all available lumis, use I<-1>. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to split jobs by lumi section.
 
 =item B<lumis_per_job*>
 
-The number of luminosity blocks to be accessed by each job. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
+No default. The number of luminosity blocks to be accessed by each job. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
 
 =item B<number_of_jobs *>
 
-Define the number of jobs to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+No default. Define the number of jobs to be run for the task. The number of events or lumis for each job is computed taking into account the total number of events/lumis required as well as the granularity of EventCollections. Can be used also with No input.
 
 =item B<split_by_run *>
 
@@ -525,7 +525,7 @@ Force CRAB to add the EDM output file, as defined in PSET in PoolOutputModule (i
 
 =item B<increment_seeds>
 
-Specifies a comma separated list of seeds to increment from job to job. The initial value is taken
+Default is I<none>. Specifies a comma separated list of seeds to increment from job to job. The initial value is taken
 from the CMSSW config file. I<increment_seeds=sourceSeed,g4SimHits> will set sourceSeed=11,12,13 and g4SimHits=21,22,23 on
 subsequent jobs if the values of the two seeds are 10 and 20 in the CMSSW config file.
 
@@ -533,14 +533,14 @@ See also I<preserve_seeds>. Seeds not listed in I<increment_seeds> or I<preserve
 
 =item B<preserve_seeds>
 
-Specifies a comma separated list of seeds to which CRAB will not change from their values in the user
+Default is I<none>. Specifies a comma separated list of seeds to which CRAB will not change from their values in the user
 CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia and GEANT seeds the same for every job.
 
 See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
 
 =item B<first_lumi>
 
-Relevant only for Monte Carlo production for which it defaults to 1. The first job will generate events with this lumi block number, subsequent jobs will
+Default is I<1>. Relevant only for Monte Carlo production. The first job will generate events with this lumi block number, subsequent jobs will
 increment the lumi block number. Setting this number to 0 (not recommend) means CMSSW will not be able to read multiple such files as they
 will all have the same run, lumi and event numbers. This check in CMSSW can be bypassed by setting
 I<process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')> in the input source, should you need to
@@ -548,7 +548,7 @@ read files produced without setting first_run (in old versions of CRAB) or first
 
 =item B<generator>
 
-Name of the generator your MC job is using. Some generators require CRAB to skip events, others do not.
+Default is I<pythia>. Name of the generator your MC job is using. Some generators require CRAB to skip events, others do not.
 Possible values are pythia (default), comphep, lhe, and madgraph. This will skip events in your generator input file.
 
 =item B<executable>
