@@ -65,18 +65,21 @@ class PsetManipulator:
         Write out modified CMSSW.py
         """
 
-        pklFileName = common.work_space.jobDir() + name + ".pkl"
-        pklFile = open(pklFileName, "wb")
+        pklFileName=common.work_space.jobDir()+name+".pkl"
+        pklFile = open(pklFileName,"w")
         myPickle = pickle.Pickler(pklFile)
         myPickle.dump(self.cmsProcess)
         pklFile.close()
-
-        outFile = open(common.work_space.jobDir()+name, "w")
+        pklFile = open(pklFileName,"rb")
+        outFile = open(common.work_space.jobDir()+name,"w")
         outFile.write("import FWCore.ParameterSet.Config as cms\n")
         outFile.write("import pickle\n")
-        outFile.write("process = pickle.load(open('%s', 'rb'))\n" % (name + ".pkl"))
+        outFile.write("pickledCfg=\"\"\"")
+        outFile.write(pklFile.read())
+        outFile.write("\"\"\"\n")
+        outFile.write("process = pickle.loads(pickledCfg)\n")
+        pklFile.close()
         outFile.close()
-
 
         return
 
