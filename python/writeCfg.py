@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.26 2009/12/14 22:33:54 ewv Exp $"
-__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: writeCfg.py,v 1.27 2010/04/05 16:47:36 ewv Exp $"
+__version__ = "$Revision: 1.27 $"
 
 import getopt
 import imp
@@ -186,6 +186,15 @@ def main(argv) :
         print "RandomNumberGeneratorService found, will attempt to change seeds"
         from IOMC.RandomEngine.RandomServiceHelper import RandomNumberServiceHelper
         ranGenerator = cfg.data.services['RandomNumberGeneratorService']
+
+        ranModules   = getattr(ranGenerator, "moduleSeeds", None)
+        oldSource    = getattr(ranGenerator, "sourceSeed",  None)
+        if ranModules != None or oldSource != None:
+            msg = "Your random number seeds are set in an old,\n"
+            msg += "deprecated style. Please change to new style:\n"
+            msg += "https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideEDMRandomNumberGeneratorService"
+            raise ConfigException(msg)
+
         randSvc = RandomNumberServiceHelper(ranGenerator)
 
         incrementSeedList = []
