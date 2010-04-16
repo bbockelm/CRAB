@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.352.2.1 2010/02/05 16:05:29 ewv Exp $"
-__version__ = "$Revision: 1.352.2.1 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.352.4.2 2010/04/07 15:56:26 spiga Exp $"
+__version__ = "$Revision: 1.352.4.2 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -680,7 +680,7 @@ class Cmssw(JobType):
                +'MB input sandbox limit \n'
             msg += '      and not supported by the direct GRID submission system.\n'
             msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
-            msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServerForUsers#Server_available_for_users'
+            msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
             raise CrabException(msg)
 
         ## create tar-ball with ML stuff
