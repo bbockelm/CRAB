@@ -12,8 +12,9 @@ from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReader
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter,DBSWriterObjects
 import sys
-from DBSAPI.dbsApiException import DbsException
 from DBSAPI.dbsApi import DbsApi
+from DBSAPI.dbsMigrateApi import DbsMigrateApi
+from DBSAPI.dbsApiException import *
 
 class Publisher(Actor):
     def __init__(self, cfg_params):
@@ -90,39 +91,37 @@ class Publisher(Actor):
         self.problemFiles=[]  
         self.noEventsFiles=[]
         self.noLFN=[]
-        
+
     def importParentDataset(self,globalDBS, datasetpath):
         """
+           WARNING: it works only with DBS_2_0_9_patch_6
         """
-        dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
-        
+
+        args={'url':globalDBS}
         try:
-            #if (self.import_all_parents==1):
+            api_reader = DbsApi(args)
+        except DbsApiException, ex:
+            msg = "%s\n" % formatEx(ex)
+            raise CrabException(msg)
+
+        args={'url':self.DBSURL}
+        try:
+            api_writer = DbsApi(args)
+        except DbsApiException, ex:
+            msg = "%s\n" % formatEx(ex)
+            raise CrabException(msg)
+
+        try:
             common.logger.info("--->>> Importing all parents level")
             start = time.time()
-            common.logger.debug("start import time: " + str(start))
-            ### to skip the ProdCommon api exception in the case of block without location
-            ### skipNoSiteError=True
-            #dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
-            ### calling dbs api directly
-            dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath)
+            common.logger.debug("start import parents time: " + str(start))
+            for block in api_reader.listBlocks(datasetpath):
+                print "blockName = ", block['Name']
+                api_writer.dbsMigrateBlock(globalDBS,self.DBSURL,block['Name'] )
             stop = time.time()
-            common.logger.debug("stop import time: " + str(stop))
+            common.logger.debug("stop import parents time: " + str(stop))
             common.logger.info("--->>> duration of all parents import (sec): "+str(stop - start))
-            ## still not removing the code, but TODO for the final release...
-            """                                                    
-            else:
-                common.logger.info("--->>> Importing only the datasetpath " + datasetpath)
-                start = time.time()
-                #dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True) 
-                ### calling dbs api directly
-                common.logger.debug("start import time: " + str(start))
-                dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath, noParentsReadOnly = True )
-                stop = time.time()
-                common.logger.debug("stop import time: " + str(stop))
-                common.logger.info("--->>> duration of first level parent import (sec): "+str(stop - start))
-            """
-        except DBSWriterError, ex:
+        except DbsApiException, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
             msg += "Source DBS: %s\n" % globalDBS
@@ -131,7 +130,7 @@ class Publisher(Actor):
             common.logger.info(str(ex))
             return 1
         return 0
-
+        
     def publishDataset(self,file):
         """
         """
