@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.35 2010/02/09 14:50:43 farinafa Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.36 2010/02/24 17:16:12 farinafa Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import string
 import sys, os
@@ -483,7 +483,7 @@ class RegisterWorker(Thread):
         vo = self.cfg_params.get('VO', 'cms')
         role = self.cfg_params.get('EDG.role', None)
         group = self.cfg_params.get('EDG.group', None)
-        proxyServer = self.cfg_params.get("GRID.proxy_server", 'myproxy.cern.ch')
+        proxyServer = self.cfg_params.get('proxyServer', 'myproxy.cern.ch')
         try:
             # force the CredAPI to refer to the same MyProxy server used by the client 
             self.CredAPI.credObj.myproxyServer = proxyServer
