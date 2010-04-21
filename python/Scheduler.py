@@ -227,11 +227,20 @@ class Scheduler :
         except Exception, ex:
             common.logger.debug(traceback.format_exc())
             raise Exception(str(ex))
+
         try:
             remoteList = action.dirContent()
-        except Exception, ex:
-            common.logger.debug(traceback.format_exc())
-            raise Exception(str(ex))
+        except Exception, e:
+            if protocol in ['srmv2' , 'srm-lcg']:
+                try:
+                    common.logger.debug("Trying fallback checkRemoteDir for SE not in BDII (-b option)") 
+                    remoteList = action.dirContent(opt="-b -D srmv2")
+                except Exception, ex:
+                    common.logger.debug(traceback.format_exc())
+                    raise CrabException("Failure while checking remote dir: "+str(ex))
+            else:
+                common.logger.debug(traceback.format_exc())
+                raise CrabException("Failure while checking remote dir: "+str(e)) 
 
         return remoteList
 
@@ -449,5 +458,4 @@ class Scheduler :
         Declaration of jobs
         """
         self._boss.declare(jobs)
-
 
