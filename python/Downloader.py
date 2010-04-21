@@ -31,11 +31,11 @@ class Downloader:
         self.wmcorecache['timeout'] = 20            ## seconds
         self.wmcorecache['endpoint'] = endpoint
 
-    def downloadConfig(self, cacheFile, type = "txt/csv",openf=True):
+    def downloadConfig(self, cacheFile, type = "txt/csv",openf=True, useVerb='GET'):
         self.wmcorecache['type'] = type
         common.logger.debug("Downloading file [%s] to [%s]." %(str(self.wmcorecache['endpoint']),(str(self.wmcorecache['cachepath'])+"/"+cacheFile)))
         servo = Service( self.wmcorecache )
-        return servo.refreshCache( cacheFile, cacheFile, openfile=openf )
+        return servo.refreshCache( cacheFile, cacheFile, openfile=openf, verb=useVerb )
 
     def aconfig(self, fileName = "prova"):
         f = self.downloadConfig(fileName)
