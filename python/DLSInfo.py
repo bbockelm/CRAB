@@ -47,22 +47,10 @@ class DLSInfo:
 
         phedexURL='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/'
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-        caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
-        dbs_url_map  =   {'glite':    global_url,
-                          'condor':   global_url,\
-                          'condor_g': global_url,\
-                          'glidein':  global_url,\
-                          'lsf':      global_url,\
-                          'caf':      caf_url,\
-                          'sge':      global_url,\
-                          'arc':      global_url,\
-                          'pbs':      global_url
-                          }
-        dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
 
         if type=="DLS_TYPE_DBS":
             # use dbs_url as dls_endpoint if dls_type is dbs
-            endpoint=self.cfg_params.get('CMSSW.dbs_url', dbs_url_default) 
+            endpoint=self.cfg_params.get('CMSSW.dbs_url', global_url) 
         elif type=="DLS_TYPE_PHEDEX":
             endpoint=self.cfg_params.get('CMSSW.dls_phedex_url',phedexURL)
             if self.cfg_params['CRAB.scheduler'].upper() == 'CAF':  self.showCAF = True

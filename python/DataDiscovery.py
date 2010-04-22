@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.40.2.1 2010/02/05 16:05:29 ewv Exp $"
-__version__ = "$Revision: 1.40.2.1 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.40.4.1 2010/04/07 15:56:32 spiga Exp $"
+__version__ = "$Revision: 1.40.4.1 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -110,22 +110,7 @@ class DataDiscovery:
         """
         ## get DBS URL
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-        caf_url = "http://cmsdbsprod.cern.ch/cms_dbs_caf_analysis_01/servlet/DBSServlet"
-        dbs_url_map  =   {'glite':    global_url,
-                          'glite_slc5':global_url,\
-                          'glitecoll':global_url,\
-                          'condor':   global_url,\
-                          'condor_g': global_url,\
-                          'glidein':  global_url,\
-                          'lsf':      global_url,\
-                          'caf':      caf_url,\
-                          'sge':      global_url,\
-                          'arc':      global_url,\
-                          'pbs':      global_url
-                          }
-
-        dbs_url_default = dbs_url_map[(common.scheduler.name()).lower()]
-        dbs_url=  self.cfg_params.get('CMSSW.dbs_url', dbs_url_default)
+        dbs_url=  self.cfg_params.get('CMSSW.dbs_url', global_url)
         common.logger.info("Accessing DBS at: "+dbs_url)
 
         ## check if runs are selected
