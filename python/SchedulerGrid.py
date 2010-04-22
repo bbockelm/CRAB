@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.1 2010/02/16 16:40:57 spiga Exp $"
-__version__ = "$Revision: 1.124.2.1 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.2 2010/03/02 12:42:12 farinafa Exp $"
+__version__ = "$Revision: 1.124.2.2 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -39,7 +39,7 @@ class SchedulerGrid(Scheduler):
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
 
-        self.space_tocken = cfg_params.get("USER.space_tocken",None)
+        self.space_token = cfg_params.get("USER.space_token",None)
         self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
         common.logger.debug('Setting myproxy server to '+self.proxyServer)
 
@@ -273,8 +273,8 @@ class SchedulerGrid(Scheduler):
             txt += 'copy_exit_status=0\n'
             cmscp_args = ' --destination $endpoint --inputFileList $file_list'
             cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
-            if self.space_tocken:
-                cmscp_args +=' --option space_tocken=%s'%str(self.space_tocken)
+            if self.space_token:
+                cmscp_args +=' --option space_token=%s'%str(self.space_token)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
             if self.debug_wrapper==1:
