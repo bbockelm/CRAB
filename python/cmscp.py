@@ -333,18 +333,29 @@ class cmscp:
         try:
             Source_SE, Destination_SE = self.initializeApi( protocol )
         except Exception, ex:
-            return self.updateReport('', '-1', str(ex))
+            for filetocopy in list_file:
+                results.update( self.updateReport(filetocopy, '-1', str(ex)))
+            return results
 
         # create remote dir
         if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
             try:
                 self.createDir( Destination_SE, Destination_SE.protocol )
             except OperationException, ex:
-                return self.updateReport('', '60316', str(ex))
+                for filetocopy in list_file:
+                    results.update( self.updateReport(filetocopy, '60316', str(ex)))
+                return results
             ## when the client commands are not found (wrong env or really missing)
             except MissingCommand, ex:
                 msg = "ERROR %s %s" %(str(ex), str(ex.detail))
-                return self.updateReport('', '10041', msg)
+                for filetocopy in list_file:
+                    results.update( self.updateReport(filetocopy, '10041', msg))
+                return results
+            except Exception, ex:
+                msg = "ERROR %s" %(str(ex))
+                for filetocopy in list_file:
+                    results.update( self.updateReport(filetocopy, '-1', msg))
+                return results
 
         ## prepare for real copy  ##
         try :
@@ -354,7 +365,9 @@ class cmscp:
         except ProtocolMismatch, ex:
             msg  = "ERROR : Unable to create SBinterface with %s protocol"%protocol
             msg += str(ex)
-            return self.updateReport('', '-1', msg)
+            for filetocopy in list_file:
+                results.update( self.updateReport(filetocopy, '-1', msg))
+            return results
 
         results = {}
         ## loop over the complete list of files
@@ -668,8 +681,8 @@ class cmscp:
 
                 txt += 'export endpoint='+self.params['destination']+'\n'
                 
-                #if dict['erCode'] != '0':
-                cmscp_exit_status = dict['erCode']
+                if dict['erCode'] != '0':
+                    cmscp_exit_status = dict['erCode']
             else:
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 cmscp_exit_status = dict['erCode']
