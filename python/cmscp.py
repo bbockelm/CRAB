@@ -534,7 +534,7 @@ class cmscp:
         ErCode = '0'
         msg = ''
 
-        if  self.params['option'].find('space_token')>0: 
+        if  self.params['option'].find('space_token')>=0: 
             space_token=self.params['option'].split('=')[1] 
             if protocol == 'srmv2': option = '%s -space_token=%s'%(option,space_token)
             if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_token)
