@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.27 2010/04/05 16:47:36 ewv Exp $"
-__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: writeCfg.py,v 1.28 2010/04/15 13:29:34 ewv Exp $"
+__version__ = "$Revision: 1.28 $"
 
 import getopt
 import imp
@@ -17,7 +17,6 @@ import xml.dom.minidom
 from random import SystemRandom
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
-from FWCore.ParameterSet.Config                       import include
 import FWCore.ParameterSet.Types as CfgTypes
 
 MyRandom  = SystemRandom()

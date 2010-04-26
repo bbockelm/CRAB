@@ -9,7 +9,8 @@ from crab_util import *
 from crab_exceptions import *
 
 from ProdCommon.CMSConfigTools.ConfigAPI.CfgInterface import CfgInterface
-from FWCore.ParameterSet.Config    import include
+# FIXME: Cleanup includes from FWCore. Most of this is not needed.
+#from FWCore.ParameterSet.Config    import include
 from FWCore.ParameterSet.DictTypes import SortedKeysDict
 from FWCore.ParameterSet.Modules   import OutputModule
 from FWCore.ParameterSet.Modules   import Service
