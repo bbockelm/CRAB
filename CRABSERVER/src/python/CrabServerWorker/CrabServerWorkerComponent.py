@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.100 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.100 2010/01/19 20:03:55 spiga Exp $"
+__version__ = "$Revision: 1.101 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.101 2010/04/26 08:29:00 farinafa Exp $"
 
 import os, pickle, time
 
@@ -148,7 +148,7 @@ class CrabServerWorkerComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
 
         # initialize the local message services pool and schedule logic
-        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 360)
+        self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 600)
         # no parametric for now: 10*self.ms.pollTime. a deterministic deadline time seem to be properly set around 5-6 minutes
 
         self.dematerializeStatus()
@@ -333,6 +333,7 @@ class CrabServerWorkerComponent:
             cmdRng = str( [int(jobId)] )
             if len(items) == 3 and items[2] != "#fake_site#":
                 siteToBan = items[2]
+            retryCounter = '1'
 
             # load task and job data
             try:
