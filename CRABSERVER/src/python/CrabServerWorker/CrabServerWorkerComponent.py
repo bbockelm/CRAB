@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.99 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.99 2010/01/19 15:34:35 spiga Exp $"
+__version__ = "$Revision: 1.100 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.100 2010/01/19 20:03:55 spiga Exp $"
 
 import os, pickle, time
 
@@ -81,16 +81,12 @@ class CrabServerWorkerComponent:
         if self.args['storagePath'] == None and self.args['Protocol'] == 'local':
             self.args['storagePath'] = self.args["CacheDir"]
 
-        ## persistent properties
-        self.taskPool = {}  # for data persistence
-        self.subTimes = []  # moving average for submission delays
-        self.subStats = {'succ':0, 'retry':0, 'fail':0}
-
         ## volatile properties
         self.wdir = self.args['ComponentDir']
         if self.args['CacheDir']:
             self.wdir = self.args['CacheDir']
 
+        self.subStats = {'succ':0, 'retry':0, 'fail':0}
         self.maxAttempts = int( self.args.get('maxRetries', 3) )
         self.maxThreads = int( self.args.get('maxThreads', 5) )
 
@@ -237,7 +233,6 @@ class CrabServerWorkerComponent:
         if len(items) == 5: siteToBan = items[4]
 
         thrName = self.availWorkersIds.pop(0)
-        self.taskPool[thrName] = ("CrabServerWorkerComponent:Submission", payload)
         self.materializeStatus()
 
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName)
@@ -293,9 +288,6 @@ class CrabServerWorkerComponent:
             # useful to discriminate message from - to the main component (eg. resub failure feedback)
             self.availWorkersIds.append(workerName)
 
-        if workerName in self.taskPool:
-            del self.taskPool[workerName]
-            self.materializeStatus()
         if workerName in self.workerSet:
             del self.workerSet[workerName]
 
@@ -307,8 +299,6 @@ class CrabServerWorkerComponent:
         if status in successfulCodes:
             self.subStats['succ'] += 1
             if status == -2: self.subStats['retry'] += 1
-            self.subTimes.append(float(timing))
-            if len(self.subTimes) > 64: self.subTimes.pop(0)
 
         elif status in retryItCodes:
             self.subStats['retry'] += 1
@@ -402,7 +392,6 @@ class CrabServerWorkerComponent:
         # remove stuff from persistence tables
         del rng # not used
         if taskUniqName in self.workerSet: del self.workerSet[taskUniqName]
-        if taskUniqName in self.taskPool:  del self.taskPool[taskUniqName]
 
         # drive the SchedulingWorker to deschedule the task if needed
         self.swDeschedQ.put(taskUniqName)
@@ -420,12 +409,9 @@ class CrabServerWorkerComponent:
 ################################
 
     def materializeStatus(self):
-        ldump = [self.taskPool, self.subTimes, self.subStats]
-        if len(self.taskPool)>0:
-            logging.debug("Materialized disaster recovery cache: %s"%str(self.taskPool) )
         try:
             f = open(self.wdir+"/cw_status.set", 'w')
-            pickle.dump(ldump, f)
+            pickle.dump(self.subStats, f)
             f.close()
         except Exception, e:
             logging.info("Error while materializing component status\n"+str(e))
@@ -434,24 +420,15 @@ class CrabServerWorkerComponent:
     def dematerializeStatus(self):
         try:
             f = open(self.wdir+"/cw_status.set", 'r')
-            ldump = pickle.load(f)
+            self.subStats = pickle.load(f)
             f.close()
-            self.taskPool, self.subTimes, self.subStats = ldump
+            # not wellformed status (from previous release)    
+            if 'succ' not in self.subStats:
+                raise Exception()
         except Exception, e:
             logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
-            self.taskPool = {}
-            self.subTimes = []
             self.subStats = {'succ':0, 'retry':0, 'fail':0}
             self.materializeStatus()
-            return
-        # cold restart for crashes
-        for t in self.taskPool:
-            type, payload = self.taskPool[t]
-            waitTime = '00:02:00'
-            logging.info("Publishing %s with delay %s"%( str(type), waitTime ))
-            self.ms.publish(type, payload, waitTime)
-            self.ms.commit()
-        self.taskPool = {}
         return
 
     def prepareWorkerBaseStatus(self, taskUniqName, workerId, actionType = "standardSubmission"):
