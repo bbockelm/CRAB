@@ -244,7 +244,7 @@ class ProxyLife:
                 logging.info("Checking proxy [%s]"% str(proxyfull))
                 timeleft = 0
                 try:
-	            timeleft = CredAPI.getTimeLeft( proxyfull )
+                    timeleft = CredAPI.getTimeLeft( proxyfull )
                 except Exception, exc:
                     logging.info("Problem checking proxy validity: %s"% str(exc))
                     import traceback
@@ -265,7 +265,10 @@ class ProxyLife:
                             ## append for hand clean
                             allTasks.append(task)
 
-	            CredAPI.destroyCredential( proxyfull )
+                    try:
+                        CredAPI.destroyCredential( proxyfull )
+                    except Exception, ex:
+                        logging.error("Problem '%s' destroying credential '%s'."%(str(ex),str(proxyfull)))
                     
                     ## if not already asked notify the admin to hand-clean
                     if not self.cleanasked(proxyfull):
