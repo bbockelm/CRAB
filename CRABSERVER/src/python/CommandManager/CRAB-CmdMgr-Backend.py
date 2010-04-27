@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.38 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.38 2009/11/30 02:24:34 riahi Exp $"
+__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.39 2010/03/02 16:40:08 riahi Exp $"
 
 import threading
 import os
@@ -36,7 +36,7 @@ class CRAB_AS_beckend:
     def __init__(self):
         # load balancing feature. Use an integer, useful for future developments
         self.args = {}
-        self.args["maxCmdAttempts"] = '5'
+        self.args["maxCmdAttempts"] = '2'
         self.cmdAttempts = int(self.args["maxCmdAttempts"])
         self.args['resourceBroker'] = 'CERN'
 
