@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.194.2.4 2010/04/07 15:28:41 farinafa Exp $"
-__version__ = "$Revision: 1.194.2.4 $"
+__revision__ = "$Id: FatWorker.py,v 1.194.2.5 2010/04/27 09:17:12 farinafa Exp $"
+__version__ = "$Revision: 1.194.2.5 $"
 
 import string
 import sys, os
@@ -125,6 +125,10 @@ class FatWorker(Thread):
         taskObj = None
         self.local_queue.put((self.myName, "CrabServerWorkerComponent:CommandArrival", self.taskName))
         if not self.parseCommandXML() == 0:
+            logMsg = "WorkerError %s. XML for the requested task %s does not exist."%(self.myName, self.taskName)
+            self.preLog(mess = "Pre-submission failure", err = logMsg, exc = exc)
+            self.sendResult(11, "Unable to parse XML for task %s. Causes: parseCommandXML"%(self.taskName), logMsg, e)
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
 
         self.log.info("FatWorker %s loading task"%self.myName)
@@ -150,7 +154,7 @@ class FatWorker(Thread):
         newRange, skippedJobs = None, None
         try:
             newRange, skippedJobs = self.preSubmissionCheck(taskObj)
-            if len(newRange) == 0 :
+            if newRange is None or len(newRange) == 0 :
                 raise Exception('Empty range submission temptative')
         except Exception, e:
             self.markJobsAsFailed(taskObj, self.cmdRng)
@@ -361,6 +365,7 @@ class FatWorker(Thread):
                 logMsg += "outputDirectory used as base path. Submission continues.\n"
                 logMsg += str(ex)
                 self.log.info( logMsg )
+                raise Exception(logMsg)
 
         for j in task.jobs:
             if j['jobId'] in self.cmdRng and j.runningJob['closed'] == 'Y':
@@ -416,7 +421,7 @@ class FatWorker(Thread):
                 logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                 logMsg += str(e)
                 self.log.info( logMsg )
-                return [], self.cmdRng
+                return None, None
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
@@ -663,7 +668,13 @@ class FatWorker(Thread):
                 j.runningJob['state'] = "SubFailed"
                 j.runningJob['closed'] = "Y"
 
-        self.blDBsession.updateDB( taskObj )
+        try:
+            self.blDBsession.updateDB( taskObj )
+        except Exception, exc:
+            logMsg = "WorkerError %s. Task %s. Error marking jobs as failed."%(self.myName, self.taskName)
+            self.preLog(mess = "Failure in pre-submission check", err = logMsg, exc = exc)
+            self.sendResult(66, logMsg, logMsg, exc)
+            return  
 
         for jId in jobSpecId:
             try:
