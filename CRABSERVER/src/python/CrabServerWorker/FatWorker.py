@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.194.2.3 2010/02/21 13:01:29 spiga Exp $"
-__version__ = "$Revision: 1.194.2.3 $"
+__revision__ = "$Id: FatWorker.py,v 1.194.2.4 2010/04/07 15:28:41 farinafa Exp $"
+__version__ = "$Revision: 1.194.2.4 $"
 
 import string
 import sys, os
@@ -416,7 +416,7 @@ class FatWorker(Thread):
                 logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                 logMsg += str(e)
                 self.log.info( logMsg )
-                newRange=[], self.cmdRng
+                return [], self.cmdRng
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
