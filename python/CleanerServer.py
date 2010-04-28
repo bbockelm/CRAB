@@ -24,7 +24,9 @@ class CleanerServer(Cleaner):
         # get updated status from server
         try:
             stat = StatusServer(self.cfg_params)
-            stat.resynchClientSide()
+            warning_msg = stat.resynchClientSide()
+            if warning_msg is not None:
+                common.logger.info(warning_msg)
         except:
             pass
         

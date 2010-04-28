@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.47 2009/10/27 13:49:04 mcinquil Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.48 2009/11/11 13:13:47 mcinquil Exp $"
+__version__ = "$Revision: 1.48 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -38,7 +38,10 @@ class GetOutputServer( GetOutput, StatusServer ):
     def getOutput(self):
 
         # get updated status from server #inherited from StatusServer
-        self.resynchClientSide()
+        warning_msg = self.resynchClientSide()
+        if warning_msg is not None:
+            common.logger.info(warning_msg)
+
 
         # understand whether the required output are available
         self.checkBeforeGet()

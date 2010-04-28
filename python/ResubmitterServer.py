@@ -16,7 +16,9 @@ class ResubmitterServer(SubmitterServer, Resubmitter):
         try:
             from StatusServer import StatusServer
             stat = StatusServer(self.cfg_params)
-            stat.resynchClientSide()
+            warning_msg = stat.resynchClientSide()
+            if warning_msg is not None:
+                common.logger.info(warning_msg)
         except:
             pass
 

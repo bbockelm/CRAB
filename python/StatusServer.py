@@ -27,10 +27,13 @@ class StatusServer(Status):
 
     def query(self,display=True):
 
-        self.resynchClientSide()
+        warning_msg = self.resynchClientSide()
         
         upTask = common._db.getTask()  
         self.compute(upTask,display)
+
+        if warning_msg is not None:
+            common.logger.info(warning_msg)
 
     def resynchClientSide(self):
         """
@@ -48,12 +51,14 @@ class StatusServer(Status):
         # align back data and print
         reportXML = None
         useFallback = False
+        warning_msg = None
  
         try:
             handledXML += "="*( len(handledXML)%8 )  
             reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
-            common.logger.debug("WARNING: Problem while decompressing fresh status from the server. Use HTTP fallback")
+            warning_msg = "WARNING: Problem while decompressing fresh status from the server. Use HTTP fallback"
+            common.logger.debug(warning_msg)
             common.logger.debug( traceback.format_exc() )
             useFallback = True 
 
@@ -65,29 +70,32 @@ class StatusServer(Status):
                 common.logger.debug("Accessing URL for status fallback: %s"%xmlStatusURL)
                 reportXML = ''.join(urllib.urlopen(xmlStatusURL).readlines())
         except Exception, e:
-            common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
+            warning_msg = "WARNING: The status cache is out of date. Please issue crab -status again"
+            common.logger.debug(warning_msg)
             common.logger.debug("WARNING: Problem also with HTTP status fallback.")
             common.logger.debug( str(e) )
             common.logger.debug( traceback.format_exc() )
-            return
+            return warning_msg
 
         try:
             reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
         except ExpatError, experr:
-            common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
+            warning_msg = "WARNING: The status cache is out of date. Please issue crab -status again"
+            common.logger.debug(warning_msg)
             common.logger.debug("ERROR: %s"%str(experr))
             common.logger.debug( str(experr))
             common.logger.debug( traceback.format_exc() )
         #    raise CrabException(str(experr))
         except TypeError, e:
-            common.logger.info("WARNING: The status cache is out of date. Please issue crab -status again")
+            warning_msg = "WARNING: The status cache is out of date. Please issue crab -status again"
+            common.logger.debug(warning_msg)
             common.logger.debug("WARNING: Problem while retrieving fresh status from the server.")
             common.logger.debug( str(e))
             common.logger.debug( traceback.format_exc() )
-            return
+            return warning_msg
 
-        return 
+        return warning_msg
 
     def showWebMon(self):
         msg  = 'You can also check jobs status at: http://%s:8888/logginfo\n'%self.server_name
