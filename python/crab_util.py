@@ -453,6 +453,8 @@ def getDN():
     try:
         userdn = runCommand("voms-proxy-info -identity")
         userdn = string.strip(userdn)
+        #remove /CN=proxy that could cause problems with siteDB check at server-side
+        userdn = userdn.replace('/CN=proxy','') 
         #search for a / to avoid picking up warning messages
         userdn = userdn[userdn.find('/'):]
     except:
