@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.78.2.1 2010/04/20 16:03:31 farinafa Exp $"
-__version__ = "$Revision: 1.78.2.1 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.79 2010/04/21 08:50:52 farinafa Exp $"
+__version__ = "$Revision: 1.79 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -170,7 +170,9 @@ class SchedulerGlite(SchedulerGrid):
         sched_param+='MyProxyServer = "' + self.proxyServer + '";\n'
         sched_param+='VirtualOrganisation = "' + self.VO + '";\n'
         sched_param+='RetryCount = '+str(self.EDG_retry_count)+';\n'
+        sched_param+='DefaultNodeRetryCount = '+str(self.EDG_retry_count)+';\n'
         sched_param+='ShallowRetryCount = '+str(self.EDG_shallow_retry_count)+';\n'
+        sched_param+='DefaultNodeShallowRetryCount = '+str(self.EDG_shallow_retry_count)+';\n'
 
         return sched_param
 
