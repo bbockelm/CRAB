@@ -78,12 +78,11 @@ class Publisher(Actor):
             
         self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
         
-        ### fede import parent dataset is compulsory ###
         if ( int(self.import_all_parents) == 0 ):
             common.logger.info("WARNING: The option USER.publish_with_import_all_parents=0 has been deprecated. The import of parents is compulsory and done by default")
-        ############
-        self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
-    
+        self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',1)
+        if ( int(self.skipOcheck) == 0 ):
+            common.logger.info("WARNING: The option CMSSW.publish_zero_event has been deprecated. The publication is done by default also for files with 0 events")
         self.SEName=''
         self.CMSSW_VERSION=''
         self.exit_status=''
@@ -218,8 +217,6 @@ class Publisher(Actor):
             self.exit_status = '1'
             msg = "Error: Problem with "+file+" file"
             raise CrabException(msg)
-        ### overwrite ProcessedDataset with user defined value
-        ### overwrite lumisections with no value
         ### skip publication for 0 events files
         filestopublish=[]
         for file in jobReport.files:
@@ -229,25 +226,23 @@ class Publisher(Actor):
             elif (file['LFN'] == ''):
                 self.noLFN.append(file['PFN'])
             else:
-                if  self.skipOcheck==0:
-                    if int(file['TotalEvents']) != 0:
-                        ### Fede to insert also run and lumi info in DBS
-                        #file.runs = {}
-                        for ds in file.dataset:
-                            ### Fede for production
-                            if (ds['PrimaryDataset'] == 'null'):
-                                ds['PrimaryDataset']=self.userprocessedData
-                        filestopublish.append(file)
-                    else:
-                        self.noEventsFiles.append(file['LFN'])
-                else:
-                    ### Fede to insert also run and lumi info in DBS
-                    #file.runs = {}
-                    for ds in file.dataset:
-                        ### Fede for production
-                        if (ds['PrimaryDataset'] == 'null'):
-                            ds['PrimaryDataset']=self.userprocessedData
-                    filestopublish.append(file)
+                #if  self.skipOcheck==0:
+                #    if int(file['TotalEvents']) != 0:
+                #        for ds in file.dataset:
+                #            ### Fede for production
+                #            if (ds['PrimaryDataset'] == 'null'):
+                #                ds['PrimaryDataset']=self.userprocessedData
+                #        filestopublish.append(file)
+                #    else:
+                #        self.noEventsFiles.append(file['LFN'])
+                #else:
+                if int(file['TotalEvents']) == 0:
+                    self.noEventsFiles.append(file['LFN'])
+                for ds in file.dataset:
+                    ### Fede for production
+                    if (ds['PrimaryDataset'] == 'null'):
+                        ds['PrimaryDataset']=self.userprocessedData
+                filestopublish.append(file)
        
         jobReport.files = filestopublish
         for file in filestopublish:
@@ -322,7 +317,7 @@ class Publisher(Actor):
                     common.logger.info("Close block error %s"%ex)
 
             if (len(self.noEventsFiles)>0):
-                common.logger.info("--->>> WARNING: "+str(len(self.noEventsFiles))+" files not published because they contain 0 events are:")
+                common.logger.info("--->>> WARNING: "+str(len(self.noEventsFiles))+" published files contain 0 events are:")
                 for lfn in self.noEventsFiles:
                     common.logger.info("------ LFN: %s"%lfn)
             if (len(self.noLFN)>0):
