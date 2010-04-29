@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.194.2.6 2010/04/27 13:38:42 farinafa Exp $"
-__version__ = "$Revision: 1.194.2.6 $"
+__revision__ = "$Id: FatWorker.py,v 1.200 2010/04/27 13:45:43 farinafa Exp $"
+__version__ = "$Revision: 1.200 $"
 
 import string
 import sys, os
@@ -476,9 +476,14 @@ class FatWorker(Thread):
                     # update arguments for unique output naming 
                     for j in task.jobs:
                         if j['jobId'] in sub_list:
-                            self.blDBsession.getRunningInstance(j)
-                            newArgs = "%d %d"%(j.runningJob['jobId'], j.runningJob['submission'])
+                            self.blDBsession.getRunningInstance(j)                            
+                            try:
+                                resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
+                            except Exception, e:
+                                resubNum = j.runningJob['submission'] 
+                            newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
                             j['arguments'] = newArgs
+
                     self.blDBsession.updateDB( task )
 
                     try:
@@ -534,8 +539,13 @@ class FatWorker(Thread):
                 for j in task.jobs:
                     if j['jobId'] in sub_jobs[ii]:
                         self.blDBsession.getRunningInstance(j)
-                        newArgs = "%d %d"%(j.runningJob['jobId'], j.runningJob['submission'])
+                        try:
+                            resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
+                        except Exception, e:
+                            resubNum = j.runningJob['submission'] 
+                        newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
                         j['arguments'] = newArgs
+
                 self.blDBsession.updateDB( task )
 
                 try:

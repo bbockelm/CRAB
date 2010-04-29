@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.162 2010/01/26 15:16:32 farinafa Exp $"
-__version__ = "$Revision: 1.162 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.163 2010/02/19 15:13:34 farinafa Exp $"
+__version__ = "$Revision: 1.163 $"
 
 import os
 import time
@@ -920,7 +920,10 @@ class TaskTrackingComponent:
                 site  = jobbe.runningJob['destination'].split(":")[0]
 
             # For unique naming of the output
-            jsub  = str(jobbe.runningJob['submission'])
+            try:
+                jsub = str(jobbe['arguments']).split(' ')[1]
+            except Exception, e:
+                jsub  = str(jobbe.runningJob['submission'])
 
             del jobbe
 

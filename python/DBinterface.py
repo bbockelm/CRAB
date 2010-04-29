@@ -401,8 +401,7 @@ class DBinterface:
                 job.runningJob['state'] = str( rForJ.getAttribute('action') )
           
                 # Needed for unique naming of the output.
-                # GIVES PROBLEMS. FIX in >=2_7_2    
-                #job.runningJob['submission'] =  str(rForJ.getAttribute('submission'))
+                job['arguments'] = "%d %s"%(job.runningJob['jobId'], str(rForJ.getAttribute('submission')).strip() )
           
         common.bossSession.updateDB( task_new )
         return
@@ -414,14 +413,18 @@ class DBinterface:
                 return False
         return True
 
-    # Method to update arguments w.r.t. resubmission number in order to grant unique output 
+    # Method to update arguments w.r.t. resubmission number in order to grant unique output
     def updateResubAttribs(self, jobsL):
         task = self.getTask(jobsL)
         for j in task.jobs:
-            newArgs = "%d %d"%(j['jobId'], j['submissionNumber'])
+            common.bossSession.getRunningInstance(j)
+            try:
+                resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
+            except Exception, e:
+                resubNum = j.runningJob['submission']
+            newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
             j['arguments'] = newArgs
-            
-        common.bossSession.updateDB(task) 
-        return
 
+        common.bossSession.updateDB(task)
+        return
 
