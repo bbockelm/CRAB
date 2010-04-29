@@ -71,7 +71,7 @@ class SchedulerGrid(Scheduler):
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
 
         self.EDG_retry_count = cfg_params.get('GRID.retry_count',0)
-        self.EDG_shallow_retry_count= cfg_params.get('GRID.shallow_retry_count',-1)
+        self.EDG_shallow_retry_count= cfg_params.get('GRID.shallow_retry_count',0)
         self.EDG_clock_time = cfg_params.get('GRID.max_wall_clock_time',None)
 
         # Default minimum CPU time to >= 130 minutes
