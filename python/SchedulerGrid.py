@@ -2,8 +2,8 @@
 Base class for all grid schedulers
 """
 
-__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.2 2010/03/02 12:42:12 farinafa Exp $"
-__version__ = "$Revision: 1.124.2.2 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.3 2010/04/22 15:18:14 spiga Exp $"
+__version__ = "$Revision: 1.124.2.3 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -74,7 +74,7 @@ class SchedulerGrid(Scheduler):
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
 
         self.EDG_retry_count = cfg_params.get('GRID.retry_count',0)
-        self.EDG_shallow_retry_count= cfg_params.get('GRID.shallow_retry_count',-1)
+        self.EDG_shallow_retry_count= cfg_params.get('GRID.shallow_retry_count',0)
         self.EDG_clock_time = cfg_params.get('GRID.max_wall_clock_time',None)
 
         # Default minimum CPU time to >= 130 minutes
