@@ -302,11 +302,11 @@ class Cmssw(JobType):
             ### FOR MULTI PUBLICATION
             
             edmOutputDict = PsetEdit.getPoolOutputModule()
-            common.logger.debug("(test) edmOutputDict = "+edmOutputDict)
+            common.logger.debug("(test) edmOutputDict = "+str(edmOutputDict))
             filter_dict = {}
             for key in edmOutputDict.keys():
                 filter_dict[key]=edmOutputDict[key]['dataset']
-            common.logger.debug("(test) filter_dict for multipublication =  "+filter_dict)
+            common.logger.debug("(test) filter_dict for multipublication =  "+str(filter_dict))
 
             #### FOR MULTI PUBLICATION 
             #### in CMSSW.sh: export var_filter
