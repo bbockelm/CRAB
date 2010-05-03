@@ -17,6 +17,8 @@ class Reporter(Actor):
     """
     def __init__(self, cfg_params):
         self.cfg_params = cfg_params
+        self.fjrDirectory = cfg_params.get('USER.outputdir' ,
+                                           common.work_space.resDir()) + '/'
         return
 
     def run(self):
@@ -40,7 +42,7 @@ class Reporter(Actor):
             msg+=  "SE: %s %s  srmPath: %s\n"%(self.cfg_params['USER.storage_element'],SE,endpoint)
 
         else:
-            msg+=  "Local output: %s"%task['outputDirectory']
+            msg += "Local output: %s\n" % task['outputDirectory']
         #print task
         possible_status = [ 'Created',
                             'Undefined',
@@ -68,7 +70,8 @@ class Reporter(Actor):
         for job in task.getJobs():
             if (job.runningJob['applicationReturnCode']>0 or job.runningJob['wrapperReturnCode']>0): continue
             # get FJR filename
-            fjr=task['outputDirectory']+job['outputFiles'][-1]
+            fjr = self.fjrDirectory + job['outputFiles'][-1]
+
             jobReport = readJobReport(fjr)
             if len(jobReport) > 0:
                 inputFiles = jobReport[0].inputFiles
@@ -102,9 +105,9 @@ class Reporter(Actor):
         msg += "Luminosity section summary file: %s\n" % lumiFilename
         list_ID={}
 
-        # TEMPORARY by Fabio, to be removed 
+        # TEMPORARY by Fabio, to be removed
         # avoid clashes between glite_slc5 and glite schedulers when a server is used
-        # otherwise, -report with a server requires a local scheduler 
+        # otherwise, -report with a server requires a local scheduler
         if self.cfg_params.get('CRAB.server_name', None) is None:
             common.logger.debug( "Reporter updating task status")
             task = common.scheduler.queryEverything(task['id'])
