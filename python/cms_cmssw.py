@@ -1,3 +1,7 @@
+
+__revision__ = "$Id: cms_cmssw.py,v 1.352.4.4 2010/05/04 10:36:18 spiga Exp $"
+__version__ = "$Revision: 1.352.4.4 $"
+
 from JobType import JobType
 from crab_exceptions import *
 from crab_util import *
@@ -102,6 +106,7 @@ class Cmssw(JobType):
         self.lumiMask = self.cfg_params.get('CMSSW.lumi_mask',None)
         self.lumiParams = self.cfg_params.get('CMSSW.total_number_of_lumis',None) or \
                           self.cfg_params.get('CMSSW.lumis_per_job',None)
+
         # FUTURE: Can remove this check
         if self.ads and self.CMSSW_major < 3:
             common.logger.info('Warning: Analysis dataset support is incomplete in CMSSW 2_x.')
@@ -681,7 +686,7 @@ class Cmssw(JobType):
                +'MB input sandbox limit \n'
             msg += '      and not supported by the direct GRID submission system.\n'
             msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
-            msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/CrabServerForUsers#Server_available_for_users'
+            msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
             raise CrabException(msg)
 
         ## create tar-ball with ML stuff
@@ -807,10 +812,12 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsUntarSoftware\n'
 
         if os.path.isfile(self.tgzNameWithPath):
-            txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'echo ">>> tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
             if  self.debug_wrapper==1 :
+                txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
                 txt += 'ls -Al \n'
+            else:
+                txt += 'tar zxf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
