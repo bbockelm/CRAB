@@ -393,6 +393,10 @@ Clean up (i.e. erase) the task working directory after a check whether there are
 
 Clean up (i.e. erase) the SiteDb and CRAB cache content.
 
+=item B<-validateCfg [fname]>
+
+Parse the ParameterSet using the framework\'s Python API in order to perform a sanity check of the CMSSW configuration file.
+
 =item B<-help [format] | -h [format]>
 
 This help. It can be produced in three different I<format>: I<man> (default), I<tex> and I<html>.
