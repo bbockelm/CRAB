@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.352.4.2 2010/04/07 15:56:26 spiga Exp $"
-__version__ = "$Revision: 1.352.4.2 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.352.4.3 2010/04/16 15:14:34 farinafa Exp $"
+__version__ = "$Revision: 1.352.4.3 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -804,10 +804,12 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsUntarSoftware\n'
 
         if os.path.isfile(self.tgzNameWithPath):
-            txt += 'echo ">>> tar xzvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'echo ">>> tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
             if  self.debug_wrapper==1 :
+                txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
                 txt += 'ls -Al \n'
+            else:
+                txt += 'tar zxf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
