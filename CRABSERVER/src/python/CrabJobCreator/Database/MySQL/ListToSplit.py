@@ -6,8 +6,8 @@ MySQL implementation of CrabJobCreator.ListToSplit
 """
 
 __all__ = []
-__revision__ = "$Id: ListToSplit.py,v 1.1 2009/09/21 23:59:38 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: ListToSplit.py,v 1.2 2009/11/30 02:28:08 riahi Exp $"
+__version__ = "$Revision: 1.2 $"
 
 from WMCore.Database.DBFormatter import DBFormatter
 
@@ -30,7 +30,10 @@ class ListToSplit(DBFormatter):
                  ON wmbs_subscription.id = wmbs_files_acquired.subscription 
              WHERE total_files != COALESCE(complete_files, 0) + COALESCE(failed_files, 0) +
                                   COALESCE(acquired_files, 0) AND wmbs_subscription.id >= :minsub
-             AND workflow IN (SELECT workflow FROM wm_managed_workflow )"""
+             AND wmbs_subscription.workflow IN (SELECT workflow FROM wm_managed_workflow) 
+             AND (wmbs_subscription.fileset NOT IN (SELECT id FROM wmbs_fileset where name LIKE :feeder)
+             OR wmbs_subscription.fileset IN (select id from wmbs_fileset where name LIKE :feeder and open = 0))     
+             """
 
     def format(self, result):
         results = DBFormatter.format(self, result)
@@ -41,7 +44,7 @@ class ListToSplit(DBFormatter):
 
         return subIDs
 
-    def execute(self, minSub = 0, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, binds = {"minsub": minSub},
+    def execute(self, minSub = 0, feeder = '%T0ASTRun%', conn = None, transaction = False):
+        result = self.dbi.processData(self.sql, binds = {"minsub": minSub,"feeder": feeder},
                                       conn = conn, transaction = transaction)
         return self.format(result)
