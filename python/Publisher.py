@@ -12,8 +12,9 @@ from ProdCommon.DataMgmt.DBS.DBSErrors import DBSWriterError, formatEx,DBSReader
 from ProdCommon.DataMgmt.DBS.DBSReader import DBSReader
 from ProdCommon.DataMgmt.DBS.DBSWriter import DBSWriter,DBSWriterObjects
 import sys
-from DBSAPI.dbsApiException import DbsException
 from DBSAPI.dbsApi import DbsApi
+from DBSAPI.dbsMigrateApi import DbsMigrateApi
+from DBSAPI.dbsApiException import *
 
 class Publisher(Actor):
     def __init__(self, cfg_params):
@@ -77,12 +78,11 @@ class Publisher(Actor):
             
         self.import_all_parents = cfg_params.get('USER.publish_with_import_all_parents',1)
         
-        ### fede import parent dataset is compulsory ###
         if ( int(self.import_all_parents) == 0 ):
             common.logger.info("WARNING: The option USER.publish_with_import_all_parents=0 has been deprecated. The import of parents is compulsory and done by default")
-        ############
-        self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',0)
-    
+        self.skipOcheck=cfg_params.get('CMSSW.publish_zero_event',1)
+        if ( int(self.skipOcheck) == 0 ):
+            common.logger.info("WARNING: The option CMSSW.publish_zero_event has been deprecated. The publication is done by default also for files with 0 events")
         self.SEName=''
         self.CMSSW_VERSION=''
         self.exit_status=''
@@ -90,39 +90,37 @@ class Publisher(Actor):
         self.problemFiles=[]  
         self.noEventsFiles=[]
         self.noLFN=[]
-        
+
     def importParentDataset(self,globalDBS, datasetpath):
         """
+           WARNING: it works only with DBS_2_0_9_patch_6
         """
-        dbsWriter = DBSWriter(self.DBSURL,level='ERROR')
-        
+
+        args={'url':globalDBS}
         try:
-            #if (self.import_all_parents==1):
+            api_reader = DbsApi(args)
+        except DbsApiException, ex:
+            msg = "%s\n" % formatEx(ex)
+            raise CrabException(msg)
+
+        args={'url':self.DBSURL}
+        try:
+            api_writer = DbsApi(args)
+        except DbsApiException, ex:
+            msg = "%s\n" % formatEx(ex)
+            raise CrabException(msg)
+
+        try:
             common.logger.info("--->>> Importing all parents level")
             start = time.time()
-            common.logger.debug("start import time: " + str(start))
-            ### to skip the ProdCommon api exception in the case of block without location
-            ### skipNoSiteError=True
-            #dbsWriter.importDataset(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True)
-            ### calling dbs api directly
-            dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath)
+            common.logger.debug("start import parents time: " + str(start))
+            for block in api_reader.listBlocks(datasetpath):
+                print "blockName = ", block['Name']
+                api_writer.dbsMigrateBlock(globalDBS,self.DBSURL,block['Name'] )
             stop = time.time()
-            common.logger.debug("stop import time: " + str(stop))
+            common.logger.debug("stop import parents time: " + str(stop))
             common.logger.info("--->>> duration of all parents import (sec): "+str(stop - start))
-            ## still not removing the code, but TODO for the final release...
-            """                                                    
-            else:
-                common.logger.info("--->>> Importing only the datasetpath " + datasetpath)
-                start = time.time()
-                #dbsWriter.importDatasetWithoutParentage(globalDBS, datasetpath, self.DBSURL, skipNoSiteError=True) 
-                ### calling dbs api directly
-                common.logger.debug("start import time: " + str(start))
-                dbsWriter.dbs.migrateDatasetContents(globalDBS, self.DBSURL, datasetpath, noParentsReadOnly = True )
-                stop = time.time()
-                common.logger.debug("stop import time: " + str(stop))
-                common.logger.info("--->>> duration of first level parent import (sec): "+str(stop - start))
-            """
-        except DBSWriterError, ex:
+        except DbsApiException, ex:
             msg = "Error importing dataset to be processed into local DBS\n"
             msg += "Source Dataset: %s\n" % datasetpath
             msg += "Source DBS: %s\n" % globalDBS
@@ -131,7 +129,7 @@ class Publisher(Actor):
             common.logger.info(str(ex))
             return 1
         return 0
-
+        
     def publishDataset(self,file):
         """
         """
@@ -219,8 +217,6 @@ class Publisher(Actor):
             self.exit_status = '1'
             msg = "Error: Problem with "+file+" file"
             raise CrabException(msg)
-        ### overwrite ProcessedDataset with user defined value
-        ### overwrite lumisections with no value
         ### skip publication for 0 events files
         filestopublish=[]
         for file in jobReport.files:
@@ -230,25 +226,23 @@ class Publisher(Actor):
             elif (file['LFN'] == ''):
                 self.noLFN.append(file['PFN'])
             else:
-                if  self.skipOcheck==0:
-                    if int(file['TotalEvents']) != 0:
-                        ### Fede to insert also run and lumi info in DBS
-                        #file.runs = {}
-                        for ds in file.dataset:
-                            ### Fede for production
-                            if (ds['PrimaryDataset'] == 'null'):
-                                ds['PrimaryDataset']=self.userprocessedData
-                        filestopublish.append(file)
-                    else:
-                        self.noEventsFiles.append(file['LFN'])
-                else:
-                    ### Fede to insert also run and lumi info in DBS
-                    #file.runs = {}
-                    for ds in file.dataset:
-                        ### Fede for production
-                        if (ds['PrimaryDataset'] == 'null'):
-                            ds['PrimaryDataset']=self.userprocessedData
-                    filestopublish.append(file)
+                #if  self.skipOcheck==0:
+                #    if int(file['TotalEvents']) != 0:
+                #        for ds in file.dataset:
+                #            ### Fede for production
+                #            if (ds['PrimaryDataset'] == 'null'):
+                #                ds['PrimaryDataset']=self.userprocessedData
+                #        filestopublish.append(file)
+                #    else:
+                #        self.noEventsFiles.append(file['LFN'])
+                #else:
+                if int(file['TotalEvents']) == 0:
+                    self.noEventsFiles.append(file['LFN'])
+                for ds in file.dataset:
+                    ### Fede for production
+                    if (ds['PrimaryDataset'] == 'null'):
+                        ds['PrimaryDataset']=self.userprocessedData
+                filestopublish.append(file)
        
         jobReport.files = filestopublish
         for file in filestopublish:
@@ -323,7 +317,7 @@ class Publisher(Actor):
                     common.logger.info("Close block error %s"%ex)
 
             if (len(self.noEventsFiles)>0):
-                common.logger.info("--->>> WARNING: "+str(len(self.noEventsFiles))+" files not published because they contain 0 events are:")
+                common.logger.info("--->>> WARNING: "+str(len(self.noEventsFiles))+" published files contain 0 events are:")
                 for lfn in self.noEventsFiles:
                     common.logger.info("------ LFN: %s"%lfn)
             if (len(self.noLFN)>0):
