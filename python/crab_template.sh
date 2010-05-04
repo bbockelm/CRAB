@@ -54,6 +54,8 @@ echo export PYTHONPATH=$PYTHONPATH >> CacheEnv.sh
 RUNTIME_AREA=`pwd`
 export RUNTIME_AREA
 
+dumpEnv
+
 echo "Today is `date`"
 echo "Job submitted on host `hostname`"
 uname -a

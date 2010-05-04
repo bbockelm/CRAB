@@ -25,7 +25,7 @@ apmonInit = False
 #apmonConf = {'cms-jobmon.cern.ch:8884': {'sys_monitoring' : 0, \
 #                                    'general_info'   : 0, \
 #                                    'job_monitoring' : 0} }
-apmonConf = {'dashboard07.cern.ch:8884': {'sys_monitoring' : 0, \
+apmonConf = {'dashboard08.cern.ch:8884': {'sys_monitoring' : 0, \
                                     'general_info'   : 0, \
                                     'job_monitoring' : 0} }
 

@@ -51,6 +51,7 @@ class Scram:
             msg = 'Did you do cmsenv from your working area ?\n'
             raise CrabException(msg)
         common.logger.debug("Scram::Scram() version is "+str(self.scramVersion))
+        common.logger.debug("Scram::Scram() arch is "+str(self.scramArch))
         common.logger.log(10-1, "Scram::Scram() area is "+self.scramArea)
         pass
 

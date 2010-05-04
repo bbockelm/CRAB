@@ -7,8 +7,8 @@ This class can also handle ranges of events as the structure is identical
 or could be subclassed renaming a function or two.
 """
 
-__revision__ = "$Id: LumiList.py,v 1.1 2010/02/05 16:06:17 ewv Exp $"
-__version__ = "$Revision: 1.1 $"
+__revision__ = "$Id: LumiList.py,v 1.1.2.1 2010/04/07 15:57:10 spiga Exp $"
+__version__ = "$Revision: 1.1.2.1 $"
 
 try: # FUTURE: Python 2.6, prior to 2.6 requires simplejson
     import json
