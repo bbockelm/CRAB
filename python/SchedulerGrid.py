@@ -1,6 +1,8 @@
 """
 Base class for all grid schedulers
 """
+__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.4 2010/04/29 09:24:46 farinafa Exp $"
+__version__ = "$Revision: 1.124.2.4 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -36,7 +38,7 @@ class SchedulerGrid(Scheduler):
         self.proxyValid=0
         self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
 
-        self.space_tocken = cfg_params.get("USER.space_tocken",None)
+        self.space_token = cfg_params.get("USER.space_token",None)
         self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
         common.logger.debug('Setting myproxy server to '+self.proxyServer)
 
@@ -63,10 +65,10 @@ class SchedulerGrid(Scheduler):
         elif int(removeBList) == 0 and blackAnaOps:
             self.EDG_ce_black_list = blackAnaOps
         if self.EDG_ce_black_list:
-            self.EDG_ce_black_list = string.split(self.EDG_ce_black_list,',')
+            self.EDG_ce_black_list = str(self.EDG_ce_black_list).split(',')
 
         self.EDG_ce_white_list = cfg_params.get('GRID.ce_white_list',None)
-        if (self.EDG_ce_white_list): self.EDG_ce_white_list = string.split(self.EDG_ce_white_list,',')
+        if (self.EDG_ce_white_list): self.EDG_ce_white_list = str(self.EDG_ce_white_list).split(',')
 
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
 
@@ -270,8 +272,8 @@ class SchedulerGrid(Scheduler):
             txt += 'copy_exit_status=0\n'
             cmscp_args = ' --destination $endpoint --inputFileList $file_list'
             cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
-            if self.space_tocken:
-                cmscp_args +=' --option space_tocken=%s'%str(self.space_tocken)
+            if self.space_token:
+                cmscp_args +=' --option space_token=%s'%str(self.space_token)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
             if self.debug_wrapper==1:
@@ -329,7 +331,7 @@ class SchedulerGrid(Scheduler):
 
     def tags(self):
         task=common._db.getTask()
-        tags_tmp=string.split(task['jobType'],'"')
+        tags_tmp=str(task['jobType']).split('"')
         tags=[str(tags_tmp[1]),str(tags_tmp[3])]
         return tags
 

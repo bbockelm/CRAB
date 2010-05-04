@@ -25,6 +25,8 @@ else:
     try:
         from CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
     except:
+        from CRAB_Server_API_36X import CRAB_Server_Session as C_AS_Session 
+    except:
         from lib26x.CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
 
 class ServerCommunicator:
@@ -36,7 +38,7 @@ class ServerCommunicator:
         Open the communication with an Analysis Server by passing the server URL and the port
         """
 
-        self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/CrabServerForUsers#Server_available_for_users'
+        self.ServerTwiki = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
 
         self.asSession = C_AS_Session(serverName, serverPort)
         self.cfg_params = cfg_params
@@ -316,6 +318,7 @@ class ServerCommunicator:
 
         miniCfg['CAF.queue'] = self.cfg_params.get('CAF.queue','cmscaf1nw')
         miniCfg['CAF.resources'] = self.cfg_params.get('CAF.resource', 'cmscaf')
+        miniCfg['CAF.group'] = self.cfg_params.get('CAF.group', None)
         ## JDL requirements specific data. Scheduler dependant
         miniCfg['EDG.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
         miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
