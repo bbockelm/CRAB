@@ -164,10 +164,10 @@ class Crab:
         self.createScheduler_()
         if not self.flag_continue:
             common._db.createTask_(optsToBeSavedDB)
-        nsg=''
-        msg = ('Used properties:\n')
+        cmdOut = runCommand('uname -a')
+        msg = ('%s \nUsed properties:\n'%cmdOut)
         if isCreating and common.debugLevel < 2 :
-            msg = ('Used properties:\n')
+            msg = ('%s \nUsed properties:\n'%cmdOut)
             msg += self.UserCfgProperties(msg)
             msg += 'End of used properties.\n'
             common.logger.debug( msg)
