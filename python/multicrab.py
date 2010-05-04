@@ -217,6 +217,7 @@ class MultiCrab:
                 options[tmp]=self.cfg_params_dataset[sec][opt]
 
             # check if user_remote_dir is set in multicrab.cfg
+            # protect against no user_remote_dir
             self.user_remote_dir =self.cfg_params_dataset[sec].get("user.user_remote_dir",None)
             if not self.user_remote_dir: 
                 self.user_remote_dir = "./"

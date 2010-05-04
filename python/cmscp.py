@@ -119,7 +119,7 @@ class cmscp:
                     'srmv2':'-b -D srmv2 --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 2400 --verbose'}
 
         srmOpt={'srmv1':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
-                'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 '}
+                'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 -storagetype=permanent '}
         rfioOpt=''
 
         supported_protocol = None
@@ -336,7 +336,6 @@ class cmscp:
             for filetocopy in list_file:
                 results.update( self.updateReport(filetocopy, '-1', str(ex)))
             return results
-            #return self.updateReport('', '-1', str(ex))
 
         # create remote dir
         if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
@@ -346,20 +345,17 @@ class cmscp:
                 for filetocopy in list_file:
                     results.update( self.updateReport(filetocopy, '60316', str(ex)))
                 return results
-                #return self.updateReport('', '60316', str(ex))
             ## when the client commands are not found (wrong env or really missing)
             except MissingCommand, ex:
                 msg = "ERROR %s %s" %(str(ex), str(ex.detail))
                 for filetocopy in list_file:
                     results.update( self.updateReport(filetocopy, '10041', msg))
                 return results
-                #return self.updateReport('', '10041', msg)
             except Exception, ex:
                 msg = "ERROR %s" %(str(ex))
                 for filetocopy in list_file:
                     results.update( self.updateReport(filetocopy, '-1', msg))
                 return results
-
 
         ## prepare for real copy  ##
         try :
@@ -372,8 +368,6 @@ class cmscp:
             for filetocopy in list_file:
                 results.update( self.updateReport(filetocopy, '-1', msg))
             return results
-            #return self.updateReport('', '-1', msg)
-            
 
         results = {}
         ## loop over the complete list of files
@@ -540,7 +534,7 @@ class cmscp:
         ErCode = '0'
         msg = ''
 
-        if  self.params['option'].find('space_token')>0: 
+        if  self.params['option'].find('space_token')>=0: 
             space_token=self.params['option'].split('=')[1] 
             if protocol == 'srmv2': option = '%s -space_token=%s'%(option,space_token)
             if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_token)
@@ -686,10 +680,16 @@ class cmscp:
                 txt += 'export SE='+se+'\n'
 
                 txt += 'export endpoint='+self.params['destination']+'\n'
+<<<<<<< cmscp.py
                 ######################
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']
                 ######################    
+=======
+                
+                if dict['erCode'] != '0':
+                    cmscp_exit_status = dict['erCode']
+>>>>>>> 1.68.2.4
             else:
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 cmscp_exit_status = dict['erCode']
