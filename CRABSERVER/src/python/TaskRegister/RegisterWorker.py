@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.36 2010/02/24 17:16:12 farinafa Exp $"
-__version__ = "$Revision: 1.36 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.33.2.2 2010/04/20 08:49:44 farinafa Exp $"
+__version__ = "$Revision: 1.33.2.2 $"
 
 import string
 import sys, os

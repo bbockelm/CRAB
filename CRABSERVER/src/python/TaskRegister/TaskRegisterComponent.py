@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.21 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.21 2009/12/03 13:56:56 farinafa Exp $"
+__version__ = "$Revision: 1.21.2.1 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.21.2.1 2010/02/16 11:21:15 spiga Exp $"
 
 import os
 import pickle
