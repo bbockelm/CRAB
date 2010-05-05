@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.101 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.101 2010/04/26 08:29:00 farinafa Exp $"
+__version__ = "$Revision: 1.100.2.1 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.100.2.1 2010/04/26 14:42:25 farinafa Exp $"
 
 import os, pickle, time
 
