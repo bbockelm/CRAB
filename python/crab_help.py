@@ -285,69 +285,67 @@ Most CRAB commands behave approximately the same with the ARC scheduler, with on
 
 =head1 COMMANDS
 
-=over 4
-
-=item B<-create>
+=head2 B<-create>
 
 Create the jobs: from version 1_3_0 it is only possible to create all jobs.
 The maximum number of jobs depends on dataset and splitting directives. This set of identical jobs accessing the same dataset are defined as a task.
 This command create a directory with default name is I<crab_0_date_time> (can be changed via ui_working_dir parameter, see below). Inside this directory it is placed whatever is needed to submit your jobs. Also the output of your jobs (once finished) will be place there (see after). Do not cancel by hand this directory: rather use -clean (see).
 See also I<-continue>.
 
-=item B<-submit [range]>
+=head2 B<-submit [range]>
 
 Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. The default is all.
 If 'n' is passed as an argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted.
 This option may be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default) to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
 
-=item B<-continue [dir] | -c [dir]>
+=head2 B<-continue [dir] | -c [dir]>
 
 Apply the action on the task stored in directory [dir]. If the task directory is the standard one (crab_0_date_time), the most recent in time is assumed. Any other directory must be specified.
 Basically all commands (except -create) need -continue, so it is automatically assumed. Of course, the standard task directory is used in this case.
 
-=item B<-status [v|verbose]>
+=head2 B<-status [v|verbose]>
 
 Check the status of the jobs, in all states. With the server, the full status, including  application and wrapper exit codes, is available as soon as the jobs end. In StandAlone mode it is necessary to retrieve (-get) the job output first. With B<v|verbose> some more information is displayed.
 
-=item B<-getoutput|-get [range]>
+=head2 B<-getoutput|-get [range]>
 
 Retrieve the output declared by the user via the output sandbox. By default the output will be put in task working dir under I<res> subdirectory. This can be changed via config parameters. B<Be extra sure that you have enough free space>. From version 2_3_x, the available free space is checked in advance. See I<range> below for syntax.
 
-=item B<-publish>
+=head2 B<-publish>
 
 Publish user output in a local DBS instance after the retrieval of output. By default publish uses the dbs_url_for_publication specified in the crab.cfg file, otherwise you can supply it as an argument of this option.
 Warnings about publication:
 
 CRAB publishes only EDM files (in the FJR they are written in the tag <File>)
 
-By default the publication of files containing 0 events is desabled. If you want to enable it you have to set the parameter [CMSSW].publish_zero_event=1 in crab.cfg.
+By default the publication of files containing 0 events is desabled. If you want to enable it you have to set the parameter [USER].publish_zero_event=1 in crab.cfg.
 
 CRAB publishes in the same USER dataset more EDM files if they are produced by a job and written in the tag <File> of FJR.
 
 It is not possible for the user to select only one file to publish, nor to publish two files in two different USER datasets.
 
 
-=item B<-checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug]>
+=head2 B<-checkPublication [-USER.dbs_url_for_publication=dbs_url -USER.dataset_to_check=datasetpath -debug]>
 
 Check if a dataset is published in a DBS. This option is automaticaly called at the end of the publication step, but it can be also used as a standalone command. By default it reads the parameters (USER.dbs_url_for_publication and USER.dataset_to_check) in your crab.cfg. You can overwrite the defaults in crab.cfg by passing these parameters as option. Using the -debug option, you will get detailed info about the files of published blocks.
 
-=item B<-resubmit [range]>
+=head2 B<-resubmit [range]>
 
 Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
 
-=item B<-forceResubmit [range]>
+=head2 B<-forceResubmit [range]>
 
 iSame as -resubmit but without any check about the actual status of the job: please use with caution, you can have problem if both the original job and the resubmitted ones actually run and tries to write the output ona a SE. This command is meant to be used if the killing is not possible or not working but you know that the job failed or will. See I<range> below for syntax.
 
-=item B<-extend>
+=head2 B<-extend>
 
 Create new jobs for an existing task, checking if new blocks are published for the given dataset.
 
-=item B<-kill [range]>
+=head2 B<-kill [range]>
 
 Kill (cancel) jobs which have been submitted to the scheduler. A range B<must> be used in all cases, no default value is set.
 
-=item B<-copyData [range -dest_se=the official SE name or -dest_endpoint=the complete endpoint of the remote SE]>
+=head2 B<-copyData [range -dest_se=the official SE name or -dest_endpoint=the complete endpoint of the remote SE]>
 
 Option that can be used only if your output have been previously copied by CRAB on a remote SE.
 By default the copyData copies your output from the remote SE locally on the current CRAB working directory (under res). Otherwise you can copy the output from the remote SE to another one, specifying either -dest_se=<the remote SE official name> or -dest_endpoint=<the complete endpoint of remote SE>. If dest_se is used, CRAB finds the correct path where the output can be stored.
@@ -357,74 +355,69 @@ Example: crab -copyData  --> output copied to crab_working_dir/res directory
          crab -copyData -dest_endpoint=srm://<se_name>:8443/xxx/yyyy/zzzz --> output copied to the se <se_name> under
          /xxx/yyyy/zzzz directory.
 
-=item B<-renewCredential >
+=head2 B<-renewCredential >
 
 If using the server modality, this command allows to delegate a valid credential (proxy/token) to the server associated with the task.
 
-=item B<-match|-testJdl [range]>
+=head2 B<-match|-testJdl [range]>
 
 Check if the job can find compatible resources. It is equivalent of doing I<edg-job-list-match> on edg.
 
-=item B<-printId [range]>
+=head2 B<-printId [range]>
 
 Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id. If [range] is "full", the the SID of all the jobs are printed, also in the case of submission with server.
 
-=item B<-createJdl [range]>
+=head2 B<-createJdl [range]>
 
 Collect the full Job Description in a file located under share directory. The file base name is File- .
 
-=item B<-postMortem [range]>
+=head2 B<-postMortem [range]>
 
 Try to collect more information of the job from the scheduler point of view.
 
-=item B<-list [range]>
+=head2 B<-list [range]>
 
 Dump technical information about jobs: for developers only.
 
-=item B<-report>
+=head2 B<-report>
 
 Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the dataset path, a summary of the status of the jobs, and so on. A summary file of the runs and luminosity sections processed is written to res/. In principle -report should generate all the info needed for an analysis. Work in progress.
 
-=item B<-clean [dir]>
+=head2 B<-clean [dir]>
 
 Clean up (i.e. erase) the task working directory after a check whether there are still running jobs. In case, you are notified and asked to kill them or retrieve their output. B<Warning> this will possibly delete also the output produced by the task (if any)!
 
-=item B<-cleanCache>
+=head2 B<-cleanCache>
 
 Clean up (i.e. erase) the SiteDb and CRAB cache content.
 
-=item B<-validateCfg [fname]>
+
+=head2 B<-validateCfg [fname]>
 
 Parse the ParameterSet using the framework\'s Python API in order to perform a sanity check of the CMSSW configuration file.
 
-=item B<-help [format] | -h [format]>
+=head2 B<-help [format] | -h [format]>
 
 This help. It can be produced in three different I<format>: I<man> (default), I<tex> and I<html>.
 
-=item B<-v>
+=head2 B<-v>
 
 Print the version and exit.
 
-=item B<range>
+=head2 B<range>
 
 The range to be used in many of the above commands has the following syntax. It is a comma separated list of jobs ranges, each of which may be a job number, or a job range of the form first-last.
 Example: 1,3-5,8 = {1,3,4,5,8}
 
-=back
+=head1 OPTIONS
 
-=head1 OPTION
-
-=over 4
-
-=item B<-cfg [file]>
+=head2 B<-cfg [file]>
 
 Configuration file name. Default is B<crab.cfg>.
 
-=item B<-debug [level]>
+=head2 B<-debug [level]>
 
 Set the debug level: high number for high verbosity.
-
-=back
 
 =head1 CONFIGURATION PARAMETERS
 
@@ -432,233 +425,235 @@ All the parameter describe in this section can be defined in the CRAB configurat
 The parameters passed to CRAB at the creation step are stored, so they cannot be changed by changing the original crab.cfg . On the other hand the task is protected from any accidental change. If you want to change any parameters, this require the creation of a new task.
 Mandatory parameters are flagged with a *.
 
-B<[CRAB]>
+=head2 B<[CRAB]>
 
-=over 4
-
-=item B<jobtype *>
+=head3 B<jobtype *>
 
 The type of the job to be executed: I<cmssw> jobtypes are supported
-
-=item B<scheduler *>
 
 The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk submission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future.  In addition, there's an I<arc> scheduler to be used with the NorduGrid ARC middleware.
 From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
 
-=item B<use_server>
+=head3 B<use_server>
 
 To use the server for job handling (recommended) 0=no (default), 1=true. The server to be used will be found automatically from a list of available ones: it can also be specified explicitly by using I<server_name> (see below)
 
-=item B<server_name>
+=head3 B<server_name>
 
 To use the CRAB-server support it is needed to fill this key with server name as <Server_DOMAIN> (e.g. cnaf,fnal). If this is set, I<use_server> is set to true automatically.
 If I<server_name=None> crab works in standalone way, same as using I<use_server=0> and no I<server_name>.
 The server available to users can be found from CRAB web page.
 
-=back
+=head2 B<[CMSSW]>
 
-B<[CMSSW]>
-
-=over 4
-
-=item B<datasetpath *>
+=head3 B<datasetpath *>
 
 The path of the processed or analysis dataset as defined in DBS. It comes with the format I</PrimaryDataset/DataTier/Process[/OptionalADS]>. If no input is needed I<None> must be specified. When running on an analysis dataset, the job splitting must be specified by luminosity block rather than event. Analysis datasets are only treated accurately on a lumi-by-lumi level with CMSSW 3_1_x and later.
 
-=item B<runselection *>
+=head3 B<runselection *>
 
 Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
 
-=item B<use_parent *>
+=head3 B<use_parent>
 
 Within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
 
-=item B<publish_zero_event>
+=head3 B<publish_zero_event>
 
 To force zero event files publication specify I<publish_zero_event> = 1
-
-=item B<pset *>
+=head3 B<pset *>
 
 The python ParameterSet to be used.
 
-=item B<pycfg_params *>
+=head3 B<pycfg_params *>
 
 These parameters are passed to the python config file, as explained in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideAboutPythonConfigFile#Passing_Command_Line_Arguments_T
 
-=item B<lumi_mask *>
+=head3 B<lumi_mask>
 
-Default is I<none>. The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below.
+The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below.
 
-=item I<Of the following five parameter exactly two must be used and one cannot mix lumi and event settings.>
+=head3 B<split by event>
 
-=item B<total_number_of_events *>
+=over 4
 
-No default. The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>.
+=item B<NOTE: Exactly two must be used of the three parameters: total_number_of_events, events_per_job, number_of_jobs.> Otherwise CRAB will complain.
 
-=item B<events_per_job*>
+=back
 
-No default. The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
+=head4 B<total_number_of_events *>
 
-=item B<total_number_of_lumis *>
+The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>.
 
-No default. The number of luminosity sections to be processed. To access all available lumis, use I<-1>. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to split jobs by lumi section.
+=head4 B<events_per_job*>
 
-=item B<lumis_per_job*>
+The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
 
-No default. The number of luminosity blocks to be accessed by each job. This option is required when using analysis datasets or lumi_mask and optional otherwise. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
+=head3 B<split by lumi>
 
-=item B<number_of_jobs *>
+=over 4
 
-No default. Define the number of jobs to be run for the task. The number of events or lumis for each job is computed taking into account the total number of events/lumis required as well as the granularity of EventCollections. Can be used also with No input.
+=item B<NOTE: Exactly two must be used of the three parameters: total_number_of_lumis, lumis_per_job, number_of_jobs.> Otherwise CRAB will complain.
 
-=item B<split_by_run *>
+=back
+
+
+=head4 B<total_number_of_lumis *>
+
+The number of luminosity blocks to be processed. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to run on an analysis dataset.
+
+=head4 B<lumis_per_job*>
+
+The number of luminosity blocks to be accessed by each job. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
+
+=head3 B<number_of_jobs *>
+
+Define the number of jobs to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+
+=head3 B<split_by_run>
 
 To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.
 
-=item B<output_file *>
+=head3 B<output_file *>
 
-The output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can use I<ignore_edm_output=1>.
+The output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can user I<ignore_edm_output=1>.
 
-=item B<skip_TFileService_output>
+=head3 B<skip_TFileService_output>
 
 Force CRAB to skip the inclusion of file produced by TFileService to list of output files. Default is I<0>, namely the file is included.
 
-=item B<get_edm_output>
+=head3 B<get_edm_output>
 
 Force CRAB to add the EDM output file, as defined in PSET in PoolOutputModule (if any) to be added to the list of output files. Default is 0 (== no inclusion)
 
-=item B<increment_seeds>
+=head3 B<increment_seeds>
 
-Default is I<none>. Specifies a comma separated list of seeds to increment from job to job. The initial value is taken
+Specifies a comma separated list of seeds to increment from job to job. The initial value is taken
 from the CMSSW config file. I<increment_seeds=sourceSeed,g4SimHits> will set sourceSeed=11,12,13 and g4SimHits=21,22,23 on
 subsequent jobs if the values of the two seeds are 10 and 20 in the CMSSW config file.
 
 See also I<preserve_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
 
-=item B<preserve_seeds>
+=head3 B<preserve_seeds>
 
-Default is I<none>. Specifies a comma separated list of seeds to which CRAB will not change from their values in the user
+Specifies a comma separated list of seeds to which CRAB will not change from their values in the user
 CMSSW config file. I<preserve_seeds=sourceSeed,g4SimHits> will leave the Pythia and GEANT seeds the same for every job.
 
 See also I<increment_seeds>. Seeds not listed in I<increment_seeds> or I<preserve_seeds> are randomly set for each job.
 
-=item B<first_lumi>
+=head3 B<first_lumi>
 
-Default is I<1>. Relevant only for Monte Carlo production. The first job will generate events with this lumi block number, subsequent jobs will
+Relevant only for Monte Carlo production for which it defaults to 1. The first job will generate events with this lumi block number, subsequent jobs will
 increment the lumi block number. Setting this number to 0 (not recommend) means CMSSW will not be able to read multiple such files as they
 will all have the same run, lumi and event numbers. This check in CMSSW can be bypassed by setting
 I<process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')> in the input source, should you need to
 read files produced without setting first_run (in old versions of CRAB) or first_lumi.
 
-=item B<generator>
+=head3 B<generator>
 
-Default is I<pythia>. Name of the generator your MC job is using. Some generators require CRAB to skip events, others do not.
+Name of the generator your MC job is using. Some generators require CRAB to skip events, others do not.
 Possible values are pythia (default), comphep, lhe, and madgraph. This will skip events in your generator input file.
 
-=item B<executable>
+=head3 B<executable>
 
 The name of the executable to be run on remote WN. The default is cmsrun. The executable is either to be found on the release area of the WN, or has been built on user working area on the UI and is (automatically) shipped to WN. If you want to run a script (which might internally call I<cmsrun>, use B<USER.script_exe> instead.
 
-=item I<DBS and DLS parameters:>
+=head3 I<DBS and DLS parameters:>
 
-=item B<dbs_url>
+=head3 B<dbs_url>
 
 The URL of the DBS query page. For expert only.
 
-=item B<show_prod>
+=head3 B<show_prod>
 
 To enable CRAB to show data hosted on Tier1s sites specify I<show_prod> = 1. By default those data are masked.
 
-=item B<subscribed>
+=head3 B<subscribed>
 
 By setting the flag I<subscribed> = 1 only the replicas that are subscribed to its site are considered.The default is to return all replicas. The intended use of this flag is to avoid sending jobs to sites based on data that is being moved or deleted (and thus not subscribed).
 
-=item B<no_block_boundary>
+=head3 B<no_block_boundary>
 
 To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1.
 
-=back
+=head2 B<[USER]>
 
-B<[USER]>
-
-=over 4
-
-=item B<additional_input_files>
+=head3 B<additional_input_files>
 
 Any additional input file you want to ship to WN: comma separated list. IMPORTANT NOTE: they will be placed in the WN working dir, and not in ${CMS_SEARCH_PATH}. Specific files required by CMSSW application must be placed in the local data directory, which will be automatically shipped by CRAB itself. You do not need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
 
-=item B<script_exe>
+=head3 B<script_exe>
 
 A user script that will be run on WN (instead of default cmsrun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.py will be placed in the working directory, with name CMSSW.py . The user must ensure that a job report named crab_fjr.xml will be written. This can be guaranteed by passing the arguments "-j crab_fjr.xml" to cmsRun in the script. The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.
 
-=item B<script_arguments>
+=head3 B<script_arguments>
 
 Any arguments you want to pass to the B<USER.script_exe>:  comma separated list.
 
-=item B<ui_working_dir>
+=head3 B<ui_working_dir>
 
 Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if e.g. the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well.
 
-=item B<thresholdLevel>
+=head3 B<thresholdLevel>
 
 This has to be a value between 0 and 100, that indicates the percentage of task completeness (jobs in a ended state are complete, even if failed). The server will notify the user by e-mail (look at the field: B<eMail>) when the task will reach the specified threshold. Works just when using the server.
 
-=item B<eMail>
+=head3 B<eMail>
 
 The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sent when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just when using the server.
 
-=item B<client>
+=head3 B<client>
 
 Specify the client that can be used to interact with the server in B<CRAB.server_name>. The default is the value in the server configuration.
 
-=item B<return_data *>
+=head3 B<return_data *>
 
 The output produced by the executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accommodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
 
-=item B<outputdir>
+=head3 B<outputdir>
 
 To be used together with I<return_data>. Directory on user interface where to store the output. Full path is mandatory, "~/" is not allowed: the default location of returned output is ui_working_dir/res .
 
-=item B<logdir>
+=head3 B<logdir>
 
 To be used together with I<return_data>. Directory on user interface where to store the standard output and error. Full path is mandatory, "~/" is not allowed: the default location of returned output is ui_working_dir/res .
 
-=item B<copy_data *>
+=head3 B<copy_data *>
 
 The output (only that produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recommended in case of large output.
 
-=item B<storage_element>
+=head3 B<storage_element>
 
 To be used with <copy_data>=1
 If you want to copy the output of your analysis in a official CMS Tier2 or Tier3, you have to write the CMS Site Name of the site, as written in the SiteDB https://cmsweb.cern.ch/sitedb/reports/showReport?reportid=se_cmsname_map.ini (i.e T2_IT_legnaro). You have also to specify the <remote_dir>(see below)
 
 If you want to copy the output in a not_official_CMS remote site you have to specify the complete storage element name (i.e se.xxx.infn.it).You have also to specify the <storage_path> and the <storage_port> if you do not use the default one(see below).
 
-=item B<user_remote_dir>
+=head3 B<user_remote_dir>
 
 To be used with <copy_data>=1 and <storage_element> official CMS sites.
 This is the directory or tree of directories where your output will be stored. This directory will be created under the mountpoint ( which will be discover by CRAB if an official CMS storage Element has been used, or taken from the crab.cfg as specified by the user). B<NOTE> This part of the path will be used as logical file name of your files in the case of publication without using an official CMS storage Element. Generally it should start with "/store".
 
-=item B<storage_path>
+=head3 B<storage_path>
 
 To be used with <copy_data>=1 and <storage_element> not official CMS sites.
 This is the full path of the Storage Element writeable by all, the mountpoint of SE (i.e /srm/managerv2?SFN=/pnfs/se.xxx.infn.it/yyy/zzz/)
 
 
-=item B<storage_pool>
+=head3 B<storage_pool>
 
 If you are using CAF scheduler, you can specify the storage pool where to write your output.
 The default is cmscafuser. If you do not want to use the default, you can overwrite it specifing None
 
-=item B<storage_port>
+=head3 B<storage_port>
 
 To choose the storage port specify I<storage_port> = N (default is 8443) .
 
-=item B<local_stage_out *>
+=head3 B<local_stage_out *>
 
 This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1
 
-=item B<publish_data*>
+=head3 B<publish_data*>
 
 To be used with <copy_data>=1
 To publish your produced output in a local istance of DBS set publish_data = 1
@@ -666,155 +661,145 @@ All the details about how to use this functionality are written in https://twiki
 N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data.
 2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data.
 
-=item B<publish_data_name>
+=head3 B<publish_data_name>
 
 You produced output will be published in your local DBS with dataset name <primarydataset>/<publish_data_name>/USER
 
-=item B<dbs_url_for_publication>
+=head3 B<dbs_url_for_publication>
 
 Specify the URL of your local DBS istance where CRAB has to publish the output files
 
 
-=item B<srm_version>
+=head3 B<srm_version>
 
 To choose the srm version specify I<srm_version> =  (srmv1 or srmv2).
 
-=item B<xml_report>
+=head3 B<xml_report>
 
 To be used to switch off the screen report during the status query, enabling the db serialization in a file. Specifying I<xml_report> = FileName CRAB will serialize the DB into CRAB_WORKING_DIR/share/FileName.
 
-=item B<usenamespace>
+=head3 B<usenamespace>
 
 To use the automate namespace definition (perfomed by CRAB) it is possible to set I<usenamespace>=1. The same policy used for the stage out in case of data publication will be applied.
 
-=item B<debug_wrapper>
+=head3 B<debug_wrapper>
 
 To enable the higer verbose level on wrapper specify I<debug_wrapper> = 1. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
 
-=item B<deep_debug>
+=head3 B<deep_debug>
 
 To be used in case of unexpected job crash when the sdtout and stderr files are lost. Submitting again the same jobs specifying I<deep_debug> = 1 these files will be reported back. NOTE: it works only on standalone mode for debugging purpose.
 
-=item B<dontCheckSpaceLeft>
+=head3 B<dontCheckSpaceLeft>
 
 Set it to 1 to skip the check of free space left on your working directory before attempting to get the output back. Default is 0 (=False)
 
-=item B<check_user_remote_dir>
+=head3 B<check_user_remote_dir>
 
 To avoid stage out failures CRAB checks the remote location content at the creation time. By setting I<check_user_remote_dir>=0  crab will skip the check.
 
-=back
+=head2 B<[GRID]>
 
-B<[GRID]>
-
-=over 4
-
-=item B<RB>
+=head3 B<RB>
 
 Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actually identical, being a collection of all WMSes available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
 You can use any other RB which is available, if you provide the proper configuration files. E.g., for gLite WMS XYZ, you should provide I<glite.conf.CMS_XYZ>. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
 Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
 
-=item B<proxy_server>
+=head3 B<proxy_server>
 
 The proxy server to which you delegate the responsibility to renew your proxy once expired. The default is I<myproxy.cern.ch> : change only if you B<really> know what you are doing.
 
-=item B<role>
+=head3 B<role>
 
 The role to be set in the VOMS. See VOMS documentation for more info.
 
-=item B<group>
+=head3 B<group>
 
 The group to be set in the VOMS, See VOMS documentation for more info.
 
-=item B<dont_check_proxy>
+=head3 B<dont_check_proxy>
 
 If you do not want CRAB to check your proxy. The creation of the proxy (with proper length), its delegation to a myproxyserver is your responsibility.
 
-=item B<dont_check_myproxy>
+=head3 B<dont_check_myproxy>
 
 If you want to to switch off only the proxy renewal set I<dont_check_myproxy>=1. The proxy delegation to a myproxyserver is your responsibility.
 
-=item B<requirements>
+=head3 B<requirements>
 
 Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set.
 
-=item B<additional_jdl_parameters:>
+=head3 B<additional_jdl_parameters:>
 
 Any other parameters you want to add to jdl file:semicolon separated list, each
-item B<must> be complete, including the closing ";".
+head3 B<must> be complete, including the closing ";".
 
-=item B<wms_service>
+=head3 B<wms_service>
 
 With this field it is also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
 
-=item B<max_cpu_time>
+=head3 B<max_cpu_time>
 
 Maximum CPU time needed to finish one job. It will be used to select a suitable queue on the CE. Time in minutes.
 
-=item B<max_wall_clock_time>
+=head3 B<max_wall_clock_time>
 
 Same as previous, but with real time, and not CPU one.
 
-=item B<ce_black_list>
+=head3 B<ce_black_list>
 
 All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
-=item B<ce_white_list>
+=head3 B<ce_white_list>
 
 Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
-=item B<se_black_list>
+=head3 B<se_black_list>
 
 All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
-=item B<se_white_list>
+=head3 B<se_white_list>
 
 Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
-=item B<remove_default_blacklist>
+=head3 B<remove_default_blacklist>
 
 CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1.
 
-=item B<virtual_organization>
+=head3 B<virtual_organization>
 
 You do not want to change this: it is cms!
 
-=item B<retry_count>
+=head3 B<retry_count>
 
 Number of time the Grid will try to resubmit your job in case of Grid related problem.
 
-=item B<shallow_retry_count>
+=head3 B<shallow_retry_count>
 
 Number of time shallow resubmission the Grid will try: resubmissions are tried B<only> if the job aborted B<before> start. So you are guaranteed that your jobs run strictly once.
 
-=item B<maxtarballsize>
+=head3 B<maxtarballsize>
 
 Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actual limit is that on the RB input sandbox. Default is 9.5 Mb (sandbox limit is 10 Mb)
 
-=item B<skipwmsauth>
+=head3 B<skipwmsauth>
 
 Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problmes  will disappear. It is needed working on gLite UI outside of CERN.
 
-=back
+=head2 B<[LSF]> or B<[CAF]> or B<[PBS]> or B<[SGE]> 
 
-B<[LSF]> or B<[CAF]> or B<[PBS]> or B<[SGE]> 
-
-=over 4
-
-=item B<queue>
+=head3 B<queue>
 
 The LSF/PBS queue you want to use: if none, the default one will be used. For CAF, the proper queue will be automatically selected.
 
-=item B<resource>
+=head3 B<resource>
 
 The resources to be used within a LSF/PBS queue. Again, for CAF, the right one is selected.
 
-=item B<group>
+=head3 B<group>
 
 The physics GROUP which the user belong to ( it is for example PHYS_SUSY etc...). By specifying that the LSF accounting and fair share per sub-group is done properly.
-
-=back
 
 =head1 FILES
 
