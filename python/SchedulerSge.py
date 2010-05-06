@@ -105,8 +105,7 @@ class SchedulerSge(SchedulerLocal) :
             sched_param= ''
             if (self.queue):
                 sched_param += '-q '+self.queue +' '
-            if (self.res): sched_param += self.res +' '
-        
+            if (self.res): sched_param += '-l '+self.res +' '
 
         pass
 
