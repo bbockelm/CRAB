@@ -235,7 +235,7 @@ class Scheduler :
             raise Exception(str(ex))
 
         try:
-            remoteList = action.dirContent(self.protocolOpt[protocol])
+            remoteList = action.dirContent(opt=self.protocolOpt[protocol])
         except Exception, e:
             common.logger.debug(traceback.format_exc())
             raise CrabException("Failure while checking remote dir: "+str(e)) 
