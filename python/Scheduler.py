@@ -46,6 +46,12 @@ class Scheduler :
                               'SGE'      : 'srmv2', \
                               'ARC'      : 'srmv2'
                             }
+
+        self.protocolOpt = { 'rfio' : '', \
+                             'srmv2' : '' ,  \
+                             'srm-lcg' : '-b -D srmv2' 
+                            }
+
         return
 
     def name(self):
@@ -229,7 +235,7 @@ class Scheduler :
             raise Exception(str(ex))
 
         try:
-            remoteList = action.dirContent(opt="-b -D srmv2")
+            remoteList = action.dirContent(opt=self.protocolOpt[protocol])
         except Exception, e:
             common.logger.debug(traceback.format_exc())
             raise CrabException("Failure while checking remote dir: "+str(e)) 
