@@ -30,6 +30,7 @@ class cmscp:
         self.debug = 0
         self.local_stage = 0
         self.params.update( args )
+        self.subprocesstimeout = {'copy': None, 'exists': None, 'delete': None, 'size': None}
 
         return
 
@@ -111,12 +112,19 @@ class cmscp:
         if self.debug: 
             print 'setProtocol() :\n'
             print '\tmiddleware =  %s utils \n'%middleware
-        
+
+        ## timeout needed for subprocess command of SEAPI
+        ## they should be a bit higher then the corresponding passed by command line  
+        self.subprocesstimeout['copy']   = 2500
+        self.subprocesstimeout['exists'] = 600
+        self.subprocesstimeout['delete'] = 600
+        self.subprocesstimeout['size']   = 600
+
         lcgOpt={'srmv1':'-b -D srmv1  -t 2400 --verbose',
                 'srmv2':'-b -D srmv2  -t 2400 --verbose'}
         if self.checkLcgUtils() >= 17:
-            lcgOpt={'srmv1':'-b -D srmv1 --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 2400 --verbose',
-                    'srmv2':'-b -D srmv2 --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 2400 --verbose'}
+            lcgOpt={'srmv1':'-b -D srmv1 --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose',
+                    'srmv2':'-b -D srmv2 --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose'}
 
         srmOpt={'srmv1':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
                 'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 -storagetype=permanent '}
@@ -446,7 +454,7 @@ class cmscp:
         f_tocopy=filetocopy
         if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
-            checkSource = sbi_source.checkExists( f_tocopy , opt=option )
+            checkSource = sbi_source.checkExists( f_tocopy , opt=option, tout = self.subprocesstimeout['exists'] )
             if self.debug : print '\tCheck for local file %s exist succeded \n'%f_tocopy  
         except OperationException, ex:
             msg  ='ERROR: problems checkig if source file %s exist'%filetocopy
@@ -481,7 +489,7 @@ class cmscp:
         f_tocopy=filetocopy
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
         try:
-            check = sbi_dest.checkExists( f_tocopy, opt=option )
+            check = sbi_dest.checkExists( f_tocopy, opt=option, tout = self.subprocesstimeout['exists'] )
             if self.debug : print '\tCheck for remote file %s exist succeded \n'%f_tocopy  
         except OperationException, ex:
             msg  = 'ERROR: problems checkig if file %s already exist'%filetocopy
@@ -539,7 +547,7 @@ class cmscp:
             if protocol == 'srmv2': option = '%s -space_token=%s'%(option,space_token)
             if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_token)
         try:
-            sbi.copy( source_file , dest_file , opt = option)
+            sbi.copy( source_file , dest_file , opt = option, tout = self.subprocesstimeout['copy'])
         except TransferException, ex:
             msg  = "Problem copying %s file" % filetocopy
             msg += str(ex)
@@ -580,11 +588,20 @@ class cmscp:
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 dbgmsg += '\t'+str(ex.output)+'\n'
                 print dbgmsg
+        except SEAPITimeout, ex:
+            ErCode = '60317'
+            msg  = "Problem copying %s file" % filetocopy
+            msg += str(ex)
+            if self.debug :
+                dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+                dbgmsg += '\t'+str(ex.output)+'\n'
+                print dbgmsg
+ 
         if ErCode == '0' and protocol.find('srmv') == 0:
             remote_file_size = -1 
             local_file_size = os.path.getsize( source_file ) 
             try:
-                remote_file_size = sbi_dest.getSize( dest_file, opt=option )
+                remote_file_size = sbi_dest.getSize( dest_file, opt=option, tout = self.subprocesstimeout['size'] )
                 if self.debug : print '\t Check of remote size succeded for file %s\n'%dest_file
             except TransferException, ex:
                 msg  = "Problem checking the size of %s file" % filetocopy
@@ -620,7 +637,7 @@ class cmscp:
         f_tocopy=filetocopy
         if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy)
         try:
-            sbi_dest.delete( f_tocopy, opt=option )
+            sbi_dest.delete( f_tocopy, opt=option, tout = self.subprocesstimeout['delete'] )
             if self.debug : '\t deletion of file %s succeeded\n'%str(filetocopy)
         except OperationException, ex:
             msg  ='ERROR: problems removing partially staged file %s'%filetocopy
@@ -680,16 +697,9 @@ class cmscp:
                 txt += 'export SE='+se+'\n'
 
                 txt += 'export endpoint='+self.params['destination']+'\n'
-<<<<<<< cmscp.py
-                ######################
-                if dict['erCode'] != '0':
-                    cmscp_exit_status = dict['erCode']
-                ######################    
-=======
                 
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']
->>>>>>> 1.68.2.4
             else:
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 cmscp_exit_status = dict['erCode']
