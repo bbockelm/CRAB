@@ -26,7 +26,15 @@ class CredentialRenew(Actor):
         # FIXME With MyProxy delegation this part is completely overlapped with the method manageDelegation
         # in SubmitServer. We should to maintain just one version of the method in a common part  
 
-        myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
+        try:
+            myproxyserver = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/").config("myproxy_server.conf")
+            if myproxyserver is None:
+                raise CrabException("myproxy_server.conf retrieved but empty")
+        except Exception, e:
+            common.logger.info("Problem setting myproxy server endpoint: using myproxy.cern.ch")
+            common.logger.debug(e)
+            myproxyserver = 'myproxy.cern.ch'
+
         configAPI = {'credential' : self.credentialType, \
                      'myProxySvr' : myproxyserver,\
                      'serverDN'   : self.server_dn,\

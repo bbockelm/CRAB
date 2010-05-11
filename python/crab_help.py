@@ -706,10 +706,6 @@ Which RB you want to use instead of the default one, as defined in the configura
 You can use any other RB which is available, if you provide the proper configuration files. E.g., for gLite WMS XYZ, you should provide I<glite.conf.CMS_XYZ>. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
 Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
 
-=head3 B<proxy_server>
-
-The proxy server to which you delegate the responsibility to renew your proxy once expired. The default is I<myproxy.cern.ch> : change only if you B<really> know what you are doing.
-
 =head3 B<role>
 
 The role to be set in the VOMS. See VOMS documentation for more info.

@@ -37,48 +37,7 @@ class SchedulerSge(SchedulerLocal) :
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
 
-        self.return_data = cfg_params.get('USER.return_data', 0)
-        self.copy_data   = cfg_params.get("USER.copy_data", 0)
-
-        if ( int(self.return_data) == 0 and int(self.copy_data) == 0 ):
-            msg = 'Error: return_data and copy_data cannot be set both to 0\n'
-            msg = msg + 'Please modify your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if ( int(self.return_data) == 1 and int(self.copy_data) == 1 ):
-            msg = 'Error: return_data and copy_data cannot be set both to 1\n'
-            msg = msg + 'Please modify your crab.cfg file\n'
-            raise CrabException(msg)
-
-        if ( int(self.copy_data) == 0 and int(self.publish_data) == 1 ):
-            msg = 'Warning: publish_data = 1 must be used with copy_data = 1\n'
-            msg = msg + 'Please modify copy_data value in your crab.cfg file\n'
-            common.logger.info(msg)
-            raise CrabException(msg)
-
-        if int(self.copy_data) == 1:
-            self.SE = cfg_params.get('USER.storage_element', None)
-            if not self.SE:
-                msg = "Error. The [USER] section has no 'storage_element'"
-                common.logger.info(msg)
-                raise CrabException(msg)
-
-            self.proxyValid = 0
-            self.dontCheckProxy = int(cfg_params.get("GRID.dont_check_proxy",0))
-            self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
-            common.logger.debug('Setting myproxy server to ' + self.proxyServer)
-
-            self.group = cfg_params.get("GRID.group", None)
-            self.role  = cfg_params.get("GRID.role", None)
-            self.VO    = cfg_params.get('GRID.virtual_organization', 'cms')
-
-            self.checkProxy()
-
-        self.role = None
-
         self.pool = cfg_params.get('USER.storage_pool',None)
-#        self.cpu = cfg_params.get('USER.cpu',172800)
-#        self.vmem = cfg_params.get('USER.vmem',2)
         return
 
     def envUniqueID(self):
@@ -147,10 +106,7 @@ class SchedulerSge(SchedulerLocal) :
     def listMatch(self, dest, full):
         """
         """
-        #if len(dest)!=0:
         sites = [self.blackWhiteListParser.cleanForBlackWhiteList(dest,'list')]
-        #else:
-        #    sites = [str(getLocalDomain(self))]
         return sites
 
     def wsCopyOutput(self):

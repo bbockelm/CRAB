@@ -278,6 +278,15 @@ class ServerCommunicator:
         else:
             common.logger.info("WARNING: Skipping default black list!")
 
+        try:
+            myproxyserver = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/").config("myproxy_server.conf")
+            if myproxyserver is None:
+                raise CrabException("myproxy_server.conf retrieved but empty")
+        except Exception, e:
+            common.logger.info("Problem setting myproxy server endpoint: using myproxy.cern.ch")
+            common.logger.debug(e)
+            myproxyserver = 'myproxy.cern.ch'
+
         # create a mini-cfg to be transfered to the server
         miniCfg = {}
 
@@ -322,7 +331,7 @@ class ServerCommunicator:
         ## JDL requirements specific data. Scheduler dependant
         miniCfg['EDG.max_wall_time'] = self.cfg_params.get('GRID.max_wall_clock_time', None)
         miniCfg['EDG.max_cpu_time'] = self.cfg_params.get('GRID.max_cpu_time', '130')
-        miniCfg['proxyServer'] = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
+        miniCfg['proxyServer'] = myproxyserver 
         miniCfg['VO'] = self.cfg_params.get('GRID.virtual_organization', 'cms')
         miniCfg['EDG_retry_count'] = self.cfg_params.get('GRID.retry_count',0)
         miniCfg['EDG_shallow_retry_count'] = self.cfg_params.get('GRID.shallow_retry_count',-1)

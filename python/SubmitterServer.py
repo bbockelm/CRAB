@@ -15,6 +15,8 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 from ProdCommon.Storage.SEAPI.Exceptions import *
 from ProdCommon.Credential.CredentialAPI import CredentialAPI
 
+from Downloader import Downloader
+
 class SubmitterServer( Submitter ):
     def __init__(self, cfg_params, parsed_range, val):
         self.srvCfg = {}
@@ -73,7 +75,7 @@ class SubmitterServer( Submitter ):
             stop = time.time()
             common.logger.debug("Submission Time: "+str(stop - start))
             #wmbs
-            if self.type ==0 :msg = 'Total of %d jobs submitted'%len(self.submitRange) 
+            if self.type == 0 : msg = 'Total of %d jobs submitted'%len(self.submitRange) 
             else: msg='Request submitted to the server.'
             common.logger.info(msg)
             
@@ -237,7 +239,15 @@ class SubmitterServer( Submitter ):
         """
         common.logger.info("Registering credential to the server : %s"%self.server_name)
 
-        myproxyserver = self.cfg_params.get('GRID.proxy_server', 'myproxy.cern.ch')
+        try:
+            myproxyserver = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/").config("myproxy_server.conf")
+            if myproxyserver is None:
+                raise CrabException("myproxy_server.conf retrieved but empty")
+        except Exception, e:
+            common.logger.info("Problem setting myproxy server endpoint: using myproxy.cern.ch")
+            common.logger.debug(e)
+            myproxyserver = 'myproxy.cern.ch'  
+  
         configAPI = {'credential' : self.credentialType, \
                      'myProxySvr' : myproxyserver,\
                      'serverDN'   : self.server_dn,\

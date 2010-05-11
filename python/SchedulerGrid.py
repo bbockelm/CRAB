@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.124.2.4 2010/04/29 09:24:46 farinafa Exp $"
-__version__ = "$Revision: 1.124.2.4 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.128 2010/05/04 16:43:35 spiga Exp $"
+__version__ = "$Revision: 1.128 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -34,17 +34,6 @@ class SchedulerGrid(Scheduler):
         self.jobtypeName   = cfg_params.get('CRAB.jobtype','')
         self.schedulerName = cfg_params.get('CRAB.scheduler','')
         Scheduler.configure(self,cfg_params)
-
-        self.proxyValid=0
-        self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
-
-        self.space_token = cfg_params.get("USER.space_token",None)
-        self.proxyServer = cfg_params.get("GRID.proxy_server",'myproxy.cern.ch')
-        common.logger.debug('Setting myproxy server to '+self.proxyServer)
-
-        self.group = cfg_params.get("GRID.group", None)
-        self.role = cfg_params.get("GRID.role", None)
-
 
         removeBList = cfg_params.get("GRID.remove_default_blacklist", 0 )
         blackAnaOps = None
