@@ -241,6 +241,7 @@ class SubmitterServer( Submitter ):
 
         try:
             myproxyserver = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/").config("myproxy_server.conf")
+            myproxyserver = myproxyserver.strip()
             if myproxyserver is None:
                 raise CrabException("myproxy_server.conf retrieved but empty")
         except Exception, e:
