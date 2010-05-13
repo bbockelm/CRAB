@@ -73,13 +73,19 @@ class CrabJobCreatorWorker:
 
         # Changment state work
         jobObj = Job(id = task.jobs[0]["wmbsJobId"])
-        jobObj.load()
-        jobObj.changeState(status)
-        self.log.debug("Write Job parameter %s"%jobObj)
-        self.queries.execute(jobs = [jobObj])
 
-        self.log.info("CrabJobCreatorWorker update state to %s of wmbsJob \
-    %s bl_job %s task %s" %(status, task.jobs[0]["wmbsJobId"], jobId, taskId)) 
+        if jobObj.exists() == False:
+
+            self.log.info("--->>> wmbs job %s doesn't exists" %task.jobs[0]["wmbsJobId"])
+
+        else:
+ 
+            jobObj.load()
+            jobObj.changeState(status)
+            self.queries.execute(jobs = [jobObj])
+
+            self.log.info("CrabJobCreatorWorker update state to %s of wmbsJob \
+        %s bl_job %s task %s" %(status, task.jobs[0]["wmbsJobId"], jobId, taskId)) 
 
         self.log.info("CrabJobCreatorWorker finished")
         return
