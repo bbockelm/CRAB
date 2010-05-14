@@ -15,9 +15,7 @@ import string, time, os
 from crab_util import *
 from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser, \
                                                       SEBlackWhiteListParser
-
 import sys
-import sha # Good for python 2.4, replaced with hashlib in 2.5
 
 #
 #  Naming convention:
