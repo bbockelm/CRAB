@@ -260,6 +260,7 @@ class SchedulerArc(SchedulerGrid):
                     rte = re.sub("VO-cms-", "APPS/HEP/", rte)
                     rte = re.sub("_", "-", rte, 1)
                     rte = re.sub("_", ".", rte)
+                    rte = rte.upper()
                 tags.append(rte)
         return tags
 
