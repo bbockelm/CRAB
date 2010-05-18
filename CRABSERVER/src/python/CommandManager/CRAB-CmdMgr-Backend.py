@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.39 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.39 2010/03/02 16:40:08 riahi Exp $"
+__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.38 2009/11/30 02:24:34 riahi Exp $"
 
 import threading
 import os
@@ -55,20 +55,6 @@ class CRAB_AS_beckend:
         self.log.debug("wdir: %s, attempts: %s commands"%(self.wdir, self.cmdAttempts))
 
         # Get configuration
-        self.init = WMInit()
-        self.init.setLogging()
-        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
-            os.getenv('DIALECT'), os.getenv("DBSOCK"))
-
-        # CRAB_CmdMgr registration in WMCore.MsgService
-        self.myThread = threading.currentThread()
-        self.factory = WMFactory("msgService", "WMCore.MsgService."+ \
-                             self.myThread.dialect)
-        self.newMsgService = self.myThread.factory['msgService'].loadObject("MsgService")
-        self.myThread.transaction.begin()
-        self.newMsgService.registerAs("CRAB_CmdMgr")
-        self.myThread.transaction.commit()
-
         self.ms = MessageService()
         self.ms.registerAs("CRAB_CmdMgr")
         self.log.info("Front-end message service created")
@@ -382,43 +368,19 @@ class CRAB_AS_beckend:
         self.myThread = threading.currentThread()
 
         # Get configuration
-        self.init = WMInit()
-        self.init.setLogging()
-        self.init.setDatabaseConnection(os.getenv("DATABASE"), \
+        init = WMInit()
+        init.setLogging()
+        init.setDatabaseConnection(os.getenv("DATABASE"), \
             os.getenv('DIALECT'), os.getenv("DBSOCK"))
 
         self.log.info("Stopping workflow %s"%taskName)
 
         # Workflow creation
-        wf = Workflow(name = "wf_"+taskName)
+        wf = Workflow(name = "wf_"+taskName, spec=taskName+'.xml', owner = taskName.split('_')[0], task=taskName)
 
-        try:
-            self.log.info("Loading workflow with name %s" %("wf_"+taskName))
+        if wf.exists() > 0:
             wf.load()
-            self.log.info("WorkFlow loaded has Id:%s"%wf.id)
-
-        except Exception, e:
-
-            logMsg = ("Problem when loading WF for %s" \
-                      %("wf_"+taskName))
-            logMsg += str(e)
-            self.log.info( logMsg )
-            self.log.debug( traceback.format_exc() )
-            return
-
-        dataset, feeder, processing, startrun = self.getWorkflowParameterFromXml(self.wdir, taskName)
-
-        # CRAB sends a message to the WorkflowManager to remove the workflow from management
-        self.myThread.transaction.begin()
-        WFManagerdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
-                dataset + ':' + feeder + ':' + processing + ':' + startrun}
-
-        WFManagerSent = pickle.dumps(WFManagerdict)
-        msg = {'name' : 'RemoveWorkflowFromManagement', \
-                'payload' : WFManagerSent}
-        self.newMsgService.publish(msg)
-        self.myThread.transaction.commit()
-        self.newMsgService.finish()
+            wf.delete()
 
     def getWorkflowParameterFromXml(self, wdir, taskName):
         from xml.dom import minidom
