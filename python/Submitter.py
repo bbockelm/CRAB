@@ -51,7 +51,7 @@ class Submitter(Actor):
         # total jobs
         nj_list = []
         self.complete_List = common._db.nJobs('list')
-        if type==1 and len(self.complete_List) < 1 :
+        if type==1: 
             self.nj_list =[]
             if self.chosenJobsList: self.nj_list = self.chosenJobsList
             return
@@ -107,6 +107,7 @@ class Submitter(Actor):
         common.logger.debug("Submitter::run() called")
 
         start = time.time()
+
 
         self.BuildJobList()
 
