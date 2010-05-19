@@ -767,14 +767,6 @@ CRAB enforce the T1s Computing Eelements Black List. By default it is appended t
 
 You do not want to change this: it is cms!
 
-=head3 B<retry_count>
-
-Number of time the Grid will try to resubmit your job in case of Grid related problem.
-
-=head3 B<shallow_retry_count>
-
-Number of time shallow resubmission the Grid will try: resubmissions are tried B<only> if the job aborted B<before> start. So you are guaranteed that your jobs run strictly once.
-
 =head3 B<maxtarballsize>
 
 Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actual limit is that on the RB input sandbox. Default is 9.5 Mb (sandbox limit is 10 Mb)

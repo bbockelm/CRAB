@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.79 2010/04/21 08:50:52 farinafa Exp $"
-__version__ = "$Revision: 1.79 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.80 2010/04/29 10:23:06 farinafa Exp $"
+__version__ = "$Revision: 1.80 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -18,6 +18,8 @@ class SchedulerGlite(SchedulerGrid):
     def __init__(self, name="GLITE"):
         SchedulerGrid.__init__(self,name)
 
+        self.EDG_retry_count        = 0
+        self.EDG_shallow_retry_count= 0
         self.OSBsize = 55000000
 
     def configure(self,cfg_params):
