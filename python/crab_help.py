@@ -452,7 +452,7 @@ The path of the processed or analysis dataset as defined in DBS. It comes with t
 
 =head3 B<runselection *>
 
-Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 .
+Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 . Run number range will include both run XYZ1 and XYZ2. 
 
 =head3 B<use_parent>
 
