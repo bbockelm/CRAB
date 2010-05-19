@@ -4,7 +4,7 @@ import common
 class Downloader:
 
     def __init__(self, endpoint, cachepath='', cacheduration = 0.5, timeout = 20, \
-                 type = "txt/csv", logger = common.logger):
+                 type = "txt/csv", logger = None ):
         ## if not already defined set default CachePath to $HOME/.cms_crab   
         if cachepath =='':
             import os
@@ -22,7 +22,7 @@ class Downloader:
                 common.logger.info('Warning cannot create %s. Using current directory'%cachepath)
                 cachepath=os.getcwd() 
        
-        if not logger: logger = common.logger 
+        if not logger: logger = common.logger()
 
         self.wmcorecache = {}
         self.wmcorecache['logger'] = logger
