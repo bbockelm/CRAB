@@ -70,28 +70,21 @@ class StatusServer(Status):
                 common.logger.debug("Accessing URL for status fallback: %s"%xmlStatusURL)
                 reportXML = ''.join(urllib.urlopen(xmlStatusURL).readlines())
         except Exception, e:
-            warning_msg = "WARNING: The status cache is out of date. Please issue crab -status again"
+            warning_msg = "WARNING: Unable to retrieve status from server. Please issue crab -status again"
             common.logger.debug(warning_msg)
-            common.logger.debug("WARNING: Problem also with HTTP status fallback.")
             common.logger.debug( str(e) )
             common.logger.debug( traceback.format_exc() )
             return warning_msg
 
         try:
-            reportList = minidom.parseString(reportXML).getElementsByTagName('Job')
+            xmlStatus = minidom.parseString(reportXML)
+            reportList = xmlStatus.getElementsByTagName('Job')
             common._db.deserXmlStatus(reportList)
-        except ExpatError, experr:
-            warning_msg = "WARNING: The status cache is out of date. Please issue crab -status again"
+        except Exception, e:
+            warning_msg = "WARNING: Unable to extract status from XML file. Please issue crab -status again"
             common.logger.debug(warning_msg)
-            common.logger.debug("ERROR: %s"%str(experr))
-            common.logger.debug( str(experr))
-            common.logger.debug( traceback.format_exc() )
-        #    raise CrabException(str(experr))
-        except TypeError, e:
-            warning_msg = "WARNING: The status cache is out of date. Please issue crab -status again"
-            common.logger.debug(warning_msg)
-            common.logger.debug("WARNING: Problem while retrieving fresh status from the server.")
-            common.logger.debug( str(e))
+            common.logger.debug("DUMP STATUS XML: %s" str(reportXML))
+            common.logger.debug( str(e) )
             common.logger.debug( traceback.format_exc() )
             return warning_msg
 
