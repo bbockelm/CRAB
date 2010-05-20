@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.194.2.6 2010/04/27 13:38:42 farinafa Exp $"
-__version__ = "$Revision: 1.194.2.6 $"
+__revision__ = "$Id: FatWorker.py,v 1.202 2010/05/05 10:32:02 spiga Exp $"
+__version__ = "$Revision: 1.202 $"
 
 import string
 import sys, os
@@ -1028,7 +1028,9 @@ class FatWorker(Thread):
         sched_param += 'MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
         sched_param += 'VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
         sched_param += 'RetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
+        sched_param += 'DefaultNodeRetryCount = '+str(self.cfg_params['EDG_retry_count'])+';\n'
         sched_param += 'ShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
+        sched_param += 'DefaultNodeShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
         return sched_param
 
     def se_list(self, id, dest):
