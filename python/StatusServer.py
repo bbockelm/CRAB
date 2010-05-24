@@ -12,7 +12,6 @@ from Status import Status
 from xml.parsers.expat import *
 
 import zlib
-import base64
 
 class StatusServer(Status):
 
@@ -54,8 +53,7 @@ class StatusServer(Status):
         warning_msg = None
  
         try:
-            handledXML += "="*( len(handledXML)%8 )  
-            reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
+            reportXML = zlib.decompress( handledXML.decode('base64') )
         except Exception, e:
             warning_msg = "WARNING: Problem while decompressing fresh status from the server. Use HTTP fallback"
             common.logger.debug(warning_msg)

@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.38 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.38 2009/11/30 02:24:34 riahi Exp $"
+__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.41 2010/05/18 21:29:03 riahi Exp $"
 
 import threading
 import os
@@ -10,7 +10,6 @@ import getopt
 import urllib
 import pickle
 import zlib
-import base64
 from xml.dom import minidom
 
 import logging
@@ -286,9 +285,8 @@ class CRAB_AS_beckend:
         """
         if taskUniqName is None or statusType is None:
             retStatus = "Error: unrecognized [%s] of status information required for [%s]"%(str(statusType),str(taskUniqName))
-            handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
-            handledStatus += "="*( len(handledStatus)%8 )
-            return handledStatus
+            handledStatus = zlib.compress(retStatus)
+            return handledStatus.encode('base64')
 
         self.log.info("TaskStatus requested "+taskUniqName+"(%s)"%statusType)
         retStatus, prjUName_fRep = ("", "")
@@ -319,9 +317,8 @@ class CRAB_AS_beckend:
 
         # return the document
         retStatus = "".join(retStatus)
-        handledStatus = base64.urlsafe_b64encode(zlib.compress(retStatus))
-        handledStatus += "="*( len(handledStatus)%8 )
-        return handledStatus #retStatus
+        handledStatus = zlib.compress(retStatus)
+        return handledStatus.encode('base64') #retStatus
 
 
 ###############################

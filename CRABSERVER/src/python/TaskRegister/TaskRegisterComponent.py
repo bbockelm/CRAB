@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.21.2.1 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.21.2.1 2010/02/16 11:21:15 spiga Exp $"
+__version__ = "$Revision: 1.23 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.23 2010/05/05 10:38:27 spiga Exp $"
 
 import os
 import pickle
@@ -79,7 +79,11 @@ class TaskRegisterComponent:
 
         ## volatile properties
         self.wdir = self.args['ComponentDir']
-        if self.args['CacheDir']: self.wdir = self.args['CacheDir']
+        if self.args['CacheDir']: 
+            self.wdir = self.args['CacheDir']
+            if not os.path.isdir(self.wdir):
+                os.makedirs(self.wdir)
+
         self.maxThreads = int( self.args.get('maxThreads', 5) )
         self.availWorkersIds = [ "worker_%d"%mId for mId in xrange(self.maxThreads) ]
         self.workerSet = {} # thread collection
