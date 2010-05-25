@@ -23,6 +23,7 @@ class ProxyLife:
         self.proxiespath = path
         if minim < 3600*6:
             minim = 3600*6
+
         self.minimumleft = minim
         self.bossCfgDB = dBlite
         self.dictSE = dictSE
@@ -225,10 +226,9 @@ class ProxyLife:
         """
         logging.info( "Start proxy's polling...." )
 
-         
-
         from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI( credConfig )
+
         CredAPI.credObj.myproxyServer = '$MYPROXY_SERVER'
  
         mySession = BossLiteAPI("MySQL", self.bossCfgDB)
@@ -237,7 +237,14 @@ class ProxyLife:
         if os.path.exists(self.proxiespath):
 
             ## get the list of proxies
-            proxieslist = tlapi.getListProxies( mySession.bossLiteDB )
+            if credConfig['credential'] == 'Token':
+                proxieslist=[]
+                proxiesTemp = tlapi.getListTokens( mySession.bossLiteDB )
+                for proxy in proxiesTemp:
+                    if os.path.exists(proxy): proxieslist.append(proxy)
+            else:
+                proxieslist = tlapi.getListProxies( mySession.bossLiteDB )
+ 
             for proxyfull in proxieslist:
 
                 ## get the remaining proxy life time
@@ -253,8 +260,8 @@ class ProxyLife:
 
                 ## credential expired ##
                 if timeleft <= 0:
-                    logging.info( "Credential expired [%s]: %s s"% (proxyfull, str(timeleft)) )
 
+                    logging.info( "Credential expired [%s]: %s s"% (proxyfull, str(timeleft)) )
                     tasksbymail = tlapi.getTaskList(proxyfull, mySession.bossLiteDB)
                     allTasks = []
                     for mail, tasks in tasksbymail.iteritems():
@@ -266,6 +273,7 @@ class ProxyLife:
                             allTasks.append(task)
 
                     try:
+                        logging.info("Destroying proxy %s" %proxyfull) 
                         CredAPI.destroyCredential( proxyfull )
                     except Exception, ex:
                         logging.error("Problem '%s' destroying credential '%s'."%(str(ex),str(proxyfull)))
@@ -292,10 +300,13 @@ class ProxyLife:
                             pass
 
                         try:
+
                             CredAPI.renewalMyProxy(proxyfull)
                             delegatedtimeleft = CredAPI.getTimeLeft(proxyfull)
                             logging.info("Renewed credential still valid for: %s s"% str(delegatedtimeleft))
+
                         except Exception, exc:
+
                             logging.info("Problem renewing proxy : %s"% str(exc))
                             import traceback
                             logging.info( str(traceback.format_exc()) )
@@ -307,6 +318,22 @@ class ProxyLife:
                             # Sanjay fix here
                             # set again the proxy ownership for glExec
                             pass
+
+                    if credConfig['credential'] == 'Token':
+                        logging.info("Trying to renew Token [%s]"% str(proxyfull))
+
+              	        try:
+
+                            CredAPI.renewalMyToken(proxyfull)
+                            delegatedtimeleft = CredAPI.getTimeLeft(proxyfull)
+                            logging.info("Renewed credential still valid for: %s s"% str(delegatedtimeleft))
+
+                        except Exception, exc:
+
+                            logging.info("Problem renewing Token : %s"% str(exc))
+                            import traceback
+                            logging.info( str(traceback.format_exc()) )
+                            delegatedtimeleft = 0
 
                     if delegatedtimeleft <= timeleft: 
                         tasksbymail = tlapi.getTaskList(proxyfull, mySession.bossLiteDB)
