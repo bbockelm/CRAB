@@ -24,6 +24,22 @@ class TaskLifeAPI:
 
         return proxyList
 
+    def getListTokens(self, dbSession):
+        """
+        _getListTokens_
+        """
+        proxyList = []
+
+        sqlStr="SELECT distinct(proxy) FROM tt_taskInstance ;" 
+
+        tuple = dbSession.select(sqlStr)
+        if tuple != None:
+            for tupla in tuple:
+                proxyList.append(tupla[0])
+
+        return proxyList
+
+
     def getTaskList(self, proxy, dbSession):
         dictionary = {}
 
