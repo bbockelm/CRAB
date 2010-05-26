@@ -452,7 +452,7 @@ The path of the processed or analysis dataset as defined in DBS. It comes with t
 
 =head3 B<runselection *>
 
-Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 . Run number range will include both run XYZ1 and XYZ2. 
+Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 . Run number range will include both run XYZ1 and XYZ2. Combining runselection with a lumi_mask runs on the intersection of the two lists.
 
 =head3 B<use_parent>
 
@@ -471,7 +471,7 @@ These parameters are passed to the python config file, as explained in https://t
 
 =head3 B<lumi_mask>
 
-The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below.
+The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below. Combining runselection with a lumi_mask runs on the intersection of the two lists.
 
 =head3 B<split by event>
 
@@ -775,7 +775,7 @@ Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actua
 
 Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problmes  will disappear. It is needed working on gLite UI outside of CERN.
 
-=head2 B<[LSF]> or B<[CAF]> or B<[PBS]> or B<[SGE]> 
+=head2 B<[LSF]> or B<[CAF]> or B<[PBS]> or B<[SGE]>
 
 =head3 B<queue>
 
