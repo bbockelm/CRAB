@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.35 2010/03/22 15:29:42 ewv Exp $"
-__version__ = "$Revision: 1.35 $"
+__revision__ = "$Id: Splitter.py,v 1.36 2010/04/09 13:17:52 ewv Exp $"
+__version__ = "$Revision: 1.36 $"
 
 import common
 from crab_exceptions import *
@@ -62,6 +62,7 @@ class JobSplitter:
             self.total_number_of_events = 0
             self.selectTotalNumberEvents = 0
 
+        return
 
     def checkLumiSettings(self):
         """
@@ -92,6 +93,11 @@ class JobSplitter:
             self.limitTotalLumis = True
             self.totalNLumis = self.lumisPerJob * self.theNumberOfJobs
 
+        # Has the user specified runselection?
+        if (self.cfg_params.has_key('CMSSW.runselection')):
+            common.logger.info('You have specified runselection and split by lumi.')
+            common.logger.info('Good lumi list will be the intersection of runselection and lumimask or ADS (if any).')
+        return
 
     def ComputeSubBlockSites( self, blockSites ):
         """
@@ -481,7 +487,7 @@ class JobSplitter:
                 #need to check single file location
                 jobDestination.append(res['locations'])
                 count +=1
-       # prepare dict output
+        # prepare dict output
         dictOut = {}
         dictOut['params']= ['InputFiles','MaxEvents','SkipEvents']
         dictOut['args'] = list_of_lists

@@ -7,8 +7,8 @@ This class can also handle ranges of events as the structure is identical
 or could be subclassed renaming a function or two.
 """
 
-__revision__ = "$Id: LumiList.py,v 1.1.2.1 2010/04/07 15:57:10 spiga Exp $"
-__version__ = "$Revision: 1.1.2.1 $"
+__revision__ = "$Id: LumiList.py,v 1.3 2010/05/04 17:24:58 spiga Exp $"
+__version__ = "$Revision: 1.3 $"
 
 try: # FUTURE: Python 2.6, prior to 2.6 requires simplejson
     import json
@@ -42,10 +42,10 @@ class LumiList(object):
     """
 
 
-    def __init__(self, filename = None, lumis = None, runsAndLumis = None):
+    def __init__(self, filename = None, lumis = None, runsAndLumis = None, runs = None):
         """
         Constructor takes filename (JSON), a list of run/lumi pairs,
-        or a dict with run #'s as the keys and a list of lumis as the values
+        or a dict with run #'s as the keys and a list of lumis as the values, or just a list of runs
         """
         self.compactList = {}
         if filename:
@@ -75,7 +75,10 @@ class LumiList(object):
                         nRange =  len(self.compactList[runString])
                         self.compactList[runString][nRange-1][1] = lumi
                     lastLumi = lumi
-
+        if runs:
+            for run in runs:
+                runString = str(run)
+                self.compactList[runString] = [[1,0xFFFFFFF]]
 
     def filterLumis(self, lumiList):
         """
@@ -227,7 +230,7 @@ class LumiListTest(unittest.TestCase):
 
         completeList = zip([1]*150, range(1, 150)) + \
                        zip([2]*150, range(1, 150)) + \
-                       zip([3]*150, range(1, 150)) 
+                       zip([3]*150, range(1, 150))
 
         smallList    = zip([1]*50,  range(1, 10)) + zip([2]*50, range(50, 70))
         overlapList  = zip([1]*150, range(30, 40)) + \

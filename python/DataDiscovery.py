@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.42 2010/03/22 21:17:15 ewv Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.43 2010/05/04 15:49:40 spiga Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -126,6 +126,8 @@ class DataDiscovery:
         lumiList = None
         if self.lumiMask:
             lumiList = LumiList(filename=self.lumiMask)
+        if runselection:
+            runList = LumiList(runs = runselection)
 
         self.splitByRun = int(self.cfg_params.get('CMSSW.split_by_run', 0))
 
@@ -166,6 +168,8 @@ class DataDiscovery:
                 # For LumiMask, intersection of two lists.
                 if self.lumiMask:
                     self.lumis[filename] = lumiList.filterLumis(fileLumis)
+                    if runselection:
+                        self.lumis[filename] = runList.filterLumis(self.lumis[filename])
                 else:
                     self.lumis[filename] = fileLumis
                 if filename.find('.dat') < 0 :
@@ -212,7 +216,7 @@ class DataDiscovery:
         if useParent == 1: allowedRetriveValue.append('retrive_parent')
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
-            if len(runselection) <=0 :
+            if len(runselection) <=0 or self.ads or self.lumiMask:
                 if useParent==1 or self.splitByRun==1 or self.ads or self.lumiMask or self.lumiParams:
                     if self.ads:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)

@@ -7,8 +7,7 @@ class CrabLogger:
         # print 'Creating LOGGER',logging._handlers
         logging.DEBUG_VERBOSE = logging.DEBUG - 1
         logging.addLevelName(logging.DEBUG_VERBOSE,'debug_verbose')
-        logging.root.setLevel([logging.DEBUG_VERBOSE, logging.DEBUG, logging.INFO, \
-                               logging.WARNING,logging.ERROR, logging.CRITICAL])
+        logging.root.setLevel(logging.CRITICAL)
 
         self.logger = logging.getLogger("crab:")
         self.logger.setLevel(logging.DEBUG_VERBOSE)
@@ -31,7 +30,7 @@ class CrabLogger:
             ch_formatter = logging.Formatter("%(name)s  %(message)s")
             ch_level=logging.INFO
             if common.debugLevel > 0:ch_level=logging.DEBUG
-            if common.debugLevel > 2: 
+            if common.debugLevel > 2:
                 fh_level=logging.DEBUG_VERBOSE
                 ch_level=logging.DEBUG_VERBOSE
 
