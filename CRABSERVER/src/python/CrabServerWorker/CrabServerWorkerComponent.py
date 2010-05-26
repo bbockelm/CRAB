@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.100.2.1 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.100.2.1 2010/04/26 14:42:25 farinafa Exp $"
+__version__ = "$Revision: 1.103 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.103 2010/05/05 10:32:02 spiga Exp $"
 
 import os, pickle, time
 
@@ -119,7 +119,8 @@ class CrabServerWorkerComponent:
             self.wmcorecache['cert'] =  self.args["certPath"]   
             self.wmcorecache['key']  =  self.args["keyPath"]   
         self.servo = Service( self.wmcorecache )
-        
+        self.servo['usestalecache'] = True
+ 
         pass
 
     def startComponent(self):

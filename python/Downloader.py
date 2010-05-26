@@ -35,6 +35,7 @@ class Downloader:
         self.wmcorecache['type'] = type
         common.logger.debug("Downloading file [%s] to [%s]." %(str(self.wmcorecache['endpoint']),(str(self.wmcorecache['cachepath'])+"/"+cacheFile)))
         servo = Service( self.wmcorecache )
+        servo['usestalecache'] = True
         return servo.refreshCache( cacheFile, cacheFile, openfile=openf, verb=useVerb )
 
     def aconfig(self, fileName = "prova"):
