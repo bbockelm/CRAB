@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.43 2010/05/04 15:49:40 spiga Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.42 2010/03/22 21:17:15 ewv Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -103,6 +103,7 @@ class DataDiscovery:
         self.parent = {}          # DBS output: parents of each file
         self.lumis = {}           # DBS output: lumis in each file
         self.lumiMask = None
+        self.splitByLumi = False
 
     def fetchDBSInfo(self):
         """
@@ -130,8 +131,11 @@ class DataDiscovery:
             runList = LumiList(runs = runselection)
 
         self.splitByRun = int(self.cfg_params.get('CMSSW.split_by_run', 0))
-
         common.logger.log(10-1,"runselection is: %s"%runselection)
+
+        if not self.splitByRun:
+            self.splitByLumi = self.lumiMask or self.lumiParams or self.ads
+
         ## service API
         args = {}
         args['url']     = dbs_url
@@ -147,6 +151,18 @@ class DataDiscovery:
         api = DBSAPI.dbsApi.DbsApi(args)
         self.files = self.queryDbs(api,path=self.datasetPath,runselection=runselection,useParent=useparent)
 
+        # Check to see what the dataset is
+        pdsName = self.datasetPath.split("/")[1]
+        primDSs = api.listPrimaryDatasets(pdsName)
+        dataType = primDSs[0]['Type']
+        common.logger.debug("Datatype is %s" % dataType)
+        if dataType == 'data' and not (self.splitByRun or self.splitByLumi):
+            msg = 'Data must be split by lumi or by run. ' \
+                  'Please see crab -help for the correct settings'
+            raise  CrabException(msg)
+
+
+
         anFileBlocks = []
         if self.skipBlocks: anFileBlocks = readTXTfile(self, fileBlocks_FileName)
 
@@ -161,15 +177,17 @@ class DataDiscovery:
                 # asked retry the list of parent for the given child
                 if useparent==1:
                     parList = [x['LogicalFileName'] for x in file['ParentList']]
-                if self.ads or self.lumiMask or self.lumiParams:
+                if self.splitByLumi:
                     fileLumis = [ (x['RunNumber'], x['LumiSectionNumber'])
                                  for x in file['LumiList'] ]
                 self.parent[filename] = parList
                 # For LumiMask, intersection of two lists.
-                if self.lumiMask:
+                if self.lumiMask and runselection:
+                    self.lumis[filename] = runList.filterLumis(lumiList.filterLumis(fileLumis))
+                elif runselection:
+                    self.lumis[filename] = runList.filterLumis(fileLumis)
+                elif self.lumiMask:
                     self.lumis[filename] = lumiList.filterLumis(fileLumis)
-                    if runselection:
-                        self.lumis[filename] = runList.filterLumis(self.lumis[filename])
                 else:
                     self.lumis[filename] = fileLumis
                 if filename.find('.dat') < 0 :
@@ -216,8 +234,8 @@ class DataDiscovery:
         if useParent == 1: allowedRetriveValue.append('retrive_parent')
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
-            if len(runselection) <=0 or self.ads or self.lumiMask:
-                if useParent==1 or self.splitByRun==1 or self.ads or self.lumiMask or self.lumiParams:
+            if len(runselection) <=0 or self.splitByLumi:
+                if useParent==1 or self.splitByRun==1 or self.splitByLumi:
                     if self.ads:
                         files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
                     else :

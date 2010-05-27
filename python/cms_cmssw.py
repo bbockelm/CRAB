@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.352.4.4 2010/05/04 10:36:18 spiga Exp $"
-__version__ = "$Revision: 1.352.4.4 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.358 2010/05/04 17:06:14 spiga Exp $"
+__version__ = "$Revision: 1.358 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -289,6 +289,11 @@ class Cmssw(JobType):
                     self.conf['generator']=self.generator
             elif self.ads or self.lumiMask or self.lumiParams:
                 self.algo = 'LumiBased'
+                if splitByRun:
+                    msg = "Cannot combine split by run with lumi_mask, ADS, " \
+                          "or lumis_per_job. Use split by lumi mode instead."
+                    raise CrabException(msg)
+
             elif splitByRun ==1:
                 self.algo = 'RunBased'
             else:
