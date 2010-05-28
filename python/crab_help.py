@@ -471,13 +471,33 @@ These parameters are passed to the python config file, as explained in https://t
 
 =head3 B<lumi_mask>
 
-The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use lumi-based splitting rather than event based splitting as described below. Combining runselection with a lumi_mask runs on the intersection of the two lists.
+The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use the split by lumi settings rather than split by event as described below. Combining runselection with a lumi_mask runs on the intersection of the two lists.
 
-=head3 B<split by event>
+=head3 B<Splitting jobs by Lumi>
 
 =over 4
 
-=item B<NOTE: Exactly two must be used of the three parameters: total_number_of_events, events_per_job, number_of_jobs.> Otherwise CRAB will complain.
+=item B<NOTE: Exactly two of these three parameters must be used: total_number_of_lumis, lumis_per_job, number_of_jobs.> Split by lumi (or by run, explained below) is required for real data. Because jobs in split by lumi mode process entire rather than partial files, you will often end up with fewer jobs processing more lumis than you are expecting. Additionally, a single job cannot analyze files from multiple blocks in DBS. All job splitting parameters in split by lumi mode are "advice" to CRAB rather than determinative.
+
+=back
+
+=head4 B<total_number_of_lumis *>
+
+The number of luminosity blocks to be processed. -1 for processing a whole dataset. Your task will process this many lumis regardless of how the jobs are actually split up. If you do not specify this, the total number of lumis processed will be number_of_jobs x lumis_per_job.
+
+=head4 B<lumis_per_job *>
+
+The number of luminosity blocks to be accessed by each job. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
+
+=head4 B<number_of_jobs *>
+
+Define the number of jobs to be run for the task. This parameter is common between split by lumi and split by event modes. In split by lumi mode, the number of jobs will only approximately match this value.
+
+=head3 B<Splitting jobs by Event>
+
+=over 4
+
+=item B<NOTE: Exactly two of these three parameters must be used: total_number_of_events, events_per_job, number_of_jobs.> Otherwise CRAB will complain. Only MC data can be split by event.
 
 =back
 
@@ -489,30 +509,13 @@ The number of events to be processed. To access all available events, use I<-1>.
 
 The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
 
-=head3 B<split by lumi>
+=head4 B<number_of_jobs *>
 
-=over 4
-
-=item B<NOTE: Exactly two must be used of the three parameters: total_number_of_lumis, lumis_per_job, number_of_jobs.> Otherwise CRAB will complain.
-
-=back
-
-
-=head4 B<total_number_of_lumis *>
-
-The number of luminosity blocks to be processed. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. Two of I<total_number_of_lumis>, I<lumis_per_job>, and I<number_of_jobs> must be supplied to run on an analysis dataset.
-
-=head4 B<lumis_per_job*>
-
-The number of luminosity blocks to be accessed by each job. This option is only valid when using analysis datasets. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
-
-=head3 B<number_of_jobs *>
-
-Define the number of jobs to be run for the task. The number of event for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+Define the number of jobs to be run for the task. The number of events for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
 
 =head3 B<split_by_run>
 
-To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not yet available.
+To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not available.
 
 =head3 B<output_file *>
 
