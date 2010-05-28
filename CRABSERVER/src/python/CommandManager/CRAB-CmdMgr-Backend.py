@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.41 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.41 2010/05/18 21:29:03 riahi Exp $"
+__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.42 2010/05/24 12:31:01 farinafa Exp $"
 
 import threading
 import os
@@ -36,13 +36,15 @@ class CRAB_AS_beckend:
         # load balancing feature. Use an integer, useful for future developments
         self.args = {}
         self.args["maxCmdAttempts"] = '2'
-        self.cmdAttempts = int(self.args["maxCmdAttempts"])
-        self.args['resourceBroker'] = 'CERN'
+        self.args["maxAllowedJobRange"] = '3000' 
 
         self.ms = None
         self.jabber = None
         self.log = None
         self.initArgs()
+
+        self.cmdAttempts = int(self.args["maxCmdAttempts"])
+        self.maxAllowedRange = int(self.args["maxAllowedJobRange"])   
 
         self.args['ComponentDir'] = os.path.expandvars(self.args['ComponentDir'])
         self.wdir = self.args['ComponentDir']
@@ -159,7 +161,7 @@ class CRAB_AS_beckend:
             # ONLY to guarantee BackComp  ClientSide
             cmdToTjobs = -1
             if xmlCmd.getAttribute('TotJob')  : cmdToTjobs = xmlCmd.getAttribute('TotJob')
-            if len(eval(cmdRng, {}, {})) > 5000:
+            if len(eval(cmdRng, {}, {})) > self.maxAllowedRange:
                 self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                 return 101
             # ONLY to guarantee BackComp  ClientSide
@@ -229,7 +231,7 @@ class CRAB_AS_beckend:
             # submission part
             if cmdKind in ['submit', 'resubmit']:
                 # check for too large submissions
-                if len( eval(cmdRng, {}, {}) ) > 5000:
+                if len( eval(cmdRng, {}, {}) ) > self.maxAllowedRange:
                     self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                     return 101
                 # send submission directive

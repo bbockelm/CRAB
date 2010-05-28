@@ -110,6 +110,8 @@ componentFields = {
     'acceptableThroughput':'-1',
     'acceptableClient':'',
     'Port':'20081',
+    'maxCmdAttempts':'2',
+    'maxAllowedJobRange':'3000'
     },
 
     "TaskTracking" : {
