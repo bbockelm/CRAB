@@ -81,7 +81,7 @@ class StatusServer(Status):
         except Exception, e:
             warning_msg = "WARNING: Unable to extract status from XML file. Please issue crab -status again"
             common.logger.debug(warning_msg)
-            common.logger.debug("DUMP STATUS XML: %s" str(reportXML))
+            common.logger.debug("DUMP STATUS XML: %s"%s str(reportXML))
             common.logger.debug( str(e) )
             common.logger.debug( traceback.format_exc() )
             return warning_msg
