@@ -30,7 +30,7 @@ else:
     try:
         from lib64.CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
     except:
-        from lib64.CRAB_Server_API_36X_amd64.so import CRAB_Server_Session as C_AS_Session
+        from lib64.CRAB_Server_API_36X_amd64 import CRAB_Server_Session as C_AS_Session
 
 class ServerCommunicator:
     """
