@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 import sys, os
+try:
+    import json
+except:    
+    import simplejson as json
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
 from ProdCommon.Storage.SEAPI.Exceptions import *
@@ -17,21 +21,22 @@ class cmscp:
            $3 if needed: file name (the output file name)
            $5 remote SE (complete endpoint)
            $6 srm version
-           --lfn $LFNBaseName
+           --for_lfn $LFNBaseName
         output:
              return 0 if all ok
              return 60307 if srmcp failed
              return 60303 if file already exists in the SE
         """
 
+        #### FEDE added SE_NAME as parameters
         #set default
         self.params = {"source":'', "destination":'','destinationDir':'', "inputFileList":'', "outputFileList":'', \
-                           "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "lfn":'' }
+                           "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "for_lfn":'', "se_name":'' }
         self.debug = 0
+        #### for fallback copy
         self.local_stage = 0
         self.params.update( args )
         self.subprocesstimeout = {'copy': None, 'exists': None, 'delete': None, 'size': None}
-
         return
 
     def processOptions( self ):
@@ -60,7 +65,8 @@ class cmscp:
                 file_to_copy.append(self.params['inputFileList'])
             self.params['inputFileList'] = file_to_copy
 
-        if not self.params['lfn'] and self.local_stage == 1 : HelpOptions()
+        #if not self.params['lfn'] and self.local_stage == 1 : HelpOptions()
+        if not self.params['for_lfn'] and self.local_stage == 1 : HelpOptions()
         
         ## TO DO:
         #### add check for outFiles
@@ -77,11 +83,31 @@ class cmscp:
         # stage out from WN
         if self.params['middleware'] :
             results = self.stager(self.params['middleware'],self.params['inputFileList'])
+            self.writeJsonFile(results)
             self.finalReport(results)
         # Local interaction with SE
         else:
             results = self.copy(self.params['inputFileList'], self.params['protocol'], self.params['option'] )
+            self.writeJsonFile(results)
             return results
+            
+    def writeJsonFile( self, results ):
+        """
+        write a json file containing copy results for each file
+        """
+        if self.debug: 
+            print 'in writeJsonFile() : \n'
+            print "---->>>> in writeJsonFile results =  ", results
+        fp = open('resultCopyFile', 'w')
+        json.dump(results, fp)
+        fp.close()
+        if self.debug: 
+            print '    reading resultCopyFile : \n'
+            lp = open('resultCopyFile', "r")
+            inputDict = json.load(lp)
+            lp.close()
+            print "    inputDict = ", inputDict
+        return
 
     def checkLcgUtils( self ):
         """
@@ -147,13 +173,15 @@ class cmscp:
         return supported_protocol
 
 
-    def checkCopy (self, copy_results, len_list_files, prot, lfn='', se=''):
+    #def checkCopy (self, copy_results, len_list_files, prot, lfn='', se=''):
+    def checkCopy (self, copy_results, len_list_files, prot):
         """
         Checks the status of copy and update result dictionary
         """
+        
         list_retry = []
-        list_retry_localSE = []
         list_not_existing = []
+        list_already_existing = []
         list_ok = []
         
         if self.debug: 
@@ -166,21 +194,22 @@ class cmscp:
                 dict['reason'] = reason
             elif er_code == '60302': 
                 list_not_existing.append( file )
-            elif er_code == '10041':
+            elif er_code == '60303':
+                list_already_existing.append( file )
+            else :    
                 list_retry.append( file )
-            ## WHAT TO DO IN GENERAL FAILURE CONDITION
-            else:
-                list_retry_localSE.append( file )
                 
             if self.debug:
                 print "\t file %s \n"%file
                 print "\t dict['erCode'] %s \n"%dict['erCode']
                 print "\t dict['reason'] %s \n"%dict['reason']
                 
-            if (lfn != '') and (se != ''):
-                upDict = self.updateReport(file, er_code, dict['reason'], lfn, se)
-            else:
-                upDict = self.updateReport(file, er_code, dict['reason'])
+            #if (lfn != '') and (se != ''):
+            #    upDict = self.updateReport(file, er_code, dict['reason'], lfn, se)
+            #else:
+            #    upDict = self.updateReport(file, er_code, dict['reason'])
+            
+            upDict = self.updateReport(file, er_code, dict['reason'])
 
             copy_results.update(upDict)
         
@@ -188,11 +217,37 @@ class cmscp:
         if len(list_ok) != 0:
             msg += '\tCopy of %s succedeed with %s utils\n'%(str(list_ok),prot)
         if len(list_ok) != len_list_files :
-            msg += '\tCopy of %s failed using %s for files \n'%(str(list_retry),prot)
-            msg += '\tCopy of %s failed using %s : files not found \n'%(str(list_not_existing),prot)
+            if len(list_retry)!=0:
+                msg += '\tCopy of %s failed using %s for files \n'%(str(list_retry),prot)
+            if len(list_not_existing)!=0:
+                msg += '\tCopy of %s failed using %s : files not found \n'%(str(list_not_existing),prot)
+            if len(list_already_existing)!=0:
+                msg += '\tCopy of %s failed using %s : files already existing\n'%(str(list_already_existing),prot)
         if self.debug : print msg
         
-        return copy_results, list_ok, list_retry, list_retry_localSE
+        return copy_results, list_ok, list_retry
+        
+    def check_for_retry_localSE (self, copy_results):
+        """
+        Checks the status of copy and create the list of file to copy to CloseSE
+        """
+        list_retry_localSE = []
+
+        if self.debug: 
+            print 'in check_for_retry_localSE() :\n'
+            print "\t results in check local = ", copy_results
+        for file, dict in copy_results.iteritems():
+            er_code = dict['erCode']
+            if er_code != '0' and  er_code != '60302' and er_code != '60308':
+                list_retry_localSE.append( file )
+                
+            if self.debug:
+                print "\t file %s \n"%file
+                print "\t dict['erCode'] %s \n"%dict['erCode']
+                print "\t dict['reason'] %s \n"%dict['reason']
+                
+        return list_retry_localSE
+
         
     def LocalCopy(self, list_retry, results):
         """
@@ -234,25 +289,35 @@ class cmscp:
         #if (str(self.params['lfn']).find("/store/") != -1):
         #    temp = str(self.params['lfn']).split("/store/")
         #    self.params['lfn']= "/store/temp/" + temp[1]
-        if (str(self.params['lfn']).find("/store/") == 0):
-            temp = str(self.params['lfn']).replace("/store/","/store/temp/",1)
-            self.params['lfn']= temp
+        if (str(self.params['for_lfn']).find("/store/") == 0):
+            temp = str(self.params['for_lfn']).replace("/store/","/store/temp/",1)
+            self.params['for_lfn']= temp
         
-        if ( self.params['lfn'][-1] != '/' ) : self.params['lfn'] = self.params['lfn'] + '/'
+        if ( self.params['for_lfn'][-1] != '/' ) : self.params['for_lfn'] = self.params['for_lfn'] + '/'
             
         file_backup=[]
         for input in self.params['inputFilesList']:
-            file = self.params['lfn'] + os.path.basename(input)
+            #file = self.params['lfn'] + os.path.basename(input)
+            file = self.params['for_lfn'] + os.path.basename(input)
             surl = tfc.matchLFN(tfc.preferredProtocol, file)
             file_backup.append(surl)
             if self.debug:
-                print '\t lfn %s \n'%self.params['lfn']
+                #print '\t lfn %s \n'%self.params['lfn']
+                print '\t for_lfn %s \n'%self.params['for_lfn']
                 print '\t file %s \n'%file
                 print '\t surl %s \n'%surl
                     
         destination=os.path.dirname(file_backup[0])
         if ( destination[-1] != '/' ) : destination = destination + '/'
         self.params['destination']=destination
+        ###########
+        
+        self.params['se_name']=seName
+        #print "######################################################"
+        #print "in local copy self.params['se_name'] = ", self.params['se_name']
+        ###print "in local copy self.params['lfn'] = ", self.params['lfn']
+        #print "in local copy self.params['for_lfn'] = ", self.params['for_lfn']
+        #print "######################################################"
             
         if self.debug:
             print "\t self.params['destination']%s \n"%self.params['destination']
@@ -265,7 +330,7 @@ class cmscp:
             if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
                 results.update(localCopy_results)
             else:
-                localCopy_results, list_ok, list_retry, list_retry_localSE = self.checkCopy(localCopy_results, len(list_files), prot, self.params['lfn'], seName)
+                localCopy_results, list_ok, list_retry = self.checkCopy(localCopy_results, len(list_files), prot)
                 results.update(localCopy_results)
                 if len(list_ok) == len(list_files) :
                     break
@@ -289,23 +354,32 @@ class cmscp:
         
         results={}
         for prot, opt in self.setProtocol( middleware ):
-            if self.debug: print '\tTrying the stage out with %s utils \n'%prot
+            if self.debug: 
+                print '\tTrying the stage out with %s utils \n'%prot
+                print '\tand options %s\n'%opt
+                
             copy_results = self.copy( list_files, prot, opt )
+            #print "in stager copy_results = ", copy_results
             if copy_results.keys() == [''] or copy_results.keys() == '' :
                 results.update(copy_results)
             else:
-                copy_results, list_ok, list_retry, list_retry_localSE = self.checkCopy(copy_results, len(list_files), prot)
+                copy_results, list_ok, list_retry = self.checkCopy(copy_results, len(list_files), prot)
                 results.update(copy_results)
                 if len(list_ok) == len(list_files) :
                     break
-                if len(list_retry): 
+                if len(list_retry):
                     list_files = list_retry
                 else: break
-                
+
         if self.local_stage:
+            #print "results before check local = ", results
+            list_retry_localSE = self.check_for_retry_localSE(results)
+            #print "results after check local = ", results
             if len(list_retry_localSE):
+                if self.debug: 
+                    print "\t list_retry_localSE %s \n"%list_retry_localSE
                 results = self.LocalCopy(list_retry_localSE, results)
-            
+
         if self.debug:
             print "\t results %s \n"%results
         return results
@@ -334,6 +408,7 @@ class cmscp:
         Make the real file copy using SE API
         """
         msg = ""
+        results = {}
         if self.debug :
             msg  = 'copy() :\n'
             msg += '\tusing %s protocol\n'%protocol
@@ -344,6 +419,11 @@ class cmscp:
             for filetocopy in list_file:
                 results.update( self.updateReport(filetocopy, '-1', str(ex)))
             return results
+            
+        prot = Destination_SE.protocol 
+        self.hostname=Destination_SE.hostname
+        #print "in copy hostname = ", self.hostname
+        #print "prot = ", prot
 
         # create remote dir
         if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
@@ -377,7 +457,8 @@ class cmscp:
                 results.update( self.updateReport(filetocopy, '-1', msg))
             return results
 
-        results = {}
+        self.hostname = Destination_SE.hostname
+        
         ## loop over the complete list of files
         for filetocopy in list_file:
             if self.debug : print '\tStart real copy for %s'%filetocopy
@@ -440,7 +521,11 @@ class cmscp:
             raise Exception(msg)
         except AlreadyExistsException, ex:
             if self.debug: print "\tThe directory already exist"
-            pass             
+            pass
+        except Exception, ex:    
+            msg = "ERROR %s %s" %(str(ex), str(ex.detail))
+            if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
+            raise Exception(msg)
         return msg
 
     def checkFileExist( self, sbi_source, sbi_dest, filetocopy, option ):
@@ -650,15 +735,25 @@ class cmscp:
 
         return 
 
-    def updateReport(self, file, erCode, reason, lfn='', se='' ):
+    #def updateReport(self, file, erCode, reason, lfn='', se='' ):
+    def updateReport(self, file, erCode, reason):
         """
         Update the final stage out infos
         """
         jobStageInfo={}
         jobStageInfo['erCode']=erCode
         jobStageInfo['reason']=reason
-        jobStageInfo['lfn']=lfn
-        jobStageInfo['se']=se
+        #if not self.params['lfn']: self.params['lfn']=''
+        if not self.params['for_lfn']: self.params['for_lfn']=''
+        if not self.params['se_name']: self.params['se_name']=''
+        if not self.hostname: self.hostname=''
+        if (erCode != '0') and (erCode != '60308'):
+           #jobStageInfo['lfn']='/copy_problem/'
+           jobStageInfo['for_lfn']='/copy_problem/'
+        else:   
+            jobStageInfo['for_lfn']=self.params['for_lfn']
+        jobStageInfo['se_name']=self.params['se_name']
+        jobStageInfo['endpoint']=self.hostname
 
         report = { file : jobStageInfo}
         return report
@@ -677,26 +772,28 @@ class cmscp:
                 reason = " ".join(reason.split("'"))
             reason="'%s'"%reason
             if file:
-                if dict['lfn']=='':
+                #if dict['lfn']=='':
+                if dict['for_lfn']=='':
                     lfn = '${LFNBaseName}'+os.path.basename(file)
                     se  = '$SE'
                     LFNBaseName = '$LFNBaseName'
                 else:
-                    lfn = dict['lfn']+os.path.basename(file)
-                    se = dict['se']
+                    #lfn = dict['lfn']+os.path.basename(file)
+                    lfn = dict['for_lfn']+os.path.basename(file)
+                    #se = dict['se']
+                    se = dict['se_name']
                     LFNBaseName = os.path.dirname(lfn)
                     if (LFNBaseName[-1] != '/'):
                         LFNBaseName = LFNBaseName + '/'
+
+                
                 #dict['lfn'] # to be implemented
                 txt += 'echo "Report for File: '+file+'"\n'
                 txt += 'echo "LFN: '+lfn+'"\n'
                 txt += 'echo "StorageElement: '+se+'"\n'
                 txt += 'echo "StageOutExitStatusReason = %s" | tee -a $RUNTIME_AREA/$repo\n'%reason
                 txt += 'echo "StageOutSE = '+se+'" >> $RUNTIME_AREA/$repo\n'
-                txt += 'export LFNBaseName='+LFNBaseName+'\n'
-                txt += 'export SE='+se+'\n'
 
-                txt += 'export endpoint='+self.params['destination']+'\n'
                 
                 if dict['erCode'] != '0':
                     cmscp_exit_status = dict['erCode']
@@ -766,7 +863,7 @@ if __name__ == '__main__' :
 
     allowedOpt = ["source=", "destination=", "inputFileList=", "outputFileList=", \
                   "protocol=","option=", "middleware=", "srm_version=", \
-                  "destinationDir=", "lfn=", "local_stage", "debug", "help"]
+                  "destinationDir=", "for_lfn=", "local_stage", "debug", "help", "se_name="]
     try:
         opts, args = getopt.getopt( sys.argv[1:], "", allowedOpt )
     except getopt.GetoptError, err:

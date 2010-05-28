@@ -1,3 +1,6 @@
+__revision__ = "$Id: CopyData.py,v 1.23.2.1 2010/02/16 16:40:56 spiga Exp $"
+__version__  = "$Revision: 1.23.2.1 $"
+
 from Actor import *
 from crab_util import *
 from crab_exceptions import *
@@ -69,6 +72,7 @@ class CopyData(Actor):
 
         to_copy = {}
         results = {}
+        tmp = ''
 
         lfn, to_copy = self.checkAvailableList()
 
@@ -82,13 +86,22 @@ class CopyData(Actor):
                 phedexCfg={'storage_element': self.dest_se}
                 stageout = PhEDExDatasvcInfo(config=phedexCfg)
                 self.endpoint = stageout.getStageoutPFN()
-                tmp = string.lstrip(lfn,'/store') + '/'
-                common.logger.log(10-1,"Source LFN = %s"%tmp)
+
+                if (str(lfn).find("/store/temp/") == 0 ):
+                    tmp = lfn.replace("/store/temp/", "/", 1)
+                elif (str(lfn).find("/store/") == 0 ):
+                    tmp = lfn.replace("/store/", "/", 1)
+                else:
+                    tmp = lfn
+
+                common.logger.debug("Source LFN = %s"%lfn)
+                common.logger.debug("tmp LFN = %s"%tmp)
                 self.endpoint = self.endpoint + tmp
             else:
                 self.endpoint = self.dest_endpoint
 
             common.logger.info("Copy file to remote SE.\n\tEndpoint: %s"%self.endpoint)
+            
             dest = {"destination": self.endpoint}
 
         for key in to_copy.keys():
@@ -97,16 +110,11 @@ class CopyData(Actor):
                         "inputFileList": to_copy[key],
                         "protocol": self.protocol
                       }
-            #if (self.protocol == "srmv2"):
-            #    cmscpConfig.setdefault("option", " -retry_timeout=480000 -retry_num=3 ")
-            #elif (self.protocol == "srm-lcg"):
-            #    cmscpConfig.setdefault("option", " -b -D srmv2  -t 2400 --verbose ")
-            #elif (self.protocol == "rfio"):
-            #    pass
             cmscpConfig.update(dest)
-            common.logger.log(10-1,"Source = %s"%key)
-            common.logger.log(10-1,"Files = %s"%to_copy[key])
-            common.logger.log(10-1,"CmscpConfig = %s"%str(cmscpConfig))
+
+            common.logger.debug("Source = %s"%key)
+            common.logger.debug("Files = %s"%to_copy[key])
+            common.logger.debug("CmscpConfig = %s"%str(cmscpConfig))
 
             results.update(self.performCopy(cmscpConfig))
         return results
@@ -119,20 +127,35 @@ class CopyData(Actor):
         '''
 
         common.logger.debug("CopyData in checkAvailableList() ")
-        # loop over jobs
 
         task=common._db.getTask(self.nj_list)
         allMatch={}
         to_copy={}
         lfn=''
+        
+        # loop over jobs
         for job in task.jobs:
             InfileList = ''
             if ( job.runningJob['state'] == 'Cleared' and ( job.runningJob[ 'wrapperReturnCode'] == 0 or job.runningJob[ 'wrapperReturnCode'] == 60308)):
                 id_job = job['jobId']
                 common.logger.log(10-1,"job_id = %s"%str(id_job))
-                endpoint = job.runningJob['storage']
+                endpoints = job.runningJob['storage']
+                output_files = job.runningJob['lfn']
+                for i in range(0,len(endpoints)):
+                    endpoint = endpoints[i]
+                    output_file_name = os.path.basename(output_files[i])
+                    if to_copy.has_key(endpoint):
+                        to_copy[endpoint] = to_copy[endpoint] + ',' + output_file_name
+                    else:
+                        to_copy[endpoint] = output_file_name
+                ### the lfn should be the same for every file, the only difference could be the temp dir
+                ### to test if this is ok as solution
+                lfn = os.path.dirname(output_files[0])
+
+                """   
                 output_files = job.runningJob['lfn']
                 common.logger.log(10-1,"Output_files = %s"%str(job.runningJob['lfn']))
+                
                 for file in output_files:
                     InfileList += '%s,'%os.path.basename(file)
                     lfn = os.path.dirname(file)
@@ -141,6 +164,7 @@ class CopyData(Actor):
                     to_copy[endpoint] = to_copy[endpoint] + InfileList
                 else:
                     to_copy[endpoint] = InfileList
+                """
 
             elif ( job.runningJob['state'] == 'Cleared' and job.runningJob['wrapperReturnCode'] != 0):
                 common.logger.info("Not possible copy outputs of Job # %s : Wrapper Exit Code is %s" \
@@ -153,10 +177,7 @@ class CopyData(Actor):
         if (len(to_copy) == 0) :
             raise CrabException("No files to copy")
 
-        for key in to_copy.keys():
-            to_copy[key] = to_copy[key][:-1]
         common.logger.debug(" to_copy = %s"%str(to_copy))
-
         return lfn, to_copy
 
     def performCopy(self, dict):

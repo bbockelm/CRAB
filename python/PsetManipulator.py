@@ -96,7 +96,8 @@ class PsetManipulator:
         outputFinder = PoolOutputFinder()
         for p  in self.cfg.data.endpaths.itervalues():
             p.visit(outputFinder)
-        return outputFinder.getList()
+        return outputFinder.getDict()
+        #return outputFinder.getList()
 
     def getBadFilesSetting(self):
         setting = False
@@ -111,12 +112,29 @@ class PoolOutputFinder(object):
 
     def __init__(self):
         self._poolList = []
+        self._poolDict = {}
+
     def enter(self,visitee):
         if isinstance(visitee,OutputModule) and visitee.type_() == "PoolOutputModule":
             filename=visitee.fileName.value().split(":")[-1]
             self._poolList.append(filename)
+
+            try:
+                selectEvents = visitee.SelectEvents.SelectEvents.value()
+            except AttributeError:
+                selectEvents = None
+            try:
+                dataset = visitee.dataset.filterName.value()
+            except AttributeError:
+                dataset = None
+            self._poolDict.update({filename:{'dataset':dataset, 'selectEvents':selectEvents}})
+
     def leave(self,visitee):
         pass
 
     def getList(self):
         return self._poolList
+
+    def getDict(self):
+        #### FEDE FOR MULTI ####
+        return self._poolDict

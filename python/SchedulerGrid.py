@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.130 2010/05/19 17:30:39 spiga Exp $"
-__version__ = "$Revision: 1.130 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.131 2010/05/27 20:18:50 spiga Exp $"
+__version__ = "$Revision: 1.131 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -273,7 +273,9 @@ class SchedulerGrid(Scheduler):
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
             cmscp_args = ' --destination $endpoint --inputFileList $file_list'
-            cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
+            ### FEDE FOR MULTI ### 
+            #cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
+            cmscp_args +=' --middleware $middleware --se_name $SE --for_lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             if self.space_token:
                 cmscp_args +=' --option space_token=%s'%str(self.space_token)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
@@ -288,6 +290,15 @@ class SchedulerGrid(Scheduler):
                 txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'fi\n'
                 txt += 'echo "#####################################"\n'
+            #### FEDE FOR MULTI ### 
+            txt += 'if [ -f resultCopyFile ] ;then\n'
+            txt += '    cat resultCopyFile\n'
+            txt += '    pwd\n'
+            txt += 'else\n'
+            txt += '    echo "resultCopyFile file not found"\n'
+            txt += '    StageOutExitStatus=60307\n'
+            txt += 'fi\n'
+            ################################
 
             txt += 'if [ -f cmscpReport.sh ] ;then\n'
             txt += '    cat cmscpReport.sh\n'
