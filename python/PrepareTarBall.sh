@@ -111,7 +111,7 @@ cvs co -r ${WMCOREtag} -d WMCore/                  COMP/WMCORE/src/python/WMCore
 cvs co -r ${WMCOREtag} -d WMCore/Algorithms        COMP/WMCORE/src/python/WMCore/Algorithms 
 cvs co -r ${WMCOREtag} -d WMCore/                  COMP/WMCORE/src/python/WMCore/WMException.py
 cvs co -r ${WMCOREtag} -d WMCore/Wrappers          COMP/WMCORE/src/python/WMCore/Wrappers
-cvs co -r ${WMCOREtag} -d WMQuality/Emulators      COMP/WMCORE/src/python/WMQuality/Emulators/SiteDBClient
+cvs co -r ${WMCOREtag} -d WMQuality                COMP/WMCORE/src/python/WMQuality
 
 ## Use the Head
 #cvs co  -d WMCore                   COMP/WMCORE/src/python/WMCore/__init__.py
@@ -123,7 +123,7 @@ cvs co -r ${WMCOREtag} -d WMQuality/Emulators      COMP/WMCORE/src/python/WMQual
 #cvs co  -d WMCore/Algorithms        COMP/WMCORE/src/python/WMCore/Algorithms 
 #cvs co  -d WMCore/                  COMP/WMCORE/src/python/WMCore/WMException.py
 #cvs co  -d WMCore/Wrappers          COMP/WMCORE/src/python/WMCore/Wrappers
-#cvs co  -d WMQuality/Emulators      COMP/WMCORE/src/python/WMQuality/Emulators/SiteDBClient
+#cvs co  -d WMQuality                COMP/WMCORE/src/python/WMQuality
 
 #cd ..
 ## exit from external
