@@ -27,10 +27,8 @@ if [ -z "$CMSSW_VERSION" ]; then
 else
   if [[ "$SCRAM_ARCH" =~ "32" ]]; then
     export PYTHONPATH=${CRABPYSQLITE}:${PYTHONPATH}
-    echo '333333332222222222'
   elif [[ "$SCRAM_ARCH" =~ "64" ]]; then
     export PYTHONPATH=${CRABPYSQLITE64}:${PYTHONPATH}
-    echo '66666664444444444'
   fi
   python $CRABPYTHON/crab.py $*
 fi
