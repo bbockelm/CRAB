@@ -276,7 +276,7 @@ class SubmitterServer( Submitter ):
                     common.logger.debug("Delegating Credentials to MyProxy : " +str(traceback.format_exc()))
                     raise CrabException(str(ex))
         else:
-            if not CredAPI.checkMyProxy(Time=100) 
+            if not CredAPI.checkMyProxy(Time=100): 
                 common.logger.info("Please renew the token:\n")
                 try:
                     CredAPI.ManualRenewCredential()
