@@ -31,9 +31,6 @@ class StatusServer(Status):
         upTask = common._db.getTask()  
         self.compute(upTask,display)
 
-        if warning_msg is not None:
-            common.logger.info(warning_msg)
-
     def resynchClientSide(self):
         """
         get status from the server and
@@ -51,28 +48,30 @@ class StatusServer(Status):
         reportXML = None
         useFallback = False
         warning_msg = None
- 
+        import base64
         try:
-            reportXML = zlib.decompress( handledXML.decode('base64') )
+         #   reportXML = zlib.decompress( handledXML.decode('base64') )
+            handledXML += "="*( len(handledXML)%8 )
+            reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
         except Exception, e:
             warning_msg = "WARNING: Problem while decompressing fresh status from the server. Use HTTP fallback"
             common.logger.debug(warning_msg)
             common.logger.debug( traceback.format_exc() )
             useFallback = True 
 
-        try:
-            if useFallback:
+        if useFallback:
+            try:
                 import urllib
                 xmlStatusURL  = 'http://%s:8888/visualog/'%self.server_name
                 xmlStatusURL += '?taskname=%s&logtype=Xmlstatus'%common._db.queryTask('name')
                 common.logger.debug("Accessing URL for status fallback: %s"%xmlStatusURL)
                 reportXML = ''.join(urllib.urlopen(xmlStatusURL).readlines())
-        except Exception, e:
-            warning_msg = "WARNING: Unable to retrieve status from server. Please issue crab -status again"
-            common.logger.debug(warning_msg)
-            common.logger.debug( str(e) )
-            common.logger.debug( traceback.format_exc() )
-            return warning_msg
+            except Exception, e:
+                warning_msg = "WARNING: Unable to retrieve status from server. Please issue crab -status again"
+                common.logger.info(warning_msg)
+                common.logger.debug( str(e) )
+                common.logger.debug( traceback.format_exc() )
+                return warning_msg
 
         try:
             xmlStatus = minidom.parseString(reportXML)
@@ -80,8 +79,8 @@ class StatusServer(Status):
             common._db.deserXmlStatus(reportList)
         except Exception, e:
             warning_msg = "WARNING: Unable to extract status from XML file. Please issue crab -status again"
-            common.logger.debug(warning_msg)
-            common.logger.debug("DUMP STATUS XML: %s"%s str(reportXML))
+            common.logger.info(warning_msg)
+            common.logger.debug("DUMP STATUS XML: %s"%str(reportXML))
             common.logger.debug( str(e) )
             common.logger.debug( traceback.format_exc() )
             return warning_msg
