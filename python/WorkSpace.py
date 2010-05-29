@@ -181,7 +181,7 @@ class WorkSpace:
         for k in secs.keys():
             config_file.write('['+k+']\n')
             for v in secs[k].keys():
-                config_file.write(v+'='+secs[k][v]+'\n')
+                if v!='debug': config_file.write(v+'='+secs[k][v]+'\n')
             else : config_file.write('\n')
         config_file.close()
 
