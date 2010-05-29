@@ -276,20 +276,12 @@ class SubmitterServer( Submitter ):
                     common.logger.debug("Delegating Credentials to MyProxy : " +str(traceback.format_exc()))
                     raise CrabException(str(ex))
         else:
-            # Kerberos token movement
-            try:
-                val= CredAPI.checkCredential(Time=100) 
-            except Exception, ex:
-                common.logger.debug("IO %s "% str(traceback.format_exc()))
-                raise CrabException(str(ex))
-  
-            if not val :
+            if not CredAPI.checkMyProxy(Time=100) 
                 common.logger.info("Please renew the token:\n")
                 try:
                     CredAPI.ManualRenewCredential()
                 except Exception, ex:
                     raise CrabException(str(ex))
-
             try:
                 dict = CredAPI.registerCredential()
             except Exception, err:
