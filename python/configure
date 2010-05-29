@@ -91,10 +91,11 @@ export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:\${CRABSQLITE_ROOT}/lib
 
 
 ## py2sql
-export CRABPYSQLITE=\${EXTERNALDIR}/py2-pysqlite
+export CRABPYSQLITE=\${EXTERNALDIR}/py2-pysqlite/2.4/site-packages
+export CRABPYSQLITE64=\${EXTERNALDIR}/py2-pysqlite/2.6/site-packages
 
-export PYTHON_VERSION=`python -V 2>&1 | sed -e 's/Python //' -e 's/\..\d*$//'` # drop last version digit
-export PYTHONPATH=\${CRABPYSQLITE}/\${PYTHON_VERSION}/site-packages:\$PYTHONPATH
+#export PYTHON_VERSION=`python -V 2>&1 | sed -e 's/Python //' -e 's/\..\d*$//'` # drop last version digit
+#export PYTHONPATH=\${CRABPYSQLITE}/\${PYTHON_VERSION}/site-packages:\$PYTHONPATH
 
 ## simplejson
 export CRABSIMPLEJSON=\${EXTERNALDIR}/simplejson 
@@ -159,10 +160,13 @@ setenv LD_LIBRARY_PATH \${LD_LIBRARY_PATH}:\${CRABSQLITE_ROOT}/lib:\$EXTERNALDIR
 
 
 ## py2sql
-setenv CRABPYSQLITE \${EXTERNALDIR}/py2-pysqlite
+#setenv CRABPYSQLITE \${EXTERNALDIR}/py2-pysqlite
 
-setenv PYTHON_VERSION `sh -c 'python -V 2>& 1 | sed -e "s/Python //" -e "s/\..\d*$//"'`
-setenv PYTHONPATH \${CRABPYSQLITE}/\${PYTHON_VERSION}/site-packages:\$PYTHONPATH
+setenv CRABPYSQLITE \${EXTERNALDIR}/py2-pysqlite/2.4/site-packages
+setenv CRABPYSQLITE64 \${EXTERNALDIR}/py2-pysqlite/2.6/site-packages
+
+#setenv PYTHON_VERSION `sh -c 'python -V 2>& 1 | sed -e "s/Python //" -e "s/\..\d*$//"'`
+#setenv PYTHONPATH \${CRABPYSQLITE}/\${PYTHON_VERSION}/site-packages:\$PYTHONPATH
 
 ## simplejson
 setenv CRABSIMPLEJSON \${EXTERNALDIR}/simplejson 

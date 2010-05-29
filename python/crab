@@ -12,6 +12,7 @@ else
 fi
 #echo $PYTHONPATH
 
+
 export LD_LIBRARY_PATH=${GLITE_LOCATION}/lib:${LD_LIBRARY_PATH}
 
 # to fix a problem with OSG 
@@ -24,5 +25,12 @@ if [ -z "$CMSSW_VERSION" ]; then
   echo '(see also: https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Setup_local_Environment)'
   echo ''
 else
+  if [[ "$SCRAM_ARCH" =~ "32" ]]; then
+    export PYTHONPATH=${CRABPYSQLITE}:${PYTHONPATH}
+    echo '333333332222222222'
+  elif [[ "$SCRAM_ARCH" =~ "64" ]]; then
+    export PYTHONPATH=${CRABPYSQLITE64}:${PYTHONPATH}
+    echo '66666664444444444'
+  fi
   python $CRABPYTHON/crab.py $*
 fi
