@@ -278,7 +278,7 @@ class SubmitterServer( Submitter ):
         else:
             # Kerberos token movement
             try:
-                val= CredAPI.checkCredential(Time=240) 
+                val= CredAPI.checkCredential(Time=100) 
             except Exception, ex:
                 common.logger.debug("IO %s "% str(traceback.format_exc()))
                 raise CrabException(str(ex))
