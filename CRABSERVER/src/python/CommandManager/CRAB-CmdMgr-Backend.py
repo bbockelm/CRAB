@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.42 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.42 2010/05/24 12:31:01 farinafa Exp $"
+__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.43 2010/05/28 12:55:54 farinafa Exp $"
 
 import threading
 import os
@@ -24,6 +24,8 @@ from JabberThread import JabberThread
 from WMCore.WMFactory import WMFactory
 from WMCore.WMInit import WMInit
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.Database.Transaction import Transaction
+from WMCore.Database.DBFactory import DBFactory
 
 class CRAB_AS_beckend:
     """
@@ -361,25 +363,54 @@ class CRAB_AS_beckend:
 ################################
     def stopWorkflow(self, taskName):
         """
-        Contact workflowManager component to remove the workflow from management 
+        Stop the workflow deleting it from wmbs_db
         """
 
-        self.myThread = threading.currentThread()
+        myThread = threading.currentThread()
 
         # Get configuration
-        init = WMInit()
-        init.setLogging()
-        init.setDatabaseConnection(os.getenv("DATABASE"), \
-            os.getenv('DIALECT'), os.getenv("DBSOCK"))
+        try:
 
-        self.log.info("Stopping workflow %s"%taskName)
+            init = WMInit()
+            init.setLogging()
+            init.setDatabaseConnection(os.getenv("DATABASE"), \
+                os.getenv('DIALECT'), os.getenv("DBSOCK"))
+
+        except:
+
+            self.log.info("EXCEPT COMMAND")
+            dialect = os.getenv('DIALECT')
+            options = {}
+            if dialect.lower() == 'mysql':
+                dialect = 'MySQL'
+                if os.getenv("DBSOCK") != None:
+                    options['unix_socket'] = os.getenv("DBSOCK")
+            elif dialect.lower() == 'oracle':
+                dialect = 'Oracle'
+            elif dialect.lower() == 'sqlite':
+                dialect = 'SQLite'
+
+            myThread.dialect = dialect
+            myThread.logger = logging
+            myThread.dbFactory = DBFactory(logging, os.getenv("DATABASE"), options)
+            myThread.dbi = myThread.dbFactory.connect()
+            myThread.transaction = Transaction(myThread.dbi)
+            myThread.transaction.commit()
+
 
         # Workflow creation
         wf = Workflow(name = "wf_"+taskName, spec=taskName+'.xml', owner = taskName.split('_')[0], task=taskName)
 
+
+        myThread.transaction.begin()
+
         if wf.exists() > 0:
+
             wf.load()
             wf.delete()
+
+        myThread.transaction.commit()
+
 
     def getWorkflowParameterFromXml(self, wdir, taskName):
         from xml.dom import minidom
