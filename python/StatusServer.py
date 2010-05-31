@@ -42,36 +42,23 @@ class StatusServer(Status):
         # communicator allocation
         csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
         handledXML = csCommunicator.getStatus( self.task_unique_name )
-        del csCommunicator
 
         # align back data and print
         reportXML = None
-        useFallback = False
         warning_msg = None
-        import base64
-        try:
-         #   reportXML = zlib.decompress( handledXML.decode('base64') )
-            handledXML += "="*( len(handledXML)%8 )
-            reportXML = zlib.decompress( base64.urlsafe_b64decode(handledXML) )
-        except Exception, e:
-            warning_msg = "WARNING: Problem while decompressing fresh status from the server. Use HTTP fallback"
-            common.logger.debug(warning_msg)
-            common.logger.debug( traceback.format_exc() )
-            useFallback = True 
 
-        if useFallback:
-            try:
-                import urllib
-                xmlStatusURL  = 'http://%s:8888/visualog/'%self.server_name
-                xmlStatusURL += '?taskname=%s&logtype=Xmlstatus'%common._db.queryTask('name')
-                common.logger.debug("Accessing URL for status fallback: %s"%xmlStatusURL)
-                reportXML = ''.join(urllib.urlopen(xmlStatusURL).readlines())
-            except Exception, e:
-                warning_msg = "WARNING: Unable to retrieve status from server. Please issue crab -status again"
-                common.logger.info(warning_msg)
-                common.logger.debug( str(e) )
-                common.logger.debug( traceback.format_exc() )
-                return warning_msg
+        max_get_status_tries = 5
+        for retry in xrange(max_get_status_tries):
+            reportXML, warning_msg = self.statusDecoding(handledXML)
+            if reportXML is not None and warning_msg is None:
+                break
+            common.logger.debug("Server status decoding problem. Trying again because of\n\t%s"%warning_msg)
+            handledXML = csCommunicator.getStatus( self.task_unique_name )
+
+        if warning_msg is not None:
+            warning_msg = "WARNING: Unable to decompress status from server. Please issue crab -status again"
+            common.logger.info(warning_msg)
+            return warning_msg
 
         try:
             xmlStatus = minidom.parseString(reportXML)
@@ -86,6 +73,52 @@ class StatusServer(Status):
             return warning_msg
 
         return warning_msg
+
+    def statusDecoding(self, handledXML):
+        import base64
+        import urllib
+        reportXML, warning_msg = None, None
+
+        # WS channel
+        try:
+            paddedXML = base64.urlsafe_b64decode(handledXML)
+        except Exception, e:
+            warning_msg = "WARNING: Problem while decoding base64 status. %s" % taceback.format_exc()
+
+        #padding 
+        paddedXML += "="*( len(handledXML)%4 )
+        if warning_msg is not None:
+            warning_msg = None
+            try:
+                paddedXML = base64.urlsafe_b64decode(paddedXML)
+            except Exception, e:
+                warning_msg = "WARNING: Padding fallback failed: %s" % taceback.format_exc()
+                return reportXML, warning_msg
+
+        # decompression
+        try:
+            reportXML = zlib.decompress(paddedXML)
+            warning_msg = None
+        except Exception, e:
+            reportXML = None
+            warning_msg = "WARNING: Problem while decompressing status from the server: %s. Using HTTP fallback"%str(e)
+
+        if warning_msg is None:
+            return reportXML, warning_msg
+
+        # HTTP channel 
+        try:
+            xmlStatusURL  = 'http://%s:8888/visualog/'%self.server_name
+            xmlStatusURL += '?taskname=%s&logtype=Xmlstatus'%common._db.queryTask('name')
+            common.logger.debug("Accessing URL for status fallback: %s"%xmlStatusURL)
+            reportXML = ''.join(urllib.urlopen(xmlStatusURL).readlines())
+            warning_msg = None
+        except Exception, e:
+            reportXML = None
+            warning_msg = "WARNING: Unable to retrieve status from server. Please issue crab -status again"
+            common.logger.debug(warning_msg + '\n' + traceback.format_exc() )
+
+        return reportXML, warning_msg 
 
     def showWebMon(self):
         msg  = 'You can also check jobs status at: http://%s:8888/logginfo\n'%self.server_name
