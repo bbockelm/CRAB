@@ -11,6 +11,7 @@ __version__ = "$Revision: 1.8 $"
 
 import logging
 import os
+import time
 import sha
 from xml.dom import minidom
 from IMProv.IMProvNode import IMProvNode
@@ -40,9 +41,6 @@ from CrabServerWorker.CrabWorkerAPI import CrabWorkerAPI
 
 # thread
 import threading
-
-# Subscriptions tracking
-SUBSWATCH = {}
 
 class CrabJobCreatorPoller(BaseWorkerThread):
     """
@@ -98,9 +96,9 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
         
         self.getListSubscription = WMBSdao(classname = "Subscriptions.ListIncomplete")
+        self.setFWJRAction = WMBSdao(classname = "Jobs.SetFWJRPath")
 
-
-    def taskExtension(self, jobGroups):
+    def taskExtension(self, jobGroups, spliAlgo):
         """
         Extension work
         """
@@ -180,10 +178,9 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
              for jI in jobGroups[jobGroups.index(jG)].jobs:
 
+                  #if flag run=1 get for file in job.file: run=file.run breack
                   jobCounter += 1
 
-                  if eval(self.cmdRng) and jobCounter > max(eval(self.cmdRng)):
-                      continue
   
                   tempDict["outputFiles"] = []
                   tempDict["outputFiles"].extend(['out_files_'+\
@@ -193,17 +190,25 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                          '_job'+str((jobGroups[jobGroups.index(jG)].jobs).index(jI)+1+jobNumber+groupNumber)
                   tempDict["standardError"] = 'CMSSW_'+ str((jobGroups[jobGroups.index(jG)].jobs).\
                           index(jI)+1)+'.stderr'
-                  tempDict["standardOutput"] = 'CMSSW_'+str((jobGroups[jobGroups.index(jG)].jobs).\
+                  tempDict["standardOutput"] = 'CMSSW_'+ str((jobGroups[jobGroups.index(jG)].jobs).\
                           index(jI)+1)+'.stdout'
                   tempDict["jobId"] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
                   tempDict["wmbsJobId"] = jI['id']
+
+                  self.setFWJRAction.execute(jobID = jI['id'], fwjrPath = self.config['storagePath']+self.taskToComplete['name'] + '/' + 'crab_fjr_'+\
+                         str((jobGroups[jobGroups.index(jG)].jobs).index(jI)+1+jobNumber+groupNumber)+'.xml',
+                                                conn = myThread.transaction.conn,
+                                                transaction = True)
+
+
                   tempDict['arguments'] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
                   tempDict['taskId'] =  self.taskToComplete['id']
+
+ 
                   rjAttrs[tempDict["name"]] = attrtemp
                   rjAttrs[tempDict["name"]]['jobId'] = \
                     (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
 
-                  logging.info("THE JOB DICT is %s" %tempDict)
  
                   job = Job( tempDict )
                   subn = int( job['submissionNumber'] )
@@ -270,7 +275,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
                     for inputFile in jI['input_files'].files:
                         tempArg['MaxEvents'] += inputFile['events']
-                        logging.info("increm. max event %s" %tempArg['MaxEvents'])
                         lfnFile=inputFile['lfn']
 
                         if tempArg['InputFiles']:
@@ -299,7 +303,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 tempArg = {}
 
             newgroupNumber+=len(jobGroups[jobGroups.index(jG)].jobs)
-
         # Add entry in xml file
         self.addEntry()
 
@@ -325,12 +328,8 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                 logging.info(ex)
              
         # Building cmdRng
-        logging.debug("Rng needed %s and length %s" %(self.cmdRng,len(eval(self.cmdRng))))
-
-
         if jobNumber > 0:
 
-            logging.info("Building new job rangs after %s" %jobNumber)
             tmp = [] 
             for i in eval(self.cmdRng):
 
@@ -346,6 +345,8 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             payload = self.taskToComplete['name'] +"::"+ \
               str(self.config['retries']) +"::"+ \
               str(self.cmdRng)
+
+            logging.info("Message to CW %s" %payload)
 
             # Send message 
             myThread.transaction.begin()
@@ -414,9 +415,21 @@ class CrabJobCreatorPoller(BaseWorkerThread):
             return 
 
         except Exception, ex:
+
             logging.info( str(ex) )
-            self.markTaskAsNotSubmitted( 'all' ) 
-            return
+            logging.info("General error: sleeping for a while and try again") 
+
+            try:
+
+                time.sleep(10)                
+                sbi.copy( source, dest, proxy=self.taskToComplete['user_proxy'], opt=self.copyTout)
+
+            except Exception, ex:
+
+                logging.info( str(ex) )
+                logging.info("Mark all as not submitted") 
+                self.markTaskAsNotSubmitted( 'all' ) 
+                return
 
     def markTaskAsNotSubmitted(self, cmdRng):
         """
@@ -566,7 +579,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
 
             try:
 
-                logging.info('%s will be verified' %jobName)             
+                logging.info('%s registration will be verified' %jobName)             
                 jobAlreadyRegistered = self.cwdb.existsWEJob(jobName)
        
             except Exception, e:
@@ -592,7 +605,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
 
             cmdRng_tmp.append(job['jobId'])
             logging.info('Registration for %s performed'%jobName)
-        if len(ranges) < 1: self.cmdRng=str(cmdRng_tmp)
+        if len(ranges) < 1 or self.command == "outputRetrieved" or self.command == "StopWorkflow" or self.command == "kill" or self.command == "submit": self.cmdRng=str(cmdRng_tmp)
         return 0
 
     def getSplitParam(self, subId):
@@ -642,55 +655,42 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         # Create dictionary of subscriptions that will be processd 
         for sub in pickSub:
 
-            # if subscription is found in SUBSWATCH means 
-            # that it is still processed by the last thread 
-            if sub not in SUBSWATCH:            
+            # Load the subscrition to split 
+            self.subscriptionToSplit = Subscription(id = sub)
 
-                # Load the subscrition to split 
-                subscriptionToSplit = Subscription(id = sub)
+            try:
+                self.subscriptionToSplit.load()
+                logging.info("Splitting %s" %str(self.subscriptionToSplit["split_algo"]))
+                    
+            except Exception, e:
+                logMsg = ("Subscription %s can't be loaded" %str(sub))
+                logMsg += str(e)
+                logging.info( logMsg )
+                logging.info( traceback.format_exc() )
+                continue 
 
-                try:
-                    subscriptionToSplit.load()
-                except Exception, e:
-                    logMsg = ("Subscription %s can't be loaded" %str(sub))
-                    logMsg += str(e)
-                    logging.info( logMsg )
-                    logging.info( traceback.format_exc() )
-                    continue 
+            # SplitterFactory object 
+            splitter = SplitterFactory()
+            jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.subscriptionToSplit)
+            try:
 
-                # SplitterFactory object 
-                splitter = SplitterFactory()
-                jobFactory = splitter(package = "WMCore.WMBS",
-                                  subscription = subscriptionToSplit)
-                try:
+                splitPerJob, splittingValue = self.getSplitParam( sub )
+                kwargs = { splitPerJob : int(splittingValue) }
+                self.jobGroups = jobFactory( **kwargs )
 
-                    splitPerJob, splittingValue = self.getSplitParam( sub )
-                    kwargs = { splitPerJob : int(splittingValue) }
-                    jobGroups = jobFactory( **kwargs )
+            except Exception, e:
+                logMsg = ("Problem when splitting %s" \
+                          %str(sub))              
+                logMsg += str(e) 
+                logging.info( logMsg )
+                logging.info( traceback.format_exc() )
+                continue 
 
-                except Exception, e:
-                    logMsg = ("Problem when splitting %s" \
-                              %str(sub))              
-                    logMsg += str(e) 
-                    logging.info( logMsg )
-                    logging.info( traceback.format_exc() )
-                    continue 
+            if len(self.jobGroups)==0 or len(self.jobGroups[0].jobs)==0:
+                continue 
 
-                # Number of job 0 or number of job > limit- exit and try again next time 
-                if len(jobGroups)==0 or len(jobGroups[0].jobs)==0 or len(jobGroups[0].jobs) >= 1000:
-                    continue 
-
-                # Add jobgroup to the list of subscriptions to process  
-                SUBSWATCH[sub] = jobGroups
-
-        # Loop on all subscription recently found 
-        for subId in SUBSWATCH.keys(): 
-
-            #Try more than one time to split subscription 
-            #if self.taskExtension(SUBSWATCH[subId]) == 0:
-            self.taskExtension(SUBSWATCH[subId]) 
-            logging.info("WORK succeeds to END")
-            del SUBSWATCH[subId]
+            self.taskExtension(self.jobGroups, self.subscriptionToSplit["split_algo"]) 
 
         logging.info('databases work ends')
     
