@@ -61,31 +61,46 @@ class CrabJobCreatorWorker:
         self.log.info("--->>> jobId = " + str(jobId))
 
 
-        #task = self.bliteSession.load(taskId, jobId)
         task = self.blDBsession.load(taskId, jobId)
 
         self.log.info("--->>> wmbs job id %s" %task.jobs[0]["wmbsJobId"])
+
+        wrapperReturnCode=str(task.jobs[0].runningJob['wrapperReturnCode'])
+        applicationReturnCode=str(task.jobs[0].runningJob['applicationReturnCode'])
+
+        self.log.info("--->>> wrapperReturnCode = " + str(wrapperReturnCode))
+        self.log.info("--->>> applicationReturnCode = " + str(applicationReturnCode))
+
+        # Consider jobs with wrapperReturnCode=0 and applicationReturnCode=0 as success jobs 
+        if int(wrapperReturnCode) == 0 or int(applicationReturnCode) == 0:
+ 
+            status = 'success'
+
+        else:
+
+            status = 'jobfailed' 
 
         if not task.jobs[0]["wmbsJobId"] :
             self.log.info("--->>> jobId %s doesn't have wmbsJobId %s" \
             %(str(jobId),task.jobs[0]["wmbsJobId"])) 
             return
 
+
         # Changment state work
         jobObj = Job(id = task.jobs[0]["wmbsJobId"])
 
         if jobObj.exists() == False:
 
-            self.log.info("--->>> wmbs job %s doesn't exists" %task.jobs[0]["wmbsJobId"])
+            self.log.info("--->>> wmbs job id %s doesn't exists" %task.jobs[0]["wmbsJobId"])
 
         else:
- 
+
             jobObj.load()
             jobObj.changeState(status)
             self.queries.execute(jobs = [jobObj])
 
             self.log.info("CrabJobCreatorWorker update state to %s of wmbsJob \
-        %s bl_job %s task %s" %(status, task.jobs[0]["wmbsJobId"], jobId, taskId)) 
+        %s bl_job %s task %s" %(status, task.jobs[0]["wmbsJobId"], jobId, taskId))
 
         self.log.info("CrabJobCreatorWorker finished")
         return
