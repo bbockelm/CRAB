@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.33.2.2 2010/04/20 08:49:44 farinafa Exp $"
-__version__ = "$Revision: 1.33.2.2 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.38 2010/05/05 10:38:27 spiga Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import string
 import sys, os
@@ -166,6 +166,9 @@ class RegisterWorker(Thread):
             logging.debug( traceback.format_exc() )
             return 
 
+        #If the parentTask is given, it will be the input of this workflow
+        if self.parentTask:
+            self.dataset=self.parentTask
 
         # CRAB sends a message to the FeederManager, with a dataset to watch
 
@@ -237,7 +240,7 @@ class RegisterWorker(Thread):
             self.feeder = self.cfg_params.get('feeder','Feeder')
             self.processing = self.cfg_params.get('processing','bulk')
             self.startRun = self.cfg_params.get('startrun','None')
-
+            self.parentTask = self.cfg_params.get('parent_task','')
             self.splitAlgo = self.cfg_params.get('splitting_algorithm','FileBased')
 
             self.dataset = self.cfg_params['CMSSW.datasetpath']
