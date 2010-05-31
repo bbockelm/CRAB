@@ -350,13 +350,14 @@ class ServerCommunicator:
         miniCfg['CMSSW_version'] = self.scram.getSWVersion()
 #WMBS
         miniCfg['feeder'] = self.cfg_params.get('WMBS.feeder', 'Feeder')
+        miniCfg['parent_task'] = self.cfg_params.get('WMBS.parent_task', '')
 
         miniCfg['processing'] = self.cfg_params.get('WMBS.processing', 'bulk')
         miniCfg['startrun'] = self.cfg_params.get('WMBS.startrun', 'None')
 
         miniCfg['splitting_algorithm'] = self.cfg_params.get('WMBS.splitting_algorithm','FileBased')
         miniCfg['split_per_job'] = self.cfg_params.get('WMBS.split_per_job','files_per_job')
-        miniCfg['split_value'] = self.cfg_params.get('WMBS.split_value',1)
+        miniCfg['split_value'] = self.cfg_params.get('WMBS.split_value',1000000)
 
         miniCfg['CMSSW_version'] = self.scram.getSWVersion()
 
