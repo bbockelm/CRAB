@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.43 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.43 2010/05/28 12:55:54 farinafa Exp $"
+__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.44 2010/05/30 20:53:39 riahi Exp $"
 
 import threading
 import os
@@ -378,7 +378,6 @@ class CRAB_AS_beckend:
 
         except:
 
-            self.log.info("EXCEPT COMMAND")
             dialect = os.getenv('DIALECT')
             options = {}
             if dialect.lower() == 'mysql':
