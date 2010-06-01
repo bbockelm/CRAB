@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.165 2010/05/05 10:38:27 spiga Exp $"
-__version__ = "$Revision: 1.165 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.166 2010/06/01 15:52:45 mcinquil Exp $"
+__version__ = "$Revision: 1.166 $"
 
 import os
 import time
@@ -692,9 +692,9 @@ class TaskTrackingComponent:
         dictionaryReport =  {}
         for job in xrange(1, int(totjobs)+1):
             if job in listsubmit:
-                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'CS', '', 'N', 'SubmissionReq'])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'CS', '', 'N', 'SubmissionReq', '', ''])
             else:
-                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', ' ', 'Created'])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', ' ', 'Created', '', ''])
         self.prepareReport( taskName, "", "", "", 0, 0, dictionaryReport, int(totjobs), 0, taskstatus )
 
     def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
