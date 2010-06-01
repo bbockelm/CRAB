@@ -629,7 +629,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
             cfgParams = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
 
             splitPerJob = cfgParams.get('split_per_job','files_per_job')
-            splitValue = cfgParams.get('split_value',1)
+            splitValue = cfgParams.get('split_value',1000000)
 
         except Exception, e:
             status = 6
@@ -648,7 +648,7 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
         """
         logging.info("starting DB Pool now...")
         myThread = threading.currentThread()
-        pickSub = self.getListToSplit.execute()
+        pickSub = self.getListSubscription.execute()
 
         logging.info('I found these new subscriptions %s to split'%pickSub)
   
