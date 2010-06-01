@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.162.2.1 2010/02/19 16:41:56 farinafa Exp $"
-__version__ = "$Revision: 1.162.2.1 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.165 2010/05/05 10:38:27 spiga Exp $"
+__version__ = "$Revision: 1.165 $"
 
 import os
 import time
@@ -297,7 +297,7 @@ class TaskTrackingComponent:
         # registration failed ##HERE 
         if event == "RegisterWorkerComponent:RegisterWorkerFailed":
             if payload != None or payload != "" or len(payload) > 0:
-                taskName = pload.split("::")[0]
+                taskName = payload.split("::")[0]
                 logBuf = self.__log(logBuf, "RegisterWorkerFailed: %s" % taskName)
                 self.updateProxyName(taskName)
                 self.updateTaskStatus(taskName, self.taskState[2])
