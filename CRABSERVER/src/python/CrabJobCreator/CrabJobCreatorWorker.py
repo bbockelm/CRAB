@@ -6,7 +6,7 @@ event from GetOutput component
 """
 __revision__ = "$Id: CrabJobCreatorWorker.py, \
   v 1.1 2009/10/13 15:23:06 riahi Exp $"
-__version__ = "$Revision: 1.1 $"
+__version__ = "$Revision: 1.3 $"
 
 import time
 import threading
@@ -98,6 +98,8 @@ class CrabJobCreatorWorker:
             jobObj.load()
             jobObj.changeState(status)
             self.queries.execute(jobs = [jobObj])
+            jobObj["outcome"] = status
+            jobObj.save()
 
             self.log.info("CrabJobCreatorWorker update state to %s of wmbsJob \
         %s bl_job %s task %s" %(status, task.jobs[0]["wmbsJobId"], jobId, taskId))
