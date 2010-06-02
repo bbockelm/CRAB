@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.37 2010/05/26 19:46:12 ewv Exp $"
-__version__ = "$Revision: 1.37 $"
+__revision__ = "$Id: Splitter.py,v 1.38 2010/05/27 18:54:45 ewv Exp $"
+__version__ = "$Revision: 1.38 $"
 
 import common
 from crab_exceptions import *
@@ -32,6 +32,10 @@ class JobSplitter:
         self.seWhiteList = cfg_params.get('GRID.se_white_list',[])
         seBlackList = cfg_params.get('GRID.se_black_list',[])
         self.blackWhiteListParser = SEBlackWhiteListParser(self.seWhiteList, seBlackList, common.logger())
+
+        ## check if has been asked for a non default file to store/read analyzed fileBlocks
+        defaultName = common.work_space.shareDir()+'AnalyzedBlocks.txt'
+        self.fileBlocks_FileName = os.path.abspath(self.cfg_params.get('CMSSW.fileblocks_file',defaultName))
 
 
     def checkUserSettings(self):
@@ -379,6 +383,7 @@ class JobSplitter:
         allBlock = []
 
         blockCounter = 0
+        saveFblocks =''
         for block in blocks:
             if block in jobsOfBlock.keys() :
                 blockCounter += 1
@@ -389,6 +394,9 @@ class JobSplitter:
                 if len(sites) == 0:
                     noSiteBlock.append( spanRanges(jobsOfBlock[block]) )
                     bloskNoSite.append( blockCounter )
+                else:
+                    saveFblocks += str(block)+'\n'
+        writeTXTfile(self, self.fileBlocks_FileName , saveFblocks)
 
         common.logger.info(screenOutput)
         if len(noSiteBlock) > 0 and len(bloskNoSite) > 0:
@@ -475,6 +483,7 @@ class JobSplitter:
         #loop over all runs
         list_of_lists = []
         jobDestination = []
+        list_of_blocks = []
         count = 0
         for jobGroup in  jobfactory():
             if count <  self.theNumberOfJobs:
@@ -486,6 +495,7 @@ class JobSplitter:
                 list_of_lists.append([fullString,str(-1),str(0)])
                 #need to check single file location
                 jobDestination.append(res['locations'])
+                list_of_blocks.append(res['block'])  
                 count +=1
         # prepare dict output
         dictOut = {}
@@ -493,6 +503,8 @@ class JobSplitter:
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=count
+
+        self.cacheBlocks(list_of_blocks,jobDestination) 
 
         return dictOut
 
@@ -507,8 +519,8 @@ class JobSplitter:
                 for loc in file['locations']:
                     if tmp_check < 1 :
                         locations.append(loc)
+                        res['block']= file['block']
                 tmp_check = tmp_check + 1
-                ### qui va messo il check per la locations
         res['lfns'] = lfns
         res['locations'] = locations
         return res
@@ -685,7 +697,7 @@ class JobSplitter:
         jobDestination = []
         jobCount = 0
         lumisCreated = 0
-
+        list_of_blocks = []
         if not self.limitJobLumis:
             self.lumisPerJob = pubdata.getMaxLumis() // self.theNumberOfJobs + 1
             common.logger.info('Each job will process about %s lumis.' %
@@ -702,6 +714,7 @@ class JobSplitter:
                 lumis = []
                 lfns  = []
                 locations = []
+                blocks = []
                 firstFile = True
                 # Collect information from all the files
                 for jobFile in job.getFiles():
@@ -709,6 +722,7 @@ class JobSplitter:
                     if firstFile:  # Get locations from first file in the job
                         for loc in jobFile['locations']:
                             locations.append(loc)
+                        blocks.append(jobFile['block'])
                         firstFile = False
                     # Accumulate Lumis from all files
                     for lumiList in jobFile['runs']:
@@ -725,7 +739,7 @@ class JobSplitter:
                 lumiLister = LumiList(lumis = lumis)
                 lumiString = lumiLister.getCMSSWString()
                 list_of_lists.append([fileString, str(-1), str(0), lumiString])
-
+                list_of_blocks.append(blocks)
                 jobDestination.append(locations)
                 jobCount += 1
                 common.logger.debug('Job %s will run on %s files and %s lumis '
@@ -741,8 +755,18 @@ class JobSplitter:
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs'] = jobCount
 
+        self.cacheBlocks(list_of_blocks,jobDestination) 
+
         return dictOut
 
+    def cacheBlocks(self, blocks,destinations):
+
+        saveFblocks=''
+        for i in range(len(blocks)):
+            sites=self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(destinations[i]))
+            if len(sites) != 0:
+                saveFblocks += str(blocks[i])+'\n'
+        writeTXTfile(self, self.fileBlocks_FileName , saveFblocks)
 
     def Algos(self):
         """

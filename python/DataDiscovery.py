@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.42 2010/03/22 21:17:15 ewv Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.45 2010/05/27 18:54:45 ewv Exp $"
+__version__ = "$Revision: 1.45 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -214,11 +214,6 @@ class DataDiscovery:
             msg = "No new fileblocks available for dataset: "+str(self.datasetPath)
             raise  CrabException(msg)
 
-        saveFblocks=''
-        for block in self.eventsPerBlock.keys() :
-            saveFblocks += str(block)+'\n'
-            common.logger.log(10-1,"DBSInfo: total nevts %i in block %s "%(self.eventsPerBlock[block],block))
-        writeTXTfile(self, fileBlocks_FileName , saveFblocks)
 
         if len(self.eventsPerBlock) <= 0:
             raise NotExistingDatasetError(("\nNo data for %s in DBS\nPlease check"
