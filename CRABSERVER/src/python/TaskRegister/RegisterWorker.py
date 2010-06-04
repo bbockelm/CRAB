@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.38 2010/05/05 10:38:27 spiga Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.39 2010/05/31 20:49:27 riahi Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import string
 import sys, os
@@ -193,7 +193,7 @@ class RegisterWorker(Thread):
             self.myThread.transaction.begin()
             locations = self.location.split(",")
             for loc in locations:
-               self.locationNew.execute(siteName = loc)
+               self.locationNew.execute(siteName = loc, seName = loc )
 
             WFManagerLocdict = {'WorkflowId' : wf.id , 'FilesetMatch': \
                       self.dataset + ':' + self.feeder + ':' + self.processing + ':' + self.startRun ,'Valid':'true', 'Locations': self.location}
