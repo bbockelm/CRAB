@@ -9,9 +9,9 @@ mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "create database ${D
 mysql -u root --socket=$TESTDIR/mysqldata/mysql.sock --exec "${GRANTSUPER}"
 
 #Create wmbs DB tables
-wmcore-db-init --config=WMCoreConfig.py --create --modules=WMCore.WMBS
-wmcore-db-init --config=WMCoreConfig.py --create --modules=WMCore.MsgService
-wmcore-db-init --config=WMCoreConfig.py --create --modules=WMCore.ThreadPool
-wmcore-db-init --config=WMCoreConfig.py --create --modules=WMComponent.FeederManager.Database
-wmcore-db-init --config=WMCoreConfig.py --create --modules=WMComponent.WorkflowManager.Database
+wmcore-db-init --config=$TESTDIR/WMCoreConfig.py --create --modules=WMCore.WMBS
+wmcore-db-init --config=$TESTDIR/WMCoreConfig.py --create --modules=WMCore.MsgService
+wmcore-db-init --config=$TESTDIR/WMCoreConfig.py --create --modules=WMCore.ThreadPool
+wmcore-db-init --config=$TESTDIR/WMCoreConfig.py --create --modules=WMComponent.FeederManager.Database
+wmcore-db-init --config=$TESTDIR/WMCoreConfig.py --create --modules=WMComponent.WorkflowManager.Database
 
