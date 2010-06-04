@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPoller.py,v 1.3 \
             2009/11/06 12:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.8 $"
+__version__ = "$Revision: 1.12 $"
 
 import logging
 import os
@@ -159,6 +159,7 @@ class CrabJobCreatorPoller(BaseWorkerThread):
 
         logging.info("Task loaded [%s]" %self.taskToComplete['name'])
 
+
         # Build job dict.s
         rjAttrs = {}
         attrtemp = {'processStatus': 'created', 'status': 'C', 'taskId': '1' , \
@@ -204,7 +205,6 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                   tempDict['arguments'] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
                   tempDict['taskId'] =  self.taskToComplete['id']
 
- 
                   rjAttrs[tempDict["name"]] = attrtemp
                   rjAttrs[tempDict["name"]]['jobId'] = \
                     (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
@@ -678,6 +678,10 @@ self.config['CacheDir'], str(self.taskToComplete['name'] \
                 splitPerJob, splittingValue = self.getSplitParam( sub )
                 kwargs = { splitPerJob : int(splittingValue) }
                 self.jobGroups = jobFactory( **kwargs )
+
+                #ToDo: Fix this in JG DAO
+                myThread = threading.currentThread()
+                myThread.transaction.commit()
 
             except Exception, e:
                 logMsg = ("Problem when splitting %s" \
