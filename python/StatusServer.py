@@ -83,7 +83,7 @@ class StatusServer(Status):
         try:
             paddedXML = base64.urlsafe_b64decode(handledXML)
         except Exception, e:
-            warning_msg = "WARNING: Problem while decoding base64 status. %s" % taceback.format_exc()
+            warning_msg = "WARNING: Problem while decoding base64 status. %s" % traceback.format_exc()
 
         #padding 
         paddedXML += "="*( len(handledXML)%4 )
