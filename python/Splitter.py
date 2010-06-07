@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.38 2010/05/27 18:54:45 ewv Exp $"
-__version__ = "$Revision: 1.38 $"
+__revision__ = "$Id: Splitter.py,v 1.39 2010/06/02 13:54:13 spiga Exp $"
+__version__ = "$Revision: 1.39 $"
 
 import common
 from crab_exceptions import *
@@ -765,7 +765,8 @@ class JobSplitter:
         for i in range(len(blocks)):
             sites=self.blackWhiteListParser.checkWhiteList(self.blackWhiteListParser.checkBlackList(destinations[i]))
             if len(sites) != 0:
-                saveFblocks += str(blocks[i])+'\n'
+                for block in blocks[i]:
+                    saveFblocks += str(block)+'\n'
         writeTXTfile(self, self.fileBlocks_FileName , saveFblocks)
 
     def Algos(self):
