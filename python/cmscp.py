@@ -182,6 +182,7 @@ class cmscp:
         list_retry = []
         list_not_existing = []
         list_already_existing = []
+        list_fallback = []
         list_ok = []
         
         if self.debug: 
@@ -190,6 +191,10 @@ class cmscp:
             er_code = dict['erCode']
             if er_code == '0':
                 list_ok.append(file)
+                reason = 'Copy succedeed with %s utils'%prot
+                dict['reason'] = reason
+            elif er_code == '60308':
+                list_fallback.append( file )
                 reason = 'Copy succedeed with %s utils'%prot
                 dict['reason'] = reason
             elif er_code == '60302': 
@@ -217,6 +222,8 @@ class cmscp:
         if len(list_ok) != 0:
             msg += '\tCopy of %s succedeed with %s utils\n'%(str(list_ok),prot)
         if len(list_ok) != len_list_files :
+            if len(list_fallback)!=0:
+                msg += '\tCopy of %s succedeed with %s utils in the fallback SE\n'%(str(list_fallback),prot)
             if len(list_retry)!=0:
                 msg += '\tCopy of %s failed using %s for files \n'%(str(list_retry),prot)
             if len(list_not_existing)!=0:
