@@ -338,7 +338,7 @@ class ServerCommunicator:
         miniCfg['proxyServer'] = myproxyserver 
         miniCfg['VO'] = self.cfg_params.get('GRID.virtual_organization', 'cms')
         miniCfg['EDG_retry_count'] = 0
-        miniCfg['EDG_shallow_retry_count'] = 0
+        miniCfg['EDG_shallow_retry_count'] = -1
 
         ## Additional field for DashBoard
         miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')
