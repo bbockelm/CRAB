@@ -22,10 +22,10 @@ apmonInit = False
 # Monalisa configuration
 #apmonUrlList = ["http://lxgate35.cern.ch:40808/ApMonConf?app=dashboard", \
 #                "http://monalisa.cacr.caltech.edu:40808/ApMonConf?app=dashboard"]
-#apmonConf = {'cms-jobmon.cern.ch:8884': {'sys_monitoring' : 0, \
+#apmonConf = {'dashboard08.cern.ch:8884': {'sys_monitoring' : 0, \
 #                                    'general_info'   : 0, \
 #                                    'job_monitoring' : 0} }
-apmonConf = {'dashboard08.cern.ch:8884': {'sys_monitoring' : 0, \
+apmonConf = {'cms-jobmon.cern.ch:8884': {'sys_monitoring' : 0, \
                                     'general_info'   : 0, \
                                     'job_monitoring' : 0} }
 
