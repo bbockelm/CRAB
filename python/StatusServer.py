@@ -80,6 +80,7 @@ class StatusServer(Status):
         reportXML, warning_msg = None, None
 
         # WS channel
+        paddedXML =''
         try:
             paddedXML = base64.urlsafe_b64decode(handledXML)
         except Exception, e:
