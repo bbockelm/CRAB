@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.39 2010/05/31 20:49:27 riahi Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.40 2010/06/04 08:25:14 riahi Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import string
 import sys, os
@@ -97,11 +97,24 @@ class RegisterWorker(Thread):
         if reconstructedTask is None:
             self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
             return
-        else:
-            reconstructedTask = self.alterPath(reconstructedTask)
+
+        if self.type == 'extended':
+        
+             reconstructedTask = self.AlterJobInfos(reconstructedTask)
+             # register jobs of the task object on the server (we_job)
+             registeredTask = self.registerTask(reconstructedTask)
+             if registeredTask != 0:
+                 self.local_queue.put((self.myName, "RegisterWorkerComponent:RegisterWorkerFailed", self.taskName))
+                 return
+
+             payload = self.taskName +"::"+ str(self.configs['retries']) +"::"+ self.cmdRng
+             self.local_queue.put( (self.myName, "TaskRegisterComponent:NewTaskRegistered", payload) )
+
 
         # Only for fully specified task
-        if self.type == 'fullySpecified':
+        if self.type =='fullySpecified':
+
+             reconstructedTask = self.alterPath(reconstructedTask)
 
              # register jobs of the task object on the server (we_job)
              registeredTask = self.registerTask(reconstructedTask)
@@ -121,6 +134,8 @@ class RegisterWorker(Thread):
  
         # Distinguish task type - WMCore interaction 
         if self.type == 'partiallySpecified':
+
+            reconstructedTask = self.alterPath(reconstructedTask)
 
             if not self.sendToWMComponent() == 0:
                 self.local_queue.put((self.myName, "RegisterWorkerComponent:WorkerFailsToRegisterPartially", self.taskName))
@@ -260,27 +275,38 @@ class RegisterWorker(Thread):
         taskObj = None
         self.log.info('Worker %s declaring new task'%self.myName)
         taskSpecFile = os.path.join(self.wdir, self.taskName + '_spec/task.xml' )
+        tmpTask = None
         try:
+            tmpTask = self.blDBsession.loadTaskByName(self.taskName)
+        except Exception, ee:
             tmpTask = None
+        if tmpTask is not None and  self.type != 'extended': 
+            self.log.info("Worker %s - Task %s already registered in BossLite"%(self.myName,self.taskName) )
+            return tmpTask
+
+        if self.type =='extended': 
             try:
-                tmpTask = self.blDBsession.loadTaskByName(self.taskName)
-            except Exception, ee:
-                tmpTask = None
-
-            if tmpTask is not None:
-                self.log.info("Worker %s - Task %s already registered in BossLite"%(self.myName,self.taskName) )
-                return tmpTask
-
-            taskObj = self.blDBsession.declare(taskSpecFile, self.credential)
-            taskObj['user_proxy'] = self.credential
-
-        except Exception, e:
-            status = 6
-            reason = "Error while declaring task %s, it will not be processed"%self.taskName
-            self.sendResult(status, reason, reason)
-            self.log.info( str(e) )
-            self.log.info( traceback.format_exc() )
-            return None
+                taskObj = self.blDBsession.declareNewJobs(taskSpecFile, tmpTask, self.credential)
+                taskObj['user_proxy'] = self.credential
+            except Exception, e:
+                status = 6
+                reason = "Error while declaring New Jobs %s, it will not be processed"%self.taskName
+                self.sendResult(status, reason, reason)
+                self.log.info( str(e) )
+                self.log.info( traceback.format_exc() )
+                return None
+        else:   
+            try:
+                taskObj = self.blDBsession.declare(taskSpecFile, self.credential)
+                taskObj['user_proxy'] = self.credential
+       
+            except Exception, e:
+                status = 6
+                reason = "Error while declaring task %s, it will not be processed"%self.taskName
+                self.sendResult(status, reason, reason)
+                self.log.info( str(e) )
+                self.log.info( traceback.format_exc() )
+                return None
 
         return taskObj
 
@@ -340,17 +366,7 @@ class RegisterWorker(Thread):
 
             # Complete job information only for fully specified task    
             if self.type == "fullySpecified":
-
-                for j in taskObj.jobs:
-                    j['executable'] = os.path.basename(j['executable']) 
-                    j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
-
-                    jid = taskObj.jobs.index(j)
-                    if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
-                        j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1))
-                        #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
-                    if '.BrokerInfo' not in j['outputFiles']:
-                        j['outputFiles'].append('.BrokerInfo')
+                self.CompleteBLjobs(taskObj)
 
             # save changes
             try:
@@ -364,6 +380,40 @@ class RegisterWorker(Thread):
 
         return taskObj
 
+####################
+    def CompleteBLjobs(self,taskObj,NewJobs=[]):
+
+        if NewJobs==[]: NewJobs=range(len(taskObj.getJobs())+1)
+
+        for j in taskObj.jobs:
+            if int(j['jobId']) in NewJobs: 
+                j['executable'] = os.path.basename(j['executable']) 
+                j['outputFiles'] = [ os.path.basename(of) for of in j['outputFiles']  ]
+          
+                jid = taskObj.jobs.index(j)
+                if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
+                    j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1))
+                    #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
+                if '.BrokerInfo' not in j['outputFiles']:
+                    j['outputFiles'].append('.BrokerInfo')
+            else:
+                self.log.info(' ')
+                pass   
+
+    def AlterJobInfos(self,taskObj):
+        NewJobs = eval(self.cmdRng)
+        self.CompleteBLjobs(taskObj,NewJobs)
+        # save changes
+        try:
+            self.blDBsession.updateDB(taskObj)
+        except Exception, e:
+            status = 6
+            reason = "Error while updating task %s, it will not be processed"%self.taskName
+            self.sendResult(status, reason, reason)
+            self.log.info( traceback.format_exc() )
+            return None
+
+        return taskObj
 
     def registerTask(self, taskArg):
         """  
