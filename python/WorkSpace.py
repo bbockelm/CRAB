@@ -188,6 +188,28 @@ class WorkSpace:
 
         return
 
+    def addToSavedCfg(self, opt):
+        pars={}
+        pars = loadConfig(self.shareDir() + common.prog_name + '.cfg', pars)
+        pars[opt.keys()[0]]=opt.values()[0]
+
+        secs={}
+        for k in pars.keys():
+            sec, value = string.split(k,".")
+            if sec not in secs.keys():
+                secs[sec]={}
+            secs[sec][value]=pars[k]
+            pass
+
+        config_file = open(self.cfgFileName(), 'w')
+        for k in secs.keys():
+            config_file.write('['+k+']\n')
+            for v in secs[k].keys():
+                if v!='debug': config_file.write(v+'='+secs[k][v]+'\n')
+            else : config_file.write('\n')
+        config_file.close()
+
+        return
     def loadSavedOptions(self):
         
         # Open save-file
