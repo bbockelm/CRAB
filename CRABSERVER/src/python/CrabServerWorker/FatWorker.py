@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.203 2010/05/20 08:40:17 farinafa Exp $"
-__version__ = "$Revision: 1.203 $"
+__revision__ = "$Id: FatWorker.py,v 1.204 2010/06/10 12:30:51 farinafa Exp $"
+__version__ = "$Revision: 1.204 $"
 
 import string
 import sys, os
@@ -168,9 +168,11 @@ class FatWorker(Thread):
         self.log.info('FatWorker %s performing list-match operation'%self.myName)
         sub_jobs, reqs_jobs, matched, unmatched = None, None, None, None
         try:
-            sub_jobs, reqs_jobs, matched, unmatched = self.submissionListCreation(taskObj, newRange)
+            sub_jobs, reqs_jobs, matched, unmatched, errorLogs = self.submissionListCreation(taskObj, newRange)
             if len(matched)==0:
-                raise Exception("Unable to submit jobs %s: no sites matched!"%(str(sub_jobs)))
+                errMsg = "Unable to submit jobs %s: no sites matched!"%str(sub_jobs)
+                errMsg += '\n%s'%str(errorLogs)
+                raise Exception(errMsg)
         except Exception, e:
             self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
@@ -741,6 +743,7 @@ class FatWorker(Thread):
         unmatched = []
         schedParam = ''
         sites = []
+        logMsg_dic = {} 
 
         for id_job in jobs_to_match:
             tags = ''
@@ -772,19 +775,23 @@ class FatWorker(Thread):
                     sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements)
                 except SchedulerError, e:
                     logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
-                    logMsg += str(e.description())
-                    self.log.info( logMsg )
+                    logMsg += str(e.description())+'\n'
+                    logMsg += "Found sites: %s"%str(sites)
+                    logMsg_dic[id_job] = ""+logMsg
                 except TimeOut, e:
                     logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
                     logMsg += str(e)+'\n'
-                    logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
-                    self.log.info( logMsg )
+                    logMsg += "Matchmaking timed out. Partial output: \n%s"%e.commandOutput() 
+                    logMsg_dic[id_job] = ""+logMsg
                 except Exception, ee:
                     logMsg = "Worker %s. Unexpected exception performing List Match for task %s. "%(self.myName, self.taskName)
                     logMsg +=  traceback.format_exc()
-                    self.log.info( logMsg )
-                if len(sites) > 0: matched.append(sel)
-                else: unmatched.append(sel)
+                    logMsg_dic[id_job] = ""+logMsg
+
+                if len(sites) > 0: 
+                    matched.append(sel)
+                else: 
+                    unmatched.append(sel)
             else :
                 cleanedList = None
                 if len(distinct_dests[sel]) > 0:
@@ -801,7 +808,7 @@ class FatWorker(Thread):
             sel += 1
 
         # all done and matched, go on with the submission
-        return sub_jobs, requirements, matched, unmatched
+        return sub_jobs, requirements, matched, unmatched, logMsg_dic
 
 #########################################################
 ### Matching auxiliary methods
