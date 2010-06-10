@@ -2,6 +2,7 @@ from crab_exceptions import *
 import logging
 import common
 import os, string, time
+from crab_util import loadConfig
 
 class WorkSpace:
     def __init__(self, top_dir, cfg_params):

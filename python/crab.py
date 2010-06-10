@@ -534,6 +534,7 @@ class Crab:
                 pass
 
             if (  opt == '-extend' ):
+                common.work_space.addToSavedCfg({"CMSSW.extend":"1"})
 
                 if val and val != 'all':
                     self.parseRange_(val)

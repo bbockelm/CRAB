@@ -24,6 +24,7 @@ class SubmitterServer( Submitter ):
         self.submitRange = []
         self.credentialType = 'Proxy'
         self.copyTout= setLcgTimeout()
+        self.extended=int(cfg_params.get('CMSSW.extend',0))    
    #wmbs
         self.type = int(cfg_params.get('WMBS.automation',0))
         self.taskType = 'fullySpecified'
@@ -294,9 +295,9 @@ class SubmitterServer( Submitter ):
     def performSubmission(self, firstSubmission=True):
         # create the communication session with the server frontend
         csCommunicator = ServerCommunicator(self.server_name, self.server_port, self.cfg_params)
-        taskXML = ''
         subOutcome = 0
 
+        TotJob = common._db.nJobs()
         # transfer remote dir to server
         self.cfg_params['CRAB.se_remote_dir'] = self.remotedir
 
@@ -305,33 +306,27 @@ class SubmitterServer( Submitter ):
             if self.checkIfDrained(csCommunicator)==True:
                 return
 
-            TotJob = common._db.nJobs()
             # move the sandbox
             self.moveISB_SEAPI()
 
             # first time submit
-            try:
-                self.stateChange( self.submitRange, "SubRequested" )
-                taskXML += common._db.serializeTask( common._db.getTask() )
-                common.logger.debug(taskXML)
-            except Exception, e:
-                self.stateChange( self.submitRange, "Created" )
-                msg = "BossLite ERROR: Unable to serialize task object\n"
-                msg +="Project "+str(self.taskuuid)+" not Submitted \n"
-                msg += str(e)
-                raise CrabException(msg)
+            taskXML= self.serialize()
 
             # TODO fix not needed first field
             subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob,taskType=self.taskType)
         else:
             # subsequent submissions and resubmit
             self.stateChange( self.submitRange, "SubRequested" )
-            try:
-                subOutcome = csCommunicator.subsequentJobSubmit(self.taskuuid, self.submitRange)
-            except Exception, ex: ##change to specific exception
-                ## clean sub. requested status
-                self.stateChange( self.submitRange, "Created" )
 
+            if  self.extended==1:
+                taskXML= self.serialize()
+                subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob,taskType='extended')
+            else:  
+                try:
+                    subOutcome = csCommunicator.subsequentJobSubmit(self.taskuuid, self.submitRange)
+                except Exception, ex: ##change to specific exception
+                    ## clean sub. requested status
+                    self.stateChange( self.submitRange, "Created" )
 
         if subOutcome != 0:
             msg = "ClientServer ERROR: %d raised during the communication.\n"%subOutcome
@@ -343,6 +338,19 @@ class SubmitterServer( Submitter ):
 
         return
 
+    def serialize(self):
+        taskXML=''
+        try:
+            self.stateChange( self.submitRange, "SubRequested" )
+            taskXML += common._db.serializeTask( common._db.getTask() )
+            common.logger.debug(taskXML)
+        except Exception, e:
+            self.stateChange( self.submitRange, "Created" )
+            msg = "BossLite ERROR: Unable to serialize task object\n"
+            msg +="Project "+str(self.taskuuid)+" not Submitted \n"
+            msg += str(e)
+            raise CrabException(msg)
+        return taskXML         
 
     def markSubmitting(self):
         """
