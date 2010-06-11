@@ -205,8 +205,6 @@ class ShowCompStatus:
                     html += sensorMissing%("service",serv)
             html += "</small></td></tr>\n"
 
-        cpid = API.getPIDof("delegation-server")
-        html += nameNpid%("Delegation",cpid)
         html += "<td></td><td></td>"
         
         html += "</table>\n"
