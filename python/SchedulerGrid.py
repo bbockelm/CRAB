@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.131 2010/05/27 20:18:50 spiga Exp $"
-__version__ = "$Revision: 1.131 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.132 2010/05/28 09:46:00 fanzago Exp $"
+__version__ = "$Revision: 1.132 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -161,8 +161,15 @@ class SchedulerGrid(Scheduler):
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
         txt += "NResub=${args[1]}; export NResub\n"
-        txt += 'OutUniqueID=_$NResub\n'
+        txt += "NRand=`getRandSeed`; export NRand\n"
+        # append random code
+        txt += 'OutUniqueID=_$NRand\n'
+        txt += 'OutUniqueID=_$NResub$OutUniqueID\n'
         txt += 'OutUniqueID=$NJob$OutUniqueID; export OutUniqueID\n'
+        # if we want to prepend
+        #txt += 'OutUniqueID=_$NResub\n'
+        #txt += 'OutUniqueID=_$NJob$OutUniqueID\n'
+        #txt += 'OutUniqueID=$NRand$OutUniqueID; export OutUniqueID\n'
 
         txt += "out_files=out_files_${NJob}; export out_files\n"
         txt += "echo $out_files\n"

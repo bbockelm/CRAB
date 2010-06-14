@@ -11,6 +11,13 @@ exec 2>&1
 #
 echo "Running $0 with $# positional parameters: $*"
 
+getRandSeed() {
+     den=(0 1 2 3 4 5 6 7 8 9 A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z)
+    nd=${#den[*]}
+    randj=${den[$RANDOM % $nd]}${den[$RANDOM % $nd]}${den[$RANDOM % $nd]}
+    echo $randj
+}
+
 dumpStatus() {
     echo ">>> info for dashboard:"
     echo "***** Cat $1 *****"

@@ -70,7 +70,9 @@ class SchedulerLocal(Scheduler) :
         txt += "# job number (first parameter for job wrapper)\n"
         txt += "NJob=${args[0]}; export NJob\n"
         txt += "NResub=${args[1]}; export NResub\n"
-        txt += 'OutUniqueID=_$NResub\n'
+        txt += "NRand=`getRandSeed`; export NRand\n"
+        txt += 'OutUniqueID=_$NRand\n'
+        txt += 'OutUniqueID=_$NResub$OutUniqueID\n'
         txt += 'OutUniqueID=$NJob$OutUniqueID; export OutUniqueID\n'
 
         txt += "out_files=out_files_${NJob}; export out_files\n"
