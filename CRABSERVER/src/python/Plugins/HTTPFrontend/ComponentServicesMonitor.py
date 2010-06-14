@@ -153,6 +153,11 @@ class ShowCompStatus:
         html += "<body><h2>Components and Services State<br/>\n"
         html += "<small style=\"color:red; font-weight:normal;\">* Work in progress</small><br/></h2>\n"
 
+        if isDrained() is False:
+            html += "<br/> Accepting new submission: YES<br/> <br/>"
+        else:
+            html += "<br/> Accepting new submission: NO<br/> <br/>"
+
         html += "<table>\n"
 #        html += "<tr><th></th><th></th><th colspan=2><small style=\"color:red;\">work in progress</th></tr>\n"
         html += tableHeader%"Components"
@@ -244,6 +249,23 @@ def status(compList=False):
                 tmp=[component, daemon['ProcessID']]
                 component_run.append(tmp)
         return component_run, component_down
+
+def isDrained():
+    """
+    _isDrained_
+
+    true returned if the server is in drain mode
+    """
+    config = os.environ.get("PRODAGENT_CONFIG", None)
+    cfgObject = ProdAgentConfiguration()
+    cfgObject.loadFromFile(config)
+    cmconf = cfgObject.getConfig("CommandManager")
+    try:
+        if int(cmconf['acceptableThroughput']) == 0:
+            return True
+    except:
+        return False
+    return False
 
 
 class ShowCompLogs:
