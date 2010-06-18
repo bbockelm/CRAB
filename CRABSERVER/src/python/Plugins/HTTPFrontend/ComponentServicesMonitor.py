@@ -153,11 +153,6 @@ class ShowCompStatus:
         html += "<body><h2>Components and Services State<br/>\n"
         html += "<small style=\"color:red; font-weight:normal;\">* Work in progress</small><br/></h2>\n"
 
-        if isDrained() is False:
-            html += "<br/> Accepting new submission: YES<br/> <br/>"
-        else:
-            html += "<br/> Accepting new submission: NO<br/> <br/>"
-
         html += "<table>\n"
 #        html += "<tr><th></th><th></th><th colspan=2><small style=\"color:red;\">work in progress</th></tr>\n"
         html += tableHeader%"Components"
@@ -211,8 +206,27 @@ class ShowCompStatus:
             html += "</small></td></tr>\n"
 
         html += "<td></td><td></td>"
-        
         html += "</table>\n"
+
+        html += "<br/><br/> <b>Internal processing status</b><br/>"
+        if isDrained() is False:
+            html += "<br/> Accepting new submission: <b>YES</b><br/>"
+        else:
+            html += "<br/> Accepting new submission: <b>NO</b><br/>"
+
+        outqueue = API.getOutputQueue()
+        JTload   = API.jobTrackingLoad()
+        jobdistr = API.processStatusDistribution()
+        jobbyst = ''
+        for couple in jobdistr:
+            if len(couple) == 2:
+                jobbyst += "<tr><td>&nbsp;&nbsp;%s</td><td>%s</td></tr>"%(str(couple[0]),str(couple[1]))
+        table_job = "<table> %s </table><br/>"%jobbyst
+
+        html += "<br/>Jobs in the GetOutput queue: %s"%str(outqueue[0][0])
+        html += "<br/>Jobs being processed by the JobTracking: %s"%str(JTload[0][0])
+        html += "<br/>Jobs by processing status: <br/>%s"%table_job
+
         html += "</body></html>"
 
         return html
