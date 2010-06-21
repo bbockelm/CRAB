@@ -36,7 +36,16 @@ class cmscp:
         #### for fallback copy
         self.local_stage = 0
         self.params.update( args )
-        self.subprocesstimeout = {'copy': None, 'exists': None, 'delete': None, 'size': None}
+        ## timeout needed for subprocess command of SEAPI
+        ## they should be a bit higher then the corresponding passed by command line  
+        ## default values
+        self.subprocesstimeout = { \
+                                   'copy':   3600, \
+                                   'exists': 1200, \
+                                   'delete': 1200, \
+                                   'size':   1200 \
+                                 }
+
         return
 
     def processOptions( self ):
@@ -138,13 +147,6 @@ class cmscp:
         if self.debug: 
             print 'setProtocol() :\n'
             print '\tmiddleware =  %s utils \n'%middleware
-
-        ## timeout needed for subprocess command of SEAPI
-        ## they should be a bit higher then the corresponding passed by command line  
-        self.subprocesstimeout['copy']   = 3600
-        self.subprocesstimeout['exists'] = 1200
-        self.subprocesstimeout['delete'] = 1200
-        self.subprocesstimeout['size']   = 1200
 
         lcgOpt={'srmv1':'-b -D srmv1  -t 2400 --verbose',
                 'srmv2':'-b -D srmv2  -t 2400 --verbose'}
