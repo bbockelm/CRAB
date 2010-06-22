@@ -338,3 +338,26 @@ def messageListing(compName):
     results = queryMethod(query)
     return query, results
 
+##### internal server processing #####
+def getOutputQueue():
+    query = "select count(*) from bl_runningjob where closed = 'N' and process_status = 'output_requested';"
+    results = queryMethod(query)
+    return results
+
+def jobTrackingLoad():
+    query = "select count(*) from bl_runningjob where closed = 'N' and process_status like '%handled'; ";
+    results = queryMethod(query)
+    return results
+
+def processStatusDistribution():
+    query = "select process_status, count(*) from bl_runningjob where closed = 'N' group by process_status;";
+    results = queryMethod(query)
+    return results
+
+def statusInfoTask(taskname):
+    if taskname is not None and len(taskname) > 0:
+        query = "select closed, status, process_status, output_request_time from bl_runningjob where task_id = (select id from bl_task where name = '%s');"%str(taskname)
+        results = queryMethod(query)
+        return results
+    return None
+
