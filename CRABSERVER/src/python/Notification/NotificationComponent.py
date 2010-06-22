@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.24 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.24 2008/12/08 21:11:24 mcinquil Exp $"
+__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.25 2009/02/13 13:26:35 mcinquil Exp $"
 
 import os
 import socket
@@ -251,24 +251,26 @@ class NotificationComponent:
 	
     #--------------------------------------------------------------------------------------
     def MessageTaskParser(self, pathfile):
-    	if not os.path.exists(pathfile):
-		logging.error("Cannot process TaskSuccess event: " 
-	                        + "xml task report %s does not exist." % pathfile)
-	        return
+        if not os.path.exists(pathfile):
+            logging.error("Cannot process TaskSuccess event: " 
+                          + "xml task report %s does not exist." % pathfile)
+            return
 		
-	if not os.path.isfile( pathfile ):
-		logging.error("Cannot process TaskSuccess event: " 
-	                        + "xml task report %s is not a regular file." % pathfile)
-	        return
-		
+        if not os.path.isfile( pathfile ):
+            logging.error("Cannot process TaskSuccess event: " 
+                          + "xml task report %s is not a regular file." % pathfile)
+            return
+	
 	C = CreateXmlJobReport()#.CreateXmlJobReport()
-	try:
-		C.fromFile( pathfile )
-	except RuntimeError, r:
-		logging.error("Cannot parse file %s: %s" % (pathfile, r)) 
-		return
-		
-	return C
+        try:
+            C.fromFile( pathfile )
+        except RuntimeError, r:
+            logging.error("Cannot parse file %s: %s" % (pathfile, r)) 
+            return
+        except ExpatError, e:
+            logging.error("Cannot parse file %s: %s" % (pathfile, e))
+            return
+        return C
 	
     #--------------------------------------------------------------------------------------	
     def MainLoop(self):
