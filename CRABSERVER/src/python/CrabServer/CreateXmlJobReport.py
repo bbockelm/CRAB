@@ -415,13 +415,25 @@ class CreateXmlJobReport:
 
     #------------------------------------------------------------------------
     def toFile(self, filename):
-    	if not self.init:
-		raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
-	
+        if not self.init:
+            raise RuntimeError, "Module CreateXmlJobReport is not initialized. Call CreateXmlJobReport.initialize(...) first"
+
 	filename_tmp = filename+".tmp"
-	file = open(filename_tmp, 'w')
-	xml.dom.ext.PrettyPrint(self.doc, file)
-	file.close()
+        file = open(filename_tmp, 'w')
+        tryals = 2
+        count = 0
+        while (count < tryals):
+            try:
+                xml.dom.ext.PrettyPrint(self.doc, file)
+                break
+            except MemoryError, ex:
+                logging.error("Memory error writing on file: %s"%str(filename))
+                count += 1
+            except Exception, ex:
+                logging.error("%s error writing on file: %s"%(str(ex),str(filename)))
+                count += 1
+
+        file.close()
         command_rename = "mv "+str(filename_tmp)+" "+str(filename)+";"
         os.popen( command_rename )  # this should be an atomic operation thread-safe and multiprocess-safe
 #	os.rename(filename_tmp, filename) # this should be an atomic operation thread-safe and multiprocess-safe
