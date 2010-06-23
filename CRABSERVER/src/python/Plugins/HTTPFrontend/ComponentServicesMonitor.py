@@ -215,6 +215,7 @@ class ShowCompStatus:
             html += "<br/> Accepting new submission: <b>NO</b><br/>"
 
         outqueue = API.getOutputQueue()
+        outqueuefail = API.getOutputFailedQueue()
         JTload   = API.jobTrackingLoad()
         jobdistr = API.processStatusDistribution()
         jobbyst = ''
@@ -223,7 +224,7 @@ class ShowCompStatus:
                 jobbyst += "<tr><td>&nbsp;&nbsp;%s</td><td>%s</td></tr>"%(str(couple[0]),str(couple[1]))
         table_job = "<table> %s </table><br/>"%jobbyst
 
-        html += "<br/>Jobs in the GetOutput queue: %s"%str(outqueue[0][0])
+        html += "<br/>Jobs in the GetOutput queue: %s Done + %s Failed = %s"%(str(outqueue[0][0]), str(outqueuefail[0][0]), str(outqueue[0][0]+outqueuefail[0][0]))
         html += "<br/>Jobs being processed by the JobTracking: %s"%str(JTload[0][0])
         html += "<br/>Jobs by processing status: <br/>%s"%table_job
 

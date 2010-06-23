@@ -344,6 +344,11 @@ def getOutputQueue():
     results = queryMethod(query)
     return results
 
+def getOutputFailedQueue():
+    query = "select count(*) from bl_runningjob where closed = 'N' and process_status = 'failed';"
+    results = queryMethod(query)
+    return results
+
 def jobTrackingLoad():
     query = "select count(*) from bl_runningjob where closed = 'N' and process_status like '%handled'; ";
     results = queryMethod(query)
