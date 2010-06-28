@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.30 2009/12/16 17:40:08 ewv Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.31 2010/05/11 13:39:50 farinafa Exp $"
+__version__ = "$Revision: 1.31 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -42,6 +42,22 @@ class SchedulerCondor(SchedulerLocal) :
 
         SchedulerLocal.configure(self, cfg_params)
 
+        self.proxyValid=0
+        self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
+        self.space_token = cfg_params.get("USER.space_token",None)
+        try:
+            self.proxyServer = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/").config("myproxy_server.conf")
+            self.proxyServer = self.proxyServer.strip()
+            if self.proxyServer is None:
+                raise CrabException("myproxy_server.conf retrieved but empty")
+        except Exception, e:
+            common.logger.info("Problem setting myproxy server endpoint: using myproxy.cern.ch")
+            common.logger.debug(e)
+            self.proxyServer= 'myproxy.cern.ch'
+        self.group = cfg_params.get("GRID.group", None)
+        self.role = cfg_params.get("GRID.role", None)
+        self.VO = cfg_params.get('GRID.virtual_organization','cms')
+
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
             if tmp.lower() == 'none':
@@ -53,6 +69,8 @@ class SchedulerCondor(SchedulerLocal) :
         except KeyError:
             msg = "Error: datasetpath not defined "
             raise CrabException(msg)
+
+        self.checkProxy()
 
         return
 
