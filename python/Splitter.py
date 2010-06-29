@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.39 2010/06/02 13:54:13 spiga Exp $"
-__version__ = "$Revision: 1.39 $"
+__revision__ = "$Id: Splitter.py,v 1.40 2010/06/07 10:38:39 spiga Exp $"
+__version__ = "$Revision: 1.40 $"
 
 import common
 from crab_exceptions import *
@@ -13,7 +13,10 @@ from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-from LumiList import LumiList
+try: # Can remove when CMSSW 3.7 and earlier are dropped
+    from FWCore.PythonUtilities.LumiList import LumiList
+except ImportError:
+    from LumiList import LumiList
 
 class JobSplitter:
     def __init__( self, cfg_params,  args ):
@@ -495,7 +498,7 @@ class JobSplitter:
                 list_of_lists.append([fullString,str(-1),str(0)])
                 #need to check single file location
                 jobDestination.append(res['locations'])
-                list_of_blocks.append(res['block'])  
+                list_of_blocks.append(res['block'])
                 count +=1
         # prepare dict output
         dictOut = {}
@@ -504,7 +507,7 @@ class JobSplitter:
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=count
 
-        self.cacheBlocks(list_of_blocks,jobDestination) 
+        self.cacheBlocks(list_of_blocks,jobDestination)
 
         return dictOut
 
@@ -755,7 +758,7 @@ class JobSplitter:
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs'] = jobCount
 
-        self.cacheBlocks(list_of_blocks,jobDestination) 
+        self.cacheBlocks(list_of_blocks,jobDestination)
 
         return dictOut
 

@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.45 2010/05/27 18:54:45 ewv Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.46 2010/06/02 13:55:14 spiga Exp $"
+__version__ = "$Revision: 1.46 $"
 
 import exceptions
 import DBSAPI.dbsApi
 from DBSAPI.dbsApiException import *
 import common
 from crab_util import *
-from LumiList import LumiList
+try: # Can remove when CMSSW 3.7 and earlier are dropped
+    from FWCore.PythonUtilities.LumiList import LumiList
+except ImportError:
+    from LumiList import LumiList
+
 import os
 
 

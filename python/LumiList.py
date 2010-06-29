@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
 """
+This code is now deprecated. Changes should be made to CMSSW/FWCore/PythonUtilities/python/LumiList.py instead
+
 Handle lists of lumi sections. Constuct in several different formats and filter
 (mask) a secondary list of lumis.
 This class can also handle ranges of events as the structure is identical
 or could be subclassed renaming a function or two.
 """
 
-__revision__ = "$Id: LumiList.py,v 1.3 2010/05/04 17:24:58 spiga Exp $"
-__version__ = "$Revision: 1.3 $"
+__revision__ = "$Id: LumiList.py,v 1.4 2010/05/26 19:46:12 ewv Exp $"
+__version__ = "$Revision: 1.4 $"
 
 try: # FUTURE: Python 2.6, prior to 2.6 requires simplejson
     import json

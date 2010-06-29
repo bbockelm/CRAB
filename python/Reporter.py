@@ -2,7 +2,10 @@ import os, common, string
 from Actor import *
 from crab_util import *
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
-from LumiList import LumiList
+try: # Can remove when CMSSW 3.7 and earlier are dropped
+    from FWCore.PythonUtilities.LumiList import LumiList
+except ImportError:
+    from LumiList import LumiList
 
 try: # FUTURE: Python 2.6, prior to 2.6 requires simplejson
     import json
