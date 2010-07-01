@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.204 2010/06/10 12:30:51 farinafa Exp $"
-__version__ = "$Revision: 1.204 $"
+__revision__ = "$Id: FatWorker.py,v 1.205 2010/06/10 16:19:13 farinafa Exp $"
+__version__ = "$Revision: 1.205 $"
 
 import string
 import sys, os
@@ -155,7 +155,7 @@ class FatWorker(Thread):
         try:
             newRange, skippedJobs = self.preSubmissionCheck(taskObj)
             if newRange is None or len(newRange) == 0 :
-                raise Exception('Empty range submission temptative')
+                raise Exception('Empty range [%s] submission temptative, skipped jobs [%s], asked jobs [%s].'%(str(newRange),%str(skippedJobs),str(self.cmdRng)))
         except Exception, e:
             self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
