@@ -229,7 +229,8 @@ class MultiCrab:
             if not self.cfg_params_dataset.has_key("USER.ui_working_dir") and self.ui_working_dir:
                 options["-USER.ui_working_dir"]=self.ui_working_dir+"/"+sec
             # if ui_working_dir is set, change -c dir accordnigly
-                options['-c']=self.ui_working_dir+"/"+sec
+                if self.flag_continue:
+                    options['-c']=self.ui_working_dir+"/"+sec
 
             # also for logDir
             if not self.cfg_params_dataset.has_key("USER.logdir") and self.logdir:
