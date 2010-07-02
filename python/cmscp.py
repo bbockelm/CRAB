@@ -28,8 +28,6 @@ class cmscp:
              return 60303 if file already exists in the SE
         """
 
-        #### FEDE added SE_NAME as parameters
-        #set default
         self.params = {"source":'', "destination":'','destinationDir':'', "inputFileList":'', "outputFileList":'', \
                            "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "for_lfn":'', "se_name":'' }
         self.debug = 0
@@ -175,7 +173,6 @@ class cmscp:
         return supported_protocol
 
 
-    #def checkCopy (self, copy_results, len_list_files, prot, lfn='', se=''):
     def checkCopy (self, copy_results, len_list_files, prot):
         """
         Checks the status of copy and update result dictionary
@@ -211,11 +208,6 @@ class cmscp:
                 print "\t dict['erCode'] %s \n"%dict['erCode']
                 print "\t dict['reason'] %s \n"%dict['reason']
                 
-            #if (lfn != '') and (se != ''):
-            #    upDict = self.updateReport(file, er_code, dict['reason'], lfn, se)
-            #else:
-            #    upDict = self.updateReport(file, er_code, dict['reason'])
-            
             upDict = self.updateReport(file, er_code, dict['reason'])
 
             copy_results.update(upDict)
@@ -295,9 +287,6 @@ class cmscp:
             print '\t tfc %s '%tfc
             print "\t self.params['inputFilesList'] %s \n"%self.params['inputFilesList']
                 
-        #if (str(self.params['lfn']).find("/store/") != -1):
-        #    temp = str(self.params['lfn']).split("/store/")
-        #    self.params['lfn']= "/store/temp/" + temp[1]
         if (str(self.params['for_lfn']).find("/store/") == 0):
             temp = str(self.params['for_lfn']).replace("/store/","/store/temp/",1)
             self.params['for_lfn']= temp
@@ -306,27 +295,20 @@ class cmscp:
             
         file_backup=[]
         for input in self.params['inputFilesList']:
-            #file = self.params['lfn'] + os.path.basename(input)
             file = self.params['for_lfn'] + os.path.basename(input)
             surl = tfc.matchLFN(tfc.preferredProtocol, file)
             file_backup.append(surl)
             if self.debug:
-                #print '\t lfn %s \n'%self.params['lfn']
                 print '\t for_lfn %s \n'%self.params['for_lfn']
                 print '\t file %s \n'%file
                 print '\t surl %s \n'%surl
                     
         destination=os.path.dirname(file_backup[0])
         if ( destination[-1] != '/' ) : destination = destination + '/'
+       
         self.params['destination']=destination
-        ###########
         
         self.params['se_name']=seName
-        #print "######################################################"
-        #print "in local copy self.params['se_name'] = ", self.params['se_name']
-        ###print "in local copy self.params['lfn'] = ", self.params['lfn']
-        #print "in local copy self.params['for_lfn'] = ", self.params['for_lfn']
-        #print "######################################################"
             
         if self.debug:
             print "\t self.params['destination']%s \n"%self.params['destination']
@@ -402,12 +384,16 @@ class cmscp:
         self.dest_prot = protocol
         if not self.params['source'] : self.source_prot = 'local'
         Source_SE  = self.storageInterface( self.params['source'], self.source_prot )
-        if not self.params['destination'] : self.dest_prot = 'local'
-        Destination_SE = self.storageInterface( self.params['destination'], self.dest_prot )
+        if not self.params['destination'] :
+            self.dest_prot = 'local'
+            Destination_SE = self.storageInterface( self.params['destinationDir'], self.dest_prot )
+        else:     
+            Destination_SE = self.storageInterface( self.params['destination'], self.dest_prot )
 
         if self.debug :
             msg  = '\t(source=%s,  protocol=%s)'%(self.params['source'], self.source_prot)
             msg += '\t(destination=%s,  protocol=%s)'%(self.params['destination'], self.dest_prot)
+            msg += '\t(destinationDir=%s,  protocol=%s)'%(self.params['destinationDir'], self.dest_prot)
             print msg
 
         return Source_SE, Destination_SE

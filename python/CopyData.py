@@ -1,5 +1,5 @@
-__revision__ = "$Id: CopyData.py,v 1.23.2.1 2010/02/16 16:40:56 spiga Exp $"
-__version__  = "$Revision: 1.23.2.1 $"
+__revision__ = "$Id: CopyData.py,v 1.26 2010/05/28 09:46:00 fanzago Exp $"
+__version__  = "$Revision: 1.26 $"
 
 from Actor import *
 from crab_util import *
@@ -108,7 +108,8 @@ class CopyData(Actor):
             cmscpConfig = {
                         "source": key,
                         "inputFileList": to_copy[key],
-                        "protocol": self.protocol
+                        "protocol": self.protocol,
+                        "debug":'1'
                       }
             cmscpConfig.update(dest)
 
@@ -185,12 +186,12 @@ class CopyData(Actor):
         call the cmscp class and do the copy
         """
         from cmscp import cmscp
-        doCopy = cmscp(dict)
+        self.doCopy = cmscp(dict)
 
         common.logger.info("Starting copy...")
 
         start = time.time()
-        results = doCopy.run()
+        results = self.doCopy.run()
         stop = time.time()
 
         common.logger.debug("CopyLocal Time: "+str(stop - start))
@@ -202,6 +203,7 @@ class CopyData(Actor):
         take the results dictionary and
         print the results
         '''
+        self.doCopy.writeJsonFile(results)
         for file, dict in results.items() :
             if file:
                 txt = 'success'
