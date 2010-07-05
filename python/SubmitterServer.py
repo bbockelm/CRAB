@@ -45,6 +45,7 @@ class SubmitterServer( Submitter ):
         self.taskuuid = str(common._db.queryTask('name'))
         self.limitJobs = False
 
+
 	return
 
     def run(self):
@@ -84,10 +85,13 @@ class SubmitterServer( Submitter ):
                 common._db.updateTask_({'jobType':'Submitted'})
 	return
 
-    def moveISB_SEAPI(self):
+    def moveISB_SEAPI(self, listOffiles=[]):
         ## get task info from BL ##
         common.logger.debug("Task name: " + self.taskuuid)
-        isblist = str(common._db.queryTask('globalSandbox')).split(',')
+        if len(listOffiles)>0:
+            isblist=listOffiles
+        else:
+            isblist = str(common._db.queryTask('globalSandbox')).split(',')
         common.logger.debug("List of ISB files: " +str(isblist) )
 
         # init SE interface
@@ -319,6 +323,9 @@ class SubmitterServer( Submitter ):
             self.stateChange( self.submitRange, "SubRequested" )
 
             if  self.extended==1:
+                # update the Arguments XML file
+                argsXML = common.work_space.shareDir()+'arguments.xml'
+                self.moveISB_SEAPI([argsXML])
                 taskXML= self.serialize()
                 subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob,taskType='extended')
             else:  
