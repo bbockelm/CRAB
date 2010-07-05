@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.206 2010/07/01 10:34:38 mcinquil Exp $"
-__version__ = "$Revision: 1.206 $"
+__revision__ = "$Id: FatWorker.py,v 1.207 2010/07/01 12:42:38 mcinquil Exp $"
+__version__ = "$Revision: 1.207 $"
 
 import string
 import sys, os
@@ -341,6 +341,7 @@ class FatWorker(Thread):
         doNotSubmitStatusMask = ['R','S'] # ,'K','Y','D'] # to avoid resubmission of final state jobs
         tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E', 'SD']
         skippedSubmissions = []
+        requested = []
 
         # closed running jobs regeneration and osb manipulation
         needUpd = False
@@ -411,7 +412,10 @@ class FatWorker(Thread):
                 j.runningJob['statusScheduler'] = 'Created'
                 needUpd = True
             if j['jobId'] in self.cmdRng:
+                requested.append(j['jobId'])
                 j.runningJob['state'] = 'SubRequested'
+
+        self.log.info("Submission requested for %s"%str(requested))
 
         if len(backupFiles) > 0:
             self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
