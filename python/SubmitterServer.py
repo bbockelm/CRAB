@@ -253,13 +253,14 @@ class SubmitterServer( Submitter ):
             common.logger.info("Problem setting myproxy server endpoint: using myproxy.cern.ch")
             common.logger.debug(e)
             myproxyserver = 'myproxy.cern.ch'  
-  
+ 
         configAPI = {'credential' : self.credentialType, \
                      'myProxySvr' : myproxyserver,\
                      'serverDN'   : self.server_dn,\
                      'shareDir'   : common.work_space.shareDir() ,\
                      'userName'   : getUserName(),\
                      'serverName' : self.server_name, \
+                     'proxyPath'  : self.proxy_path, \
                      'logger'     : common.logger() \
                      }
 
