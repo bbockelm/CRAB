@@ -391,6 +391,11 @@ def CliServerParams(self):
     self.storage_name = str(self.srvCfg['storageName'])
     self.storage_path = str(self.srvCfg['storagePath'])
 
+    if self.srvCfg.has_key('proxyPath'):
+        self.proxy_path = str(self.srvCfg['proxyPath'])
+    else:
+        self.proxy_path = os.path.dirname(str(self.srvCfg['storagePath'])) + '/proxyCache'
+
     self.storage_proto = str(self.srvCfg['storageProtocol'])
     if self.cfg_params.has_key('USER.client'):
         self.storage_proto = self.cfg_params['USER.client'].lower()
