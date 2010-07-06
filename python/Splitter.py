@@ -13,10 +13,7 @@ from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-try: # Can remove when CMSSW 3.7 and earlier are dropped
-    from FWCore.PythonUtilities.LumiList import LumiList
-except ImportError:
-    from LumiList import LumiList
+from LumiList import LumiList
 
 class JobSplitter:
     def __init__( self, cfg_params,  args ):
@@ -683,6 +680,8 @@ class JobSplitter:
             except:
                 continue
             wmbsFile = File(jobFile['LogicalFileName'])
+            if not  blockSites[block]:
+                wmbsFile['locations'].add('Nowhere')
             [ wmbsFile['locations'].add(x) for x in blockSites[block] ]
             wmbsFile['block'] = block
             for lumi in lumisPerFile[jobFile['LogicalFileName']]:
