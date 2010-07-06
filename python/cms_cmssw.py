@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.359 2010/05/27 18:54:45 ewv Exp $"
-__version__ = "$Revision: 1.359 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.360 2010/05/28 09:46:00 fanzago Exp $"
+__version__ = "$Revision: 1.360 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -9,7 +9,7 @@ import common
 import Scram
 from Splitter import JobSplitter
 from Downloader import Downloader
-try: 
+try:
     import json
 except:
     import simplejson as json
@@ -240,6 +240,9 @@ class Cmssw(JobType):
 
             ## Select Splitting
             splitByRun = int(cfg_params.get('CMSSW.split_by_run',0))
+            if splitByRun and not self.cfg_params.has_key('CMSSW.runselection'):
+                msg = "split_by_run must be combined with a runselection"
+                raise CrabException(msg)
 
             if self.selectNoInput:
                 if self.pset == None:
@@ -321,7 +324,7 @@ class Cmssw(JobType):
 
             self.var_filter = json.dumps(filter_dict)
             common.logger.debug("(test) var_filter for multi =  "+self.var_filter)
-            
+
             edmOutput = edmOutputDict.keys()
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
                 if edmOutput:
@@ -1051,7 +1054,7 @@ class Cmssw(JobType):
             #txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
-            ### removing some arguments 
+            ### removing some arguments
             #args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $OutUniqueID for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml json $RUNTIME_AREA/resultCopyFile n_job $OutUniqueID PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH'
 

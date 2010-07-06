@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.46 2010/06/02 13:55:14 spiga Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.47 2010/06/29 17:46:42 ewv Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -140,6 +140,10 @@ class DataDiscovery:
         if not self.splitByRun:
             self.splitByLumi = self.lumiMask or self.lumiParams or self.ads
 
+        if self.splitByRun and not runselection:
+            msg = "Error: split_by_run must be combined with a runselection"
+            raise CrabException(msg)
+
         ## service API
         args = {}
         args['url']     = dbs_url
@@ -227,22 +231,18 @@ class DataDiscovery:
 
     def queryDbs(self,api,path=None,runselection=None,useParent=None):
 
-        allowedRetriveValue = ['retrive_block', 'retrive_run']
-        if self.ads or self.lumiMask or self.lumiParams:
+
+        allowedRetriveValue = []
+        if self.splitByLumi or self.splitByRun or useParent == 1:
+            allowedRetriveValue.extend(['retrive_block', 'retrive_run'])
+        if self.splitByLumi:
             allowedRetriveValue.append('retrive_lumi')
-        if useParent == 1: allowedRetriveValue.append('retrive_parent')
+        if useParent == 1:
+            allowedRetriveValue.append('retrive_parent')
         common.logger.debug("Set of input parameters used for DBS query: %s" % allowedRetriveValue)
         try:
-            if len(runselection) <=0 or self.splitByLumi:
-                if useParent==1 or self.splitByRun==1 or self.splitByLumi:
-                    if self.ads:
-                        files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
-                    else :
-                        files = api.listFiles(path=path, retriveList=allowedRetriveValue)
-                else:
-                    files = api.listDatasetFiles(self.datasetPath)
-            else :
-                files=[]
+            if self.splitByRun:
+                files = []
                 for arun in runselection:
                     try:
                         if self.ads:
@@ -254,6 +254,15 @@ class DataDiscovery:
                         msg="WARNING: problem extracting info from DBS for run %s "%arun
                         common.logger.info(msg)
                         pass
+
+            else:
+                if allowedRetriveValue:
+                    if self.ads:
+                        files = api.listFiles(analysisDataset=path, retriveList=allowedRetriveValue)
+                    else :
+                        files = api.listFiles(path=path, retriveList=allowedRetriveValue)
+                else:
+                    files = api.listDatasetFiles(self.datasetPath)
 
         except DbsBadRequest, msg:
             raise DataDiscoveryError(msg)
