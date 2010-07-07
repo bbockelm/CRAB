@@ -27,7 +27,6 @@ class cmscp:
              return 60307 if srmcp failed
              return 60303 if file already exists in the SE
         """
-
         self.params = {"source":'', "destination":'','destinationDir':'', "inputFileList":'', "outputFileList":'', \
                            "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "for_lfn":'', "se_name":'' }
         self.debug = 0
@@ -226,7 +225,7 @@ class cmscp:
                 msg += '\tCopy of %s failed using %s : files already existing\n'%(str(list_already_existing),prot)
         if self.debug : print msg
         
-        return copy_results, list_ok, list_retry
+        return copy_results, list_ok, list_retry, list_fallback
         
     def check_for_retry_localSE (self, copy_results):
         """
@@ -259,9 +258,9 @@ class cmscp:
             print '\t list_retry %s utils \n'%list_retry
             print '\t len(list_retry) %s \n'%len(list_retry)
                 
-        list_files = list_retry   
-        self.params['inputFilesList']=list_files
-         
+        list_files = list_retry 
+        self.params['inputFileList']=list_files
+
         ### copy backup
         from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
         siteCfg = loadSiteLocalConfig()
@@ -285,7 +284,7 @@ class cmscp:
             print '\t catalog %s \n'%catalog 
             print "\t self.params['protocol'] %s \n"%self.params['protocol']            
             print '\t tfc %s '%tfc
-            print "\t self.params['inputFilesList'] %s \n"%self.params['inputFilesList']
+            print "\t self.params['inputFileList'] %s \n"%self.params['inputFileList']
                 
         if (str(self.params['for_lfn']).find("/store/") == 0):
             temp = str(self.params['for_lfn']).replace("/store/","/store/temp/",1)
@@ -294,7 +293,7 @@ class cmscp:
         if ( self.params['for_lfn'][-1] != '/' ) : self.params['for_lfn'] = self.params['for_lfn'] + '/'
             
         file_backup=[]
-        for input in self.params['inputFilesList']:
+        for input in self.params['inputFileList']:
             file = self.params['for_lfn'] + os.path.basename(input)
             surl = tfc.matchLFN(tfc.preferredProtocol, file)
             file_backup.append(surl)
@@ -321,9 +320,9 @@ class cmscp:
             if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
                 results.update(localCopy_results)
             else:
-                localCopy_results, list_ok, list_retry = self.checkCopy(localCopy_results, len(list_files), prot)
+                localCopy_results, list_ok, list_retry, list_fallback = self.checkCopy(localCopy_results, len(list_files), prot)
                 results.update(localCopy_results)
-                if len(list_ok) == len(list_files) :
+                if len(list_fallback) == len(list_files) :
                     break
                 if len(list_retry): 
                     list_files = list_retry
@@ -350,11 +349,10 @@ class cmscp:
                 print '\tand options %s\n'%opt
                 
             copy_results = self.copy( list_files, prot, opt )
-            #print "in stager copy_results = ", copy_results
             if copy_results.keys() == [''] or copy_results.keys() == '' :
                 results.update(copy_results)
             else:
-                copy_results, list_ok, list_retry = self.checkCopy(copy_results, len(list_files), prot)
+                copy_results, list_ok, list_retry, list_fallback = self.checkCopy(copy_results, len(list_files), prot)
                 results.update(copy_results)
                 if len(list_ok) == len(list_files) :
                     break
@@ -363,9 +361,7 @@ class cmscp:
                 else: break
 
         if self.local_stage:
-            #print "results before check local = ", results
             list_retry_localSE = self.check_for_retry_localSE(results)
-            #print "results after check local = ", results
             if len(list_retry_localSE):
                 if self.debug: 
                     print "\t list_retry_localSE %s \n"%list_retry_localSE
@@ -417,8 +413,6 @@ class cmscp:
             
         prot = Destination_SE.protocol 
         self.hostname=Destination_SE.hostname
-        #print "in copy hostname = ", self.hostname
-        #print "prot = ", prot
 
         # create remote dir
         if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
@@ -738,12 +732,10 @@ class cmscp:
         jobStageInfo={}
         jobStageInfo['erCode']=erCode
         jobStageInfo['reason']=reason
-        #if not self.params['lfn']: self.params['lfn']=''
         if not self.params['for_lfn']: self.params['for_lfn']=''
         if not self.params['se_name']: self.params['se_name']=''
         if not self.hostname: self.hostname=''
         if (erCode != '0') and (erCode != '60308'):
-           #jobStageInfo['lfn']='/copy_problem/'
            jobStageInfo['for_lfn']='/copy_problem/'
         else:   
             jobStageInfo['for_lfn']=self.params['for_lfn']
@@ -767,22 +759,18 @@ class cmscp:
                 reason = " ".join(reason.split("'"))
             reason="'%s'"%reason
             if file:
-                #if dict['lfn']=='':
                 if dict['for_lfn']=='':
                     lfn = '${LFNBaseName}'+os.path.basename(file)
                     se  = '$SE'
                     LFNBaseName = '$LFNBaseName'
                 else:
-                    #lfn = dict['lfn']+os.path.basename(file)
                     lfn = dict['for_lfn']+os.path.basename(file)
-                    #se = dict['se']
                     se = dict['se_name']
                     LFNBaseName = os.path.dirname(lfn)
                     if (LFNBaseName[-1] != '/'):
                         LFNBaseName = LFNBaseName + '/'
 
                 
-                #dict['lfn'] # to be implemented
                 txt += 'echo "Report for File: '+file+'"\n'
                 txt += 'echo "LFN: '+lfn+'"\n'
                 txt += 'echo "StorageElement: '+se+'"\n'
