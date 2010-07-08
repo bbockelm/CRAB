@@ -117,10 +117,10 @@ class Scheduler :
             common.logger.info(msg)
             raise CrabException(msg)
 
-        if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
-            msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
-            common.logger.info(msg)
-            raise CrabException(msg)
+        #if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
+        #    msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
+        #    common.logger.info(msg)
+        #    raise CrabException(msg)
 
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         self.debugWrap=''
