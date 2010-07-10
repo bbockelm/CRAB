@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.43 2009/09/28 15:22:29 farinafa Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.44 2010/01/14 11:19:28 farinafa Exp $"
+__version__ = "$Revision: 1.44 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -213,6 +213,32 @@ class TaskLifeManagerComponent:
         logging.info("   payload = " + str(payload) )
         logging.info("")
 
+
+    def logExpired(self, taskname):
+        """
+        _logExpired_
+
+        register the proxy expired for the task in argument
+        by sending a message to the logger component (TT)
+        """
+        diction = { \
+                    'reason': "Task Archived due to Expired Proxy!", \
+                    'time'  : str(time.time()) \
+                  }
+
+        from IMProv.IMProvAddEntry import Event
+        eve = Event( )
+        eve.initialize( diction )
+        unifilename = os.path.join(self.args['CacheDir'], taskname+"_spec", str(time.time())+".pkl")
+        eve.dump( unifilename )
+        message = "TTXmlLogging"
+        payload  = taskname + "::-1::" + unifilename
+        logging.debug("Sending %s."%message)
+        self.ms.publish(message, payload)
+        self.ms.commit()
+        logging.debug("Registering information:\n%s"%str(diction))
+        
+
     ##########################################################################
     # clean old tasks
     ##########################################################################
@@ -375,7 +401,9 @@ class TaskLifeManagerComponent:
         if self.procheck != None:
             ## checks and manages proxies 
             try:
-                self.procheck.pollProxies(self.credentialCfg)
+                expiredtasks = self.procheck.pollProxies(self.credentialCfg)
+                for exptask in expiredtask:
+                    self.logExpired(exptask)
             except Exception, ex:
                 import traceback
                 logging.error("Problem on polling proxies: \n" + str(ex) )

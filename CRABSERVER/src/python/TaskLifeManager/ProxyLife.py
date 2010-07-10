@@ -226,6 +226,8 @@ class ProxyLife:
         """
         logging.info( "Start proxy's polling...." )
 
+        expiredtask = []
+
         from ProdCommon.Credential.CredentialAPI import CredentialAPI
         CredAPI = CredentialAPI( credConfig )
 
@@ -271,6 +273,7 @@ class ProxyLife:
                             tlapi.archiveServerTask(task, mySession.bossLiteDB)
                             ## append for hand clean
                             allTasks.append(task)
+                            expiredtask.append(task)
 
                     try:
                         logging.info("Destroying proxy %s" %proxyfull) 
@@ -363,4 +366,5 @@ class ProxyLife:
             logging.info("not closed..")
 
         logging.info( "Proxy's polling ended." )
+        return expiredtask
 
