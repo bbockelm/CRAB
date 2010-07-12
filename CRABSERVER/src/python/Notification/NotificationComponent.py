@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.26 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.26 2010/06/22 12:50:16 mcinquil Exp $"
+__version__ = "$Revision: 1.27 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.27 2010/07/12 16:28:04 mcinquil Exp $"
 
 import os
 import socket
@@ -731,6 +731,7 @@ class NotificationComponent:
                                  "txt":    txt         \
                                 }
                     self.infoLogger(task, buildinfo)
+                self.ms.commit()
 
 
     def calcFromSeconds(self, totSec):
