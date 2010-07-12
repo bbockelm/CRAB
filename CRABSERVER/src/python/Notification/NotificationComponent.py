@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.27 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.27 2010/07/12 16:28:04 mcinquil Exp $"
+__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.28 2010/07/12 18:01:59 mcinquil Exp $"
 
 import os
 import socket
@@ -541,7 +541,7 @@ class NotificationComponent:
                     txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                     logging.info( txt )
    
-                    subj = str(self.serverName)+" Server Notification: Task Failed! " ## mailMess
+                    subj = str(self.serverName)+" Server Notification: Task Failed " ## mailMess
                   
                     try:
                         self.mailer.SendMail(emaillist, subj, mailMess)
@@ -630,7 +630,7 @@ class NotificationComponent:
                     logging.info( txt )
 
                     import socket
-                    subj = str(self.serverName)+' Server Notification: Expiring Credential!' ## mailMess
+                    subj = str(self.serverName)+' Server Notification: Expiring Credential' ## mailMess
                     try:
                         self.mailer.SendMail(emaillist, subj, mailMess)
                     except RuntimeError, mess:
@@ -697,7 +697,7 @@ class NotificationComponent:
                
 
                 import socket
-                subj = str(self.serverName)+' Server Notification: Clean Storage Area!"'
+                subj = str(self.serverName)+' Server Notification: Clean Storage Area"'
                 try:
                     self.mailer.SendMail(emaillist, subj, mailMess)
                 except RuntimeError, mess:
