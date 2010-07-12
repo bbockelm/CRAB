@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.25 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.25 2009/02/13 13:26:35 mcinquil Exp $"
+__version__ = "$Revision: 1.26 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.26 2010/06/22 12:50:16 mcinquil Exp $"
 
 import os
 import socket
@@ -605,7 +605,8 @@ class NotificationComponent:
                         if emaillist[0] == "":
                             msg = "Notification.NotificationComponent.MainLoop: empty email address ["
                             msg += emaillist[0] + "]"
-                            raise Exception(msg)
+                            logging.error(msg)
+                            self.ms.commit()
 
                     hours, mins, secs = self.calcFromSeconds( proxylife )
                     timeMsg = ""
