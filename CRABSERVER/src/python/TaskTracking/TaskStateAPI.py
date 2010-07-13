@@ -880,6 +880,8 @@ class TaskStateAPI:
             self.closeConnPA( dbCur, conn )
 	    raise
 
+        msg += "..updated correctly!"
+
         return msg
 
 

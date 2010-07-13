@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.166 2010/06/01 15:52:45 mcinquil Exp $"
-__version__ = "$Revision: 1.166 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.167 2010/06/01 16:57:10 mcinquil Exp $"
+__version__ = "$Revision: 1.167 $"
 
 import os
 import time
@@ -583,8 +583,8 @@ class TaskTrackingComponent:
         strEmail = ""
         for mail in eMaiList:
             strEmail += str(mail) + ","
-            ttdb = TaskStateAPI()
-            ttdb.updatingNotifiedPA( taskName, 2 )
+        ttdb = TaskStateAPI()
+        logging.debug ( str(ttdb.updatingNotifiedPA( taskName, 2 )) )
         if status == self.taskState[2]:
             self.taskNotSubmitted( os.path.join( self.args['CacheDir'], \
                                                  (taskName + self.workAdd), \
