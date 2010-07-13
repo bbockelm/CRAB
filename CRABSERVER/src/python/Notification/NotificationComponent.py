@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.28 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.28 2010/07/12 18:01:59 mcinquil Exp $"
+__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.29 2010/07/12 19:33:33 mcinquil Exp $"
 
 import os
 import socket
@@ -396,7 +396,7 @@ class NotificationComponent:
                     txt = "Notification.Consumer.Notify: Sending mail to [" + str(emaillist) + "] using SMTPLIB"
                     logging.info( txt )
 
-                    subj = str(self.serverName)+' Notification: Task Cleaning"' ## mailMess
+                    subj = str(self.serverName)+' Notification: Task Cleaning' ## mailMess
                     try:
                         self.mailer.SendMail(emaillist, subj, mailMess)
                     except RuntimeError, mess:
@@ -697,7 +697,7 @@ class NotificationComponent:
                
 
                 import socket
-                subj = str(self.serverName)+' Server Notification: Clean Storage Area"'
+                subj = str(self.serverName)+' Server Notification: Clean Storage Area'
                 try:
                     self.mailer.SendMail(emaillist, subj, mailMess)
                 except RuntimeError, mess:
