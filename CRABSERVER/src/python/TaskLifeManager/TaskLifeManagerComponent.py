@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.44 2010/01/14 11:19:28 farinafa Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.45 2010/07/10 22:03:16 mcinquil Exp $"
+__version__ = "$Revision: 1.45 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -222,6 +222,7 @@ class TaskLifeManagerComponent:
         by sending a message to the logger component (TT)
         """
         diction = { \
+                    'ev'    : "Expired Proxy!", \
                     'reason': "Task Archived due to Expired Proxy!", \
                     'time'  : str(time.time()) \
                   }
@@ -233,7 +234,7 @@ class TaskLifeManagerComponent:
         eve.dump( unifilename )
         message = "TTXmlLogging"
         payload  = taskname + "::-1::" + unifilename
-        logging.debug("Sending %s."%message)
+        logging.info("Sending '%s' with payload '%s'."%(message,payload))
         self.ms.publish(message, payload)
         self.ms.commit()
         logging.debug("Registering information:\n%s"%str(diction))
@@ -402,7 +403,7 @@ class TaskLifeManagerComponent:
             ## checks and manages proxies 
             try:
                 expiredtasks = self.procheck.pollProxies(self.credentialCfg)
-                for exptask in expiredtask:
+                for exptask in expiredtasks:
                     self.logExpired(exptask)
             except Exception, ex:
                 import traceback
