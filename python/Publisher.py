@@ -27,6 +27,8 @@ class Publisher(Actor):
         """
 
         self.cfg_params=cfg_params
+        self.fjrDirectory = cfg_params.get('USER.outputdir' ,
+                                           common.work_space.resDir()) + '/'
        
         if not cfg_params.has_key('USER.publish_data_name'):
             raise CrabException('Cannot publish output data, because you did not specify USER.publish_data_name parameter in the crab.cfg file')
@@ -274,21 +276,35 @@ class Publisher(Actor):
         parse of all xml file on res dir and creation of distionary
         """
         
-        file_list = glob.glob(self.resDir+"crab_fjr*.xml")
-        
-        ## Select only those fjr that are succesfull
-        if (len(file_list)==0):
-            common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
-            self.exit_status = '1'
-            return self.exit_status
-
+        task = common._db.getTask()
         good_list=[]
-        for fjr in file_list:
+
+        for job in task.getJobs():
+            fjr = self.fjrDirectory + job['outputFiles'][-1]
+            if (job.runningJob['applicationReturnCode']!=0 or job.runningJob['wrapperReturnCode']!=0): continue
+            # get FJR filename
+            fjr = self.fjrDirectory + job['outputFiles'][-1]
             reports = readJobReport(fjr)
             if len(reports)>0:
                if reports[0].status == "Success":
                   good_list.append(fjr)
         file_list=good_list
+
+        #file_list = glob.glob(self.resDir+"crab_fjr*.xml")
+        
+        ## Select only those fjr that are succesfull
+        #if (len(file_list)==0):
+        #    common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
+        #    self.exit_status = '1'
+        #    return self.exit_status
+
+        #good_list=[]
+        #for fjr in file_list:
+        #    reports = readJobReport(fjr)
+        #    if len(reports)>0:
+        #       if reports[0].status == "Success":
+        #          good_list.append(fjr)
+        #file_list=good_list
         ##
         common.logger.log(10-1, "fjr with FrameworkJobReport Status='Success', file_list = "+str(file_list))
         common.logger.log(10-1, "len(file_list) = "+str(len(file_list)))

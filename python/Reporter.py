@@ -71,7 +71,7 @@ class Reporter(Actor):
         filesRequired=0
         lumis = []
         for job in task.getJobs():
-            if (job.runningJob['applicationReturnCode']>0 or job.runningJob['wrapperReturnCode']>0): continue
+            if (job.runningJob['applicationReturnCode']!=0 or job.runningJob['wrapperReturnCode']!=0): continue
             # get FJR filename
             fjr = self.fjrDirectory + job['outputFiles'][-1]
 
