@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.40 2010/06/07 10:38:39 spiga Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: Splitter.py,v 1.42 2010/07/06 14:44:27 ewv Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import common
 from crab_exceptions import *
@@ -13,7 +13,10 @@ from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
-from LumiList import LumiList
+try: # Can remove when CMSSW 3.7 and earlier are dropped
+    from FWCore.PythonUtilities.LumiList import LumiList
+except ImportError:
+    from LumiList import LumiList
 
 class JobSplitter:
     def __init__( self, cfg_params,  args ):
