@@ -60,11 +60,17 @@ class SchedulerSge(SchedulerLocal) :
         index = int(common._db.nJobs()) - 1
         sched_param= ''
 
+        if (self.queue):
+            sched_param += '-q '+self.queue +' '
+        if (self.res):
+            sched_param += self.res +' '
+            
         for i in range(index): # Add loop DS
             sched_param= ''
             if (self.queue):
                 sched_param += '-q '+self.queue +' '
-            if (self.res): sched_param += '-l '+self.res +' '
+            if (self.res): sched_param += self.res +' '
+        
 
         pass
 
