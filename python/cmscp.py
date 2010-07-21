@@ -155,6 +155,10 @@ class cmscp:
                 'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 -storagetype=permanent '}
         rfioOpt=''
 
+        ## FEDE for hadoop ###
+        hadoopOpt = ''
+        ####
+
         supported_protocol = None
         if middleware.lower() in ['osg','lcg','condor','sge']:
             supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]),\
@@ -165,6 +169,10 @@ class cmscp:
             supported_protocol = [('rfio',rfioOpt),('local','')]
         elif middleware.lower() in ['arc']:
             supported_protocol = [('srmv2','-debug'),('srmv1','-debug')]
+        ## FEDE for hadoop ###
+        elif middleware.lower() in ['hadoop']:
+            supported_protocol = [('hadoop', hadoopOpt)]
+        ####    
         else:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
@@ -273,6 +281,9 @@ class cmscp:
         ##### to be improved ###############
         if (implName == 'rfcp'):
             self.params['middleware']='lsf'
+        #### FEDE for hadoop    
+        if implName == 'hadoop':
+            self.params['middleware'] = 'hadoop'
         ####################################    
                    
         self.params['protocol']=implName
@@ -415,7 +426,8 @@ class cmscp:
         self.hostname=Destination_SE.hostname
 
         # create remote dir
-        if Destination_SE.protocol in ['gridftp','rfio','srmv2']:
+        ### FEDE for hadoop
+        if Destination_SE.protocol in ['gridftp','rfio','srmv2','hadoop']:
             try:
                 self.createDir( Destination_SE, Destination_SE.protocol )
             except OperationException, ex:
