@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.207 2010/07/01 12:42:38 mcinquil Exp $"
-__version__ = "$Revision: 1.207 $"
+__revision__ = "$Id: FatWorker.py,v 1.208 2010/07/05 15:51:20 mcinquil Exp $"
+__version__ = "$Revision: 1.208 $"
 
 import string
 import sys, os
@@ -535,10 +535,10 @@ class FatWorker(Thread):
                                 j.runningJob['status'] = 'S'
                                 j.runningJob['statusScheduler'] = 'Submitted'
                                 j.runningJob['state'] = 'SubSuccess'
+                                self.blDBsession.updateDB( j )
                                 parentIds.append( j.runningJob['schedulerParentId'] )
                         self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
                         self.SendMLpost( task, sub_jobs[ii] )
-                        self.blDBsession.updateDB( task )
                     errorTrace = ''
             else:
                 # update arguments for unique output naming
@@ -593,10 +593,10 @@ class FatWorker(Thread):
                             j.runningJob['status'] = 'S'
                             j.runningJob['statusScheduler'] = 'Submitted'
                             j.runningJob['state'] = 'SubSuccess'
+                            self.blDBsession.updateDB( j )
                             parentIds.append( j.runningJob['schedulerParentId'] )
                     self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
                     self.SendMLpost( task, sub_jobs[ii] )
-                    self.blDBsession.updateDB( task )
 
         return submitted, unsubmitted, errorTrace
 
