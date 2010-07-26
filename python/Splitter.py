@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.42 2010/07/06 14:44:27 ewv Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: Splitter.py,v 1.43 2010/07/16 14:23:24 ewv Exp $"
+__version__ = "$Revision: 1.43 $"
 
 import common
 from crab_exceptions import *
@@ -711,10 +711,10 @@ class JobSplitter:
         for jobGroup in jobFactory(lumis_per_job = self.lumisPerJob):
             for job in jobGroup.jobs:
                 if (self.limitNJobs and jobCount >= self.theNumberOfJobs):
-                    common.logger.info('Limit on number of jobs reached.')
+                    common.logger.info('Requested number of jobs reached.')
                     break
                 if (self.limitTotalLumis and lumisCreated >= self.totalNLumis):
-                    common.logger.info('Limit on number of lumis reached.')
+                    common.logger.info('Requested number of lumis reached.')
                     break
                 lumis = []
                 lfns  = []
