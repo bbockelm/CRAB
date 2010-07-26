@@ -275,25 +275,26 @@ class cmscp:
         seName = siteCfg.localStageOut.get("se-name", None)
         catalog = siteCfg.localStageOut.get("catalog", None)
         implName = siteCfg.localStageOut.get("command", None)
+        option = siteCfg.localStageOut.get("option", None)
+
         if (implName == 'srm'):
-           implName='srmv1'
-           self.params['srm_version']=implName
-        ##### to be improved ###############
-        if (implName == 'rfcp'):
-            self.params['middleware']='lsf'
-        #### FEDE for hadoop    
-        if implName == 'hadoop':
-            self.params['middleware'] = 'hadoop'
-        ####################################    
+           protocol = 'srmv2'
+        elif (implName == 'srmv2-lcg'):
+           protocol = 'srm-lcg'
+        elif (implName == 'rfcp-CERN'):
+           protocol = 'rfio'
+        elif (implName == 'rfcp'):
+           protocol = 'rfio'
+        else: protocol = implName 
                    
-        self.params['protocol']=implName
         tfc = siteCfg.trivialFileCatalog()
             
         if self.debug:
             print '\t siteCFG %s \n'%siteCfg
             print '\t seName %s \n'%seName 
             print '\t catalog %s \n'%catalog 
-            print "\t self.params['protocol'] %s \n"%self.params['protocol']            
+            print "\t fallback protocol %s \n"%protocol            
+            print "\t fallback option %s \n"%option
             print '\t tfc %s '%tfc
             print "\t self.params['inputFileList'] %s \n"%self.params['inputFileList']
                 
@@ -315,32 +316,27 @@ class cmscp:
                     
         destination=os.path.dirname(file_backup[0])
         if ( destination[-1] != '/' ) : destination = destination + '/'
-       
         self.params['destination']=destination
-        
         self.params['se_name']=seName
             
         if self.debug:
             print "\t self.params['destination']%s \n"%self.params['destination']
-            print "\t self.params['protocol'] %s \n"%self.params['protocol']
-            print "\t self.params['option']%s \n"%self.params['option']
-              
-        for prot, opt in self.setProtocol( self.params['middleware'] ):
-            if self.debug: print '\tIn LocalCopy trying the stage out with %s utils \n'%prot
-            localCopy_results = self.copy( self.params['inputFileList'], prot, opt, backup='yes' )
-            if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
-                results.update(localCopy_results)
-            else:
-                localCopy_results, list_ok, list_retry, list_fallback = self.checkCopy(localCopy_results, len(list_files), prot)
-                results.update(localCopy_results)
-                if len(list_fallback) == len(list_files) :
-                    break
-                if len(list_retry): 
-                    list_files = list_retry
-                else: break
-            if self.debug:
-                print "\t localCopy_results = %s \n"%localCopy_results
-        
+            print "\t protocol %s \n"%protocol
+            print "\t optionn%s \n"%option
+
+        if self.debug: print '\tIn LocalCopy trying the stage out with %s utils \n'%protocol
+        if self.debug: print '\tUsing as option %s \n'%option
+
+        localCopy_results = self.copy( self.params['inputFileList'], protocol, option, backup='yes' )
+           
+        if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
+            results.update(localCopy_results)
+        else:
+            localCopy_results, list_ok, list_retry, list_fallback = self.checkCopy(localCopy_results, len(list_files), protocol)
+                
+            results.update(localCopy_results)
+        if self.debug:
+            print "\t localCopy_results = %s \n"%localCopy_results
         return results        
 
     def stager( self, middleware, list_files ):
