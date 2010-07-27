@@ -2,8 +2,8 @@
 Get output for server mode
 """
 
-__revision__ = "$Id: GetOutputServer.py,v 1.49 2010/04/28 15:15:28 mcinquil Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: GetOutputServer.py,v 1.50 2010/05/04 15:52:14 spiga Exp $"
+__version__ = "$Revision: 1.50 $"
 
 from GetOutput import GetOutput
 from StatusServer import StatusServer
@@ -31,7 +31,7 @@ class GetOutputServer( GetOutput, StatusServer ):
         self.copyTout= setLcgTimeout()
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
             self.copyTout= ' '
-  
+
         return
 
 
@@ -52,9 +52,9 @@ class GetOutputServer( GetOutput, StatusServer ):
         filesAndJodId.update( self.retrieveFiles(self.list_id) )
         common.logger.debug( "Files to be organized and notified " + str(filesAndJodId))
 
-        # load updated task       
+        # load updated task
         task = common._db.getTask()
-     
+
         self.organizeOutput( task, self.list_id )
 
         self.notifyRetrievalToServer(filesAndJodId)
@@ -106,12 +106,12 @@ class GetOutputServer( GetOutput, StatusServer ):
             raise CrabException(msg)
 
         ## copy ISB ##
-        sbi = SBinterface( seEl, loc )
+        sbi = SBinterface(seEl, loc, logger = common.logger.logger)
 
         filesAndJodId = {}
 
         if self.storage_proto in ['globus']:
-            # construct a list of absolute paths of input files             
+            # construct a list of absolute paths of input files
             # and the destinations to copy them to
             sourcesList = []
             destsList = []

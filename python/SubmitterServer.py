@@ -24,7 +24,7 @@ class SubmitterServer( Submitter ):
         self.submitRange = []
         self.credentialType = 'Proxy'
         self.copyTout= setLcgTimeout()
-        self.extended=int(cfg_params.get('CMSSW.extend',0))    
+        self.extended=int(cfg_params.get('CMSSW.extend',0))
    #wmbs
         self.type = int(cfg_params.get('WMBS.automation',0))
         self.taskType = 'fullySpecified'
@@ -60,8 +60,8 @@ class SubmitterServer( Submitter ):
 
         self.submitRange = self.nj_list
 
-        ## wmbs 
-        check = self.checkIfCreate(self.type) 
+        ## wmbs
+        check = self.checkIfCreate(self.type)
 
         if check == 0 :
 
@@ -77,11 +77,11 @@ class SubmitterServer( Submitter ):
             stop = time.time()
             common.logger.debug("Submission Time: "+str(stop - start))
             #wmbs
-            if self.type == 0 : msg = 'Total of %d jobs submitted'%len(self.submitRange) 
+            if self.type == 0 : msg = 'Total of %d jobs submitted'%len(self.submitRange)
             else: msg='Request submitted to the server.'
             common.logger.info(msg)
-            
-            if int(self.type)==1: 
+
+            if int(self.type)==1:
                 common._db.updateTask_({'jobType':'Submitted'})
 	return
 
@@ -118,7 +118,7 @@ class SubmitterServer( Submitter ):
         # create remote dir for gsiftp
         if self.storage_proto in ['gridftp','rfio','uberftp']:
             try:
-                action = SBinterface( seEl )
+                action = SBinterface(seEl, logger = common.logger.logger)
                 action.createDir( self.remotedir )
             except AlreadyExistsException, ex:
                 msg = "Project %s already exist on the Storage Element \n"%self.taskuuid
@@ -141,39 +141,39 @@ class SubmitterServer( Submitter ):
                 raise CrabException(msg)
 
         ## copy ISB ##
-        sbi = SBinterface( loc, seEl )
+        sbi = SBinterface(loc, seEl, logger = common.logger.logger)
 
         # can copy a list of files
         if self.storage_proto in ['globus']:
             #print "[moveISB_SEAPI] doing globus-url-copy"
-            # construct a list of absolute paths of input files             
+            # construct a list of absolute paths of input files
             # and the destinations to copy them to
             sourcesList = []
             destsList = []
             for filetocopy in isblist:
-                sourcesList.append(os.path.abspath(filetocopy))             
+                sourcesList.append(os.path.abspath(filetocopy))
                 destsList.append(os.path.join(self.remotedir, os.path.basename(filetocopy)))
 
             # construct logging information
             toCopy = "\n".join([t[0] + " to " + t[1] for t in map(None, sourcesList, destsList)]) + "\n"
-            common.logger.debug("Sending:\n " + toCopy)                     
-              
-            # try to do the copy        
+            common.logger.debug("Sending:\n " + toCopy)
+
+            # try to do the copy
             copy_res = None
             try:
-                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)        
+                copy_res = sbi.copy( sourcesList, destsList, opt=self.copyTout)
             except AuthorizationException, ex:
-                common.logger.debug(str(ex.detail))                         
+                common.logger.debug(str(ex.detail))
                 msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
-                msg +="Project "+ self.taskuuid +" not Submitted \n"        
+                msg +="Project "+ self.taskuuid +" not Submitted \n"
                 raise CrabException(msg)
-            except Exception, ex:                                           
-                common.logger.debug(str(ex))                                
+            except Exception, ex:
+                common.logger.debug(str(ex))
                 import traceback
                 common.logger.debug(str(traceback.format_exc()))
                 msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
                 msg +="Project "+ self.taskuuid +" not Submitted \n"
-                raise CrabException(msg)                                    
+                raise CrabException(msg)
             if copy_res is None:
                 raise CrabException("Unkown Error: Unable to ship the project to the server!")
             else:
@@ -192,25 +192,25 @@ class SubmitterServer( Submitter ):
                         msg += "              Problem transferring [%s]:  '%s'\n" %(problem[0],problem[1])
                     msg += "Project "+ self.taskuuid +" not Submitted \n"
                     raise CrabException(msg)
-                  
-        # cannot copy a list of files, need to do                           
+
+        # cannot copy a list of files, need to do
         # each file in turn
-        else:   
-            for filetocopy in isblist:                                      
+        else:
+            for filetocopy in isblist:
                 source = os.path.abspath(filetocopy)
-                dest = os.path.join(self.remotedir, os.path.basename(filetocopy))              
+                dest = os.path.join(self.remotedir, os.path.basename(filetocopy))
                 common.logger.debug("Sending "+ os.path.basename(filetocopy) +" to "+ self.storage_name)
                 try:
                     sbi.copy( source, dest, opt=self.copyTout)
                 except AuthorizationException, ex:
-                    common.logger.debug(str(ex.detail))                     
+                    common.logger.debug(str(ex.detail))
                     msg = "ERROR: Unable to create project destination on the Storage Element: %s\n"%str(ex)
                     msg +="Project "+ self.taskuuid +" not Submitted \n"
                     raise CrabException(msg)
                 except Exception, ex:
                     common.logger.debug(str(ex))
                     msg = "ERROR : Unable to ship the project to the server %s\n"%str(ex)
-                    msg +="Project "+ self.taskuuid +" not Submitted \n"    
+                    msg +="Project "+ self.taskuuid +" not Submitted \n"
                     raise CrabException(msg)
 
         ## if here then project submitted ##
@@ -252,8 +252,8 @@ class SubmitterServer( Submitter ):
         except Exception, e:
             common.logger.info("Problem setting myproxy server endpoint: using myproxy.cern.ch")
             common.logger.debug(e)
-            myproxyserver = 'myproxy.cern.ch'  
- 
+            myproxyserver = 'myproxy.cern.ch'
+
         configAPI = {'credential' : self.credentialType, \
                      'myProxySvr' : myproxyserver,\
                      'serverDN'   : self.server_dn,\
@@ -272,7 +272,7 @@ class SubmitterServer( Submitter ):
 
 
         if  self.credentialType == 'Proxy':
-            # Proxy delegation through MyProxy, 4 days lifetime minimum 
+            # Proxy delegation through MyProxy, 4 days lifetime minimum
             if not CredAPI.checkMyProxy(Time=4, checkRetrieverRenewer=True) :
                 common.logger.info("Please renew MyProxy delegated proxy:\n")
                 try:
@@ -282,7 +282,7 @@ class SubmitterServer( Submitter ):
                     common.logger.debug("Delegating Credentials to MyProxy : " +str(traceback.format_exc()))
                     raise CrabException(str(ex))
         else:
-            if not CredAPI.checkMyProxy(Time=100): 
+            if not CredAPI.checkMyProxy(Time=100):
                 common.logger.info("Please renew the token:\n")
                 try:
                     CredAPI.ManualRenewCredential()
@@ -329,7 +329,7 @@ class SubmitterServer( Submitter ):
                 self.moveISB_SEAPI([argsXML])
                 taskXML= self.serialize()
                 subOutcome = csCommunicator.submitNewTask(self.taskuuid, taskXML, self.submitRange,TotJob,taskType='extended')
-            else:  
+            else:
                 try:
                     subOutcome = csCommunicator.subsequentJobSubmit(self.taskuuid, self.submitRange)
                 except Exception, ex: ##change to specific exception
@@ -358,7 +358,7 @@ class SubmitterServer( Submitter ):
             msg +="Project "+str(self.taskuuid)+" not Submitted \n"
             msg += str(e)
             raise CrabException(msg)
-        return taskXML         
+        return taskXML
 
     def markSubmitting(self):
         """

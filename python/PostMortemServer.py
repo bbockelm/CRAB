@@ -9,11 +9,11 @@ from ProdCommon.Storage.SEAPI.SBinterface import SBinterface
 
 class PostMortemServer(PostMortem):
     def __init__(self, cfg_params, nj_list):
-            
+
         PostMortem.__init__(self, cfg_params, nj_list)
 
         # init client server params...
-        CliServerParams(self)        
+        CliServerParams(self)
 
         self.copyTout= setLcgTimeout()
         if common.scheduler.name().upper() in ['LSF', 'CAF']:
@@ -21,11 +21,11 @@ class PostMortemServer(PostMortem):
 
         if self.storage_path[0]!='/':
             self.storage_path = '/'+self.storage_path
-        
+
         return
-    
+
     def collectLogging(self):
-        # get updated status from server 
+        # get updated status from server
         try:
             from StatusServer import StatusServer
             stat = StatusServer(self.cfg_params)
@@ -38,7 +38,7 @@ class PostMortemServer(PostMortem):
         #create once storage interaction object
         seEl = None
         loc = None
-        try:  
+        try:
             seEl = SElement(self.storage_name, self.storage_proto, self.storage_port)
         except Exception, ex:
             common.logger.debug( str(ex))
@@ -52,7 +52,7 @@ class PostMortemServer(PostMortem):
             raise CrabException(msg)
 
         ## coupling se interfaces
-        sbi = SBinterface( seEl, loc )
+        sbi = SBinterface(seEl, loc, logger = common.logger.logger)
 
         ## get the list of jobs to get logging.info skimmed by failed status
         logginable = self.skimDeadList()
@@ -64,7 +64,7 @@ class PostMortemServer(PostMortem):
                 elif id not in logginable:
                     common.logger.info('Warning: job # ' + str(id) + ' not killed or aborted! Will get loggingInfo manually ')
                     PostMortem.collectOneLogging(self,id)
-            # construct a list of absolute paths of input files             
+            # construct a list of absolute paths of input files
             # and the destinations to copy them to
             sourcesList = []
             destsList = []
@@ -110,7 +110,7 @@ class PostMortemServer(PostMortem):
                 if id not in self.all_jobs:
                     common.logger.info('Warning: job # ' + str(id) + ' does not exist! Not possible to ask for postMortem ')
                     continue
-                elif id in logginable:  
+                elif id in logginable:
                     fname = self.fname_base + str(id) + '.LoggingInfo'
                     if os.path.exists(fname):
                         common.logger.info('Logging info for job ' + str(id) + ' already present in '+fname+'\nRemove it for update')
@@ -119,7 +119,7 @@ class PostMortemServer(PostMortem):
                     if self.retrieveFile( sbi, id, fname):
                         ## decode logging info
                         fl = open(fname, 'r')
-                        out = "".join(fl.readlines())  
+                        out = "".join(fl.readlines())
                         fl.close()
                         reason = self.decodeLogging(out)
                         common.logger.info('Logging info for job '+ str(id) +': '+str(reason)+'\n      written to '+str(fname)+' \n' )
@@ -143,7 +143,7 @@ class PostMortemServer(PostMortem):
             if job.runningJob['status'] in ['K','A']:
                 skimmedlist.append(job['jobId'])
         return skimmedlist
-        
+
     def retrieveFile(self, sbi, jobid, destlog):
         """
         __retrieveFile__
@@ -153,7 +153,7 @@ class PostMortemServer(PostMortem):
         self.taskuuid = str(common._db.queryTask('name'))
         common.logger.debug( "Task name: " + self.taskuuid)
 
-        # full remote dir 
+        # full remote dir
         remotedir = os.path.join(self.storage_path, self.taskuuid)
         remotelog = remotedir + '/loggingInfo_'+str(jobid)+'.log'
 
@@ -170,7 +170,7 @@ class PostMortemServer(PostMortem):
             msg += str(ex)
             common.logger.debug(msg)
             return False
-        # cleaning remote logging info file 
+        # cleaning remote logging info file
         try:
             common.logger.debug( "Cleaning remote file [%s] " %( str(remotelog) ) )
             sbi.delete(remotelog)

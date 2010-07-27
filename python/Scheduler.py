@@ -49,7 +49,7 @@ class Scheduler :
 
         self.protocolOpt = { 'rfio' : '', \
                              'srmv2' : '' ,  \
-                             'srm-lcg' : '-b -D srmv2' 
+                             'srm-lcg' : '-b -D srmv2'
                             }
 
         return
@@ -130,7 +130,7 @@ class Scheduler :
             self.debugWrap='--debug'
             self.loc_stage_out='--local_stage'
 
-        # Time padding for minimal job duration. 
+        # Time padding for minimal job duration.
         self.minimal_job_duration = 10
 
         return
@@ -206,7 +206,7 @@ class Scheduler :
             for remote in remoteList:
                 for meta in metaList:
                     metaPrePost = meta.split('.')
-                    if remote.startswith(metaPrePost[0]) and remote.endswith(metaPrePost[1]): 
+                    if remote.startswith(metaPrePost[0]) and remote.endswith(metaPrePost[1]):
                         msg  = 'Error: You are asking to stage out on a remote directory \n'
                         msg += '\twhich already contains files with same name.\n'
                         msg += '\tThe endpoint is ' + endpoint + '\n'
@@ -229,7 +229,7 @@ class Scheduler :
             common.logger.debug(traceback.format_exc())
             raise Exception(str(ex))
         try:
-            action = SBinterface( Storage )
+            action = SBinterface(Storage, logger = common.logger.logger)
         except Exception, ex:
             common.logger.debug(traceback.format_exc())
             raise Exception(str(ex))
@@ -238,7 +238,7 @@ class Scheduler :
             remoteList = action.dirContent(opt=self.protocolOpt[protocol])
         except Exception, e:
             common.logger.debug(traceback.format_exc())
-            raise CrabException("Failure while checking remote dir: "+str(e)) 
+            raise CrabException("Failure while checking remote dir: "+str(e))
 
         return remoteList
 
