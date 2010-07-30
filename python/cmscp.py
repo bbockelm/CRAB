@@ -71,13 +71,8 @@ class cmscp:
                 file_to_copy.append(self.params['inputFileList'])
             self.params['inputFileList'] = file_to_copy
 
-        #if not self.params['lfn'] and self.local_stage == 1 : HelpOptions()
         if not self.params['for_lfn'] and self.local_stage == 1 : HelpOptions()
         
-        ## TO DO:
-        #### add check for outFiles
-        #### add map {'inFileNAME':'outFileNAME'} to change out name
-
 
     def run( self ):
         """
@@ -155,10 +150,6 @@ class cmscp:
                 'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 -storagetype=permanent '}
         rfioOpt=''
 
-        ## FEDE for hadoop ###
-        hadoopOpt = ''
-        ####
-
         supported_protocol = None
         if middleware.lower() in ['osg','lcg','condor','sge']:
             supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]),\
@@ -169,10 +160,6 @@ class cmscp:
             supported_protocol = [('rfio',rfioOpt),('local','')]
         elif middleware.lower() in ['arc']:
             supported_protocol = [('srmv2','-debug'),('srmv1','-debug')]
-        ## FEDE for hadoop ###
-        elif middleware.lower() in ['hadoop']:
-            supported_protocol = [('hadoop', hadoopOpt)]
-        ####    
         else:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
@@ -193,6 +180,7 @@ class cmscp:
         
         if self.debug: 
             print 'in checkCopy() :\n'
+        
         for file, dict in copy_results.iteritems():
             er_code = dict['erCode']
             if er_code == '0':
@@ -209,7 +197,7 @@ class cmscp:
                 list_already_existing.append( file )
             else :    
                 list_retry.append( file )
-                
+          
             if self.debug:
                 print "\t file %s \n"%file
                 print "\t dict['erCode'] %s \n"%dict['erCode']
@@ -232,7 +220,6 @@ class cmscp:
             if len(list_already_existing)!=0:
                 msg += '\tCopy of %s failed using %s : files already existing\n'%(str(list_already_existing),prot)
         if self.debug : print msg
-        
         return copy_results, list_ok, list_retry, list_fallback
         
     def check_for_retry_localSE (self, copy_results):
@@ -266,36 +253,44 @@ class cmscp:
             print '\t list_retry %s utils \n'%list_retry
             print '\t len(list_retry) %s \n'%len(list_retry)
                 
-        list_files = list_retry 
+        list_files = list_retry  
         self.params['inputFileList']=list_files
 
         ### copy backup
         from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
         siteCfg = loadSiteLocalConfig()
-        seName = siteCfg.localStageOut.get("se-name", None)
         catalog = siteCfg.localStageOut.get("catalog", None)
-        implName = siteCfg.localStageOut.get("command", None)
-        option = siteCfg.localStageOut.get("option", None)
+        tfc = siteCfg.trivialFileCatalog()
+        seName = siteCfg.localStageOutSEName()
+        if seName is None:
+            seName = ""
+        option = siteCfg.localStageOutOption()
+        if option is None:
+            option = ""
+        implName = siteCfg.localStageOutCommand()
+        if implName is None:
+            implName = ""
 
         if (implName == 'srm'):
            protocol = 'srmv2'
         elif (implName == 'srmv2-lcg'):
            protocol = 'srm-lcg'
+           option = option + ' -b -D srmv2 '
         elif (implName == 'rfcp-CERN'):
            protocol = 'rfio'
         elif (implName == 'rfcp'):
            protocol = 'rfio'
+        elif (implName == 'cp'):
+           protocol = 'local'
         else: protocol = implName 
-                   
-        tfc = siteCfg.trivialFileCatalog()
             
         if self.debug:
             print '\t siteCFG %s \n'%siteCfg
-            print '\t seName %s \n'%seName 
             print '\t catalog %s \n'%catalog 
+            print '\t tfc %s '%tfc
+            print '\t fallback seName %s \n'%seName 
             print "\t fallback protocol %s \n"%protocol            
             print "\t fallback option %s \n"%option
-            print '\t tfc %s '%tfc
             print "\t self.params['inputFileList'] %s \n"%self.params['inputFileList']
                 
         if (str(self.params['for_lfn']).find("/store/") == 0):
@@ -322,10 +317,11 @@ class cmscp:
         if self.debug:
             print "\t self.params['destination']%s \n"%self.params['destination']
             print "\t protocol %s \n"%protocol
-            print "\t optionn%s \n"%option
+            print "\t option %s \n"%option
 
-        if self.debug: print '\tIn LocalCopy trying the stage out with %s utils \n'%protocol
-        if self.debug: print '\tUsing as option %s \n'%option
+        if self.debug: 
+            print '\tIn LocalCopy trying the stage out with %s utils \n'%protocol
+            print '\tUsing as option %s \n'%option
 
         localCopy_results = self.copy( self.params['inputFileList'], protocol, option, backup='yes' )
            
@@ -410,6 +406,8 @@ class cmscp:
         if self.debug :
             msg  = 'copy() :\n'
             msg += '\tusing %s protocol\n'%protocol
+            msg += '\tusing %s options\n'%options
+            msg += '\tlist_file %s\n'%list_file
             print msg
         try:
             Source_SE, Destination_SE = self.initializeApi( protocol )
@@ -417,13 +415,9 @@ class cmscp:
             for filetocopy in list_file:
                 results.update( self.updateReport(filetocopy, '-1', str(ex)))
             return results
-            
-        prot = Destination_SE.protocol 
-        self.hostname=Destination_SE.hostname
 
-        # create remote dir
-        ### FEDE for hadoop
-        if Destination_SE.protocol in ['gridftp','rfio','srmv2','hadoop']:
+        self.hostname = Destination_SE.hostname
+        if Destination_SE.protocol in ['gridftp','rfio','srmv2','hadoop','local']:
             try:
                 self.createDir( Destination_SE, Destination_SE.protocol )
             except OperationException, ex:
@@ -441,7 +435,6 @@ class cmscp:
                 for filetocopy in list_file:
                     results.update( self.updateReport(filetocopy, '-1', msg))
                 return results
-
         ## prepare for real copy  ##
         try :
             sbi = SBinterface( Source_SE, Destination_SE )
@@ -454,7 +447,6 @@ class cmscp:
                 results.update( self.updateReport(filetocopy, '-1', msg))
             return results
 
-        self.hostname = Destination_SE.hostname
         
         ## loop over the complete list of files
         for filetocopy in list_file:
@@ -534,7 +526,7 @@ class cmscp:
         ErCode = '0'
         msg = ''
         f_tocopy=filetocopy
-        if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
+        if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy)
         try:
             checkSource = sbi_source.checkExists( f_tocopy , opt=option, tout = self.subprocesstimeout['exists'] )
             if self.debug : print '\tCheck for local file %s exist succeded \n'%f_tocopy  
@@ -568,11 +560,11 @@ class cmscp:
             ErCode = '60302'
             msg = "ERROR file %s do not exist"%os.path.basename(filetocopy)
             return ErCode, msg
-        f_tocopy=filetocopy
-        if self.dest_prot != 'local':f_tocopy = os.path.basename(filetocopy) 
+        f_tocopy=os.path.basename(filetocopy)
         try:
             check = sbi_dest.checkExists( f_tocopy, opt=option, tout = self.subprocesstimeout['exists'] )
-            if self.debug : print '\tCheck for remote file %s exist succeded \n'%f_tocopy  
+            if self.debug : print '\tCheck for remote file %s exist done \n'%f_tocopy  
+            if self.debug : print '\twith exit code = %s \n'%check  
         except OperationException, ex:
             msg  = 'ERROR: problems checkig if file %s already exist'%filetocopy
             msg += str(ex)
@@ -732,7 +724,6 @@ class cmscp:
 
         return 
 
-    #def updateReport(self, file, erCode, reason, lfn='', se='' ):
     def updateReport(self, file, erCode, reason):
         """
         Update the final stage out infos
