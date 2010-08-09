@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.208 2010/07/05 15:51:20 mcinquil Exp $"
-__version__ = "$Revision: 1.208 $"
+__revision__ = "$Id: FatWorker.py,v 1.209 2010/07/22 12:59:23 farinafa Exp $"
+__version__ = "$Revision: 1.209 $"
 
 import string
 import sys, os
@@ -341,7 +341,6 @@ class FatWorker(Thread):
         doNotSubmitStatusMask = ['R','S'] # ,'K','Y','D'] # to avoid resubmission of final state jobs
         tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E', 'SD']
         skippedSubmissions = []
-        requested = []
 
         # closed running jobs regeneration and osb manipulation
         needUpd = False
@@ -399,6 +398,11 @@ class FatWorker(Thread):
                 # reproduce closed runningJob instances
                 try:
                     self.blDBsession.getNewRunningInstance(j)
+                    # Fabio. For 200Submitting bug, early updateDB for jobs instead task 
+                    j.runningJob['status'] = 'C'
+                    j.runningJob['statusScheduler'] = 'Created'
+                    j.runningJob['state'] = 'Created'
+                    self.blDBsession.updateDB( j )
                 except Exception, e:
                     logMsg = ("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
                             self.taskName, j['name']) )
@@ -408,26 +412,26 @@ class FatWorker(Thread):
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
                     continue
-                j.runningJob['status'] = 'C'
-                j.runningJob['statusScheduler'] = 'Created'
-                needUpd = True
-            if j['jobId'] in self.cmdRng:
-                requested.append(j['jobId'])
-                j.runningJob['state'] = 'SubRequested'
 
-        self.log.info("Submission requested for %s"%str(requested))
+            if j['jobId'] in self.cmdRng:
+                try:
+                    j.runningJob['status'] = 'C'
+                    j.runningJob['statusScheduler'] = 'Created'
+                    j.runningJob['state'] = 'SubRequested'
+                    self.blDBsession.updateDB( j )
+                except Exception, e:
+                    logMsg = ("Worker %s. Problem setting RunningJob %s.%s to SubRequested"%(self.myName, \
+                             self.taskName, j['name']) )
+                    logMsg += str(e)
+                    self.log.info( logMsg )
+                    self.log.debug( traceback.format_exc() )
+                    newRange.remove(j['jobId'])
+                    skippedSubmissions.append(j['jobId'])
+                    continue
 
         if len(backupFiles) > 0:
             self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
 
-        if needUpd == True:
-            try:
-                self.blDBsession.updateDB(task)
-            except Exception, e:
-                logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
-                logMsg += str(e)
-                self.log.info( logMsg )
-                return None, None
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
@@ -467,6 +471,7 @@ class FatWorker(Thread):
             logMsg = "Worker %s. Unexpected exception Delegating Proxy for task %s. "%(self.myName, self.taskName)
             logMsg +=  traceback.format_exc()
             self.log.info( logMsg )
+
         for ii in matched:
             sub_bulk = []
             bulk_window = 200
@@ -489,8 +494,7 @@ class FatWorker(Thread):
                                 resubNum = j.runningJob['submission'] 
                             newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
                             j['arguments'] = newArgs
-
-                    self.blDBsession.updateDB( task )
+                            self.blDBsession.updateDB( j )
 
                     try:
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
@@ -531,7 +535,8 @@ class FatWorker(Thread):
                             self.blDBsession.getRunningInstance(j)
                             if j.runningJob['schedulerId'] and j['jobId'] in sub_list:
                                 submitted.append(j['jobId'])
-                                if j['jobId'] in unsubmitted: unsubmitted.remove(j['jobId'])
+                                if j['jobId'] in unsubmitted:
+                                    unsubmitted.remove(j['jobId'])
                                 j.runningJob['status'] = 'S'
                                 j.runningJob['statusScheduler'] = 'Submitted'
                                 j.runningJob['state'] = 'SubSuccess'
@@ -539,6 +544,19 @@ class FatWorker(Thread):
                                 parentIds.append( j.runningJob['schedulerParentId'] )
                         self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
                         self.SendMLpost( task, sub_jobs[ii] )
+                        
+                        #Fabio. debug printout for 200Submitting  
+                        fkwtask = self.blDBsession.load( task['id'], sub_jobs[ii] )
+                        for jjj in fkwtask.jobs:
+                            self.blDBsession.getRunningInstance(j)
+                            if jjj['jobId'] in sub_list:
+                                state, stSch = (jjj.runningJob['state'], jjj.runningJob['statusScheduler'])
+                                subNo, schId = (jjj['submissionNumber'], jjj.runningJob['schedulerId'])
+                                msg = "check: TASK=%s JOB=%s action=%s statusSch=%s subNo=%s schId=%s"
+                                msg = msg%(task['name'],jjj['jobId'], state, stSch, subNo, schId) 
+                                self.log.debug(msg)
+                        #fkw end of read for debugging purposes
+
                     errorTrace = ''
             else:
                 # update arguments for unique output naming
@@ -551,8 +569,7 @@ class FatWorker(Thread):
                             resubNum = j.runningJob['submission'] 
                         newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
                         j['arguments'] = newArgs
-
-                self.blDBsession.updateDB( task )
+                        self.blDBsession.updateDB( j )
 
                 try:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
@@ -614,12 +631,6 @@ class FatWorker(Thread):
 
         ## if all the jobs have been submitted send a success message
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
-            messagelog = "Successful complete submission for task %s"%self.taskName
-            self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. %s"%messagelog )
-            self.detailLog( submittableRange, submittedJobs, unmatchedJobs, skippedJobs )
-            self.preLog(mess = messagelog)
-            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
-
             self.log.info("Submitted jobs: " + str(submittedJobs))
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
@@ -629,7 +640,20 @@ class FatWorker(Thread):
                         logMsg = "Problem changing status for job "+str(j['name'])+"\n"
                         logMsg +=  traceback.format_exc()
                         self.log.info(logMsg)
-                        continue
+
+                    # Fabio. repeat the submission marking in order to avoid the persistent SubRequested issue
+                    # this actually breaks the block of 200 SubReq, leaving only sparse wrong interactions with TT.
+                    j.runningJob['status'] = 'S'
+                    j.runningJob['statusScheduler'] = 'Submitted'
+                    j.runningJob['state'] = 'SubSuccess'
+                    self.blDBsession.updateDB( j )
+                    # ---- Fabio
+
+            messagelog = "Successful complete submission for task %s"%self.taskName
+            self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. %s"%messagelog )
+            self.detailLog( submittableRange, submittedJobs, unmatchedJobs, skippedJobs )
+            self.preLog(mess = messagelog)
+            self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
             self.log.info("FatWorker %s registered jobs entities "%self.myName)
             return
         else:
