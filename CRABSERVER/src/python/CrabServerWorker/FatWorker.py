@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.209 2010/07/22 12:59:23 farinafa Exp $"
-__version__ = "$Revision: 1.209 $"
+__revision__ = "$Id: FatWorker.py,v 1.210 2010/08/09 06:16:49 farinafa Exp $"
+__version__ = "$Revision: 1.210 $"
 
 import string
 import sys, os
@@ -545,18 +545,6 @@ class FatWorker(Thread):
                         self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
                         self.SendMLpost( task, sub_jobs[ii] )
                         
-                        #Fabio. debug printout for 200Submitting  
-                        fkwtask = self.blDBsession.load( task['id'], sub_jobs[ii] )
-                        for jjj in fkwtask.jobs:
-                            self.blDBsession.getRunningInstance(j)
-                            if jjj['jobId'] in sub_list:
-                                state, stSch = (jjj.runningJob['state'], jjj.runningJob['statusScheduler'])
-                                subNo, schId = (jjj['submissionNumber'], jjj.runningJob['schedulerId'])
-                                msg = "check: TASK=%s JOB=%s action=%s statusSch=%s subNo=%s schId=%s"
-                                msg = msg%(task['name'],jjj['jobId'], state, stSch, subNo, schId) 
-                                self.log.debug(msg)
-                        #fkw end of read for debugging purposes
-
                     errorTrace = ''
             else:
                 # update arguments for unique output naming

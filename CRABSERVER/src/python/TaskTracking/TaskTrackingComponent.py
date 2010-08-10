@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.168 2010/07/13 08:45:05 mcinquil Exp $"
-__version__ = "$Revision: 1.168 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.169 2010/08/09 06:16:49 farinafa Exp $"
+__version__ = "$Revision: 1.169 $"
 
 import os
 import time
@@ -675,18 +675,6 @@ class TaskTrackingComponent:
                 if update_flag == 1:
                     self.singleTaskPoll(taskObj, TaskStateAPI(), taskname, mySession)
 
-                #Fabio. debug printout for 200Submitting
-                fkwtask =  mySession.loadTaskByName( taskname )
-                for jjj in fkwtask.jobs:
-                    self.blDBsession.getRunningInstance(j)
-                    if jjj['jobId'] in joblist or joblist == "all":
-                       # -- NOME TASK, Numero JOB, Submission Number, SchedulerID
-                       state, stSch = (jjj.runningJob['state'], jjj.runningJob['statusScheduler'])
-                       subNo, schId = (str(jjj['submissionNumber']), jjj.runningJob['schedulerId'])
-                       msg = "check: change state(%s) TASK=%s JOB=%s action=%s statusSch=%s subNo=%s schId=%s"
-                       msg = msg%(str(value), fkwtask['name'], jjj['jobId'], state, stSch, subNo, schId)
-                       self.log.debug(msg)
-
         except Exception, ex:
             logging.error( "Exception raised: " + str(ex) )
             logging.error( str(traceback.format_exc()) )
@@ -938,14 +926,10 @@ class TaskTrackingComponent:
             except Exception, e:
                 jsub  = str(jobbe.runningJob['submission'])
 
-            #Fabio. debug printout for 200Submitting
-            msg = "check: preFix TASK=%s JOB=%s action=%s statusSch=%s subNo=%s schId=%s"
-            msg = msg%(taskName, job, action, sstat, str(jobbe['submissionNumber']), sId)
-            logging.debug(msg)
-
             # Fabio. Check for 200Submitting and fix
             try:
-                if action == "SubRequested" and sstat != "Created" :
+                # Deactivated because of Daniele's fixes on BL side
+                if False and action == "SubRequested" and sstat != "Created" :
                     # this action is WRONG! Force correction
                     msg = "check: correct task %s job %s : SubRequested but statusScheduler = %s"%(taskName, job, sstat)
                     if sstat in ["Submitted", "Waiting", "Ready", "Running"]:
@@ -961,14 +945,6 @@ class TaskTrackingComponent:
             except Exception, e:
                 logging.info("Failed to correct misleading Submitting state for task %s. %s"%(taskName, str(e) )) 
 
-            #Fabio. Printout for 200 submitting
-            mySession.getRunningInstance(jobbe)
-            state, stSch = (jobbe.runningJob['state'], jobbe.runningJob['statusScheduler'])
-            subNo, schId = (jobbe['submissionNumber'], jobbe.runningJob['schedulerId'])
-            msg = "check: postFix TASK=%s JOB=%s action=%s statusSch=%s subNo=%s schId=%s"
-            msg = msg%(taskObj['name'],jobbe['jobId'], state, stSch, subNo, schId)
-            logging.debug(msg)
-            # ##
 
             del jobbe
             # Fabio. Noticed while inserting prinout for 200Submitting. Can the delete cause problems?
