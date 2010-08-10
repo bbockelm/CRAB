@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.23 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.23 2010/05/05 10:38:27 spiga Exp $"
+__version__ = "$Revision: 1.24 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.24 2010/05/24 12:31:01 farinafa Exp $"
 
 import os
 import pickle
@@ -56,9 +56,15 @@ class TaskRegisterComponent:
 
         # specific delegation strategy for glExex
         self.args.setdefault('glExecDelegation', 'false')
+        self.args.setdefault("HeartBeatDelay", "00:05:00")
 
         self.args.update(args)
         
+        if len(self.args["HeartBeatDelay"]) != 8:
+            self.HeartBeatDelay="00:05:00"
+        else:
+            self.HeartBeatDelay=self.args["HeartBeatDelay"]
+       
         # define log file
         if self.args['Logfile'] == None:
             self.args['Logfile'] = os.path.join(self.args['ComponentDir'],
@@ -116,6 +122,11 @@ class TaskRegisterComponent:
         self.ms.subscribeTo("TaskRegisterComponent:StartDebug")
         self.ms.subscribeTo("TaskRegisterComponent:EndDebug")
         self.ms.subscribeTo("KillTask")
+
+        self.ms.subscribeTo("TaskRegisterComponent:HeartBeat")
+        self.ms.remove("TaskRegisterComponent:HeartBeat")
+        self.ms.publish("TaskRegisterComponent:HeartBeat","",self.HeartBeatDelay)
+        self.ms.commit()
 
         # TaskRegister registration in WMCore.MsgService
         self.myThread = threading.currentThread()
@@ -207,6 +218,10 @@ class TaskRegisterComponent:
             logging.getLogger().setLevel(logging.DEBUG)
         elif event == "TaskRegisterComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
+        elif event == "TaskRegisterComponent:HeartBeat":
+            logging.info("HeartBeat: I'm alive ")
+            self.ms.publish("TaskRegisterComponent:HeartBeat","",self.HeartBeatDelay)
+            self.ms.commit()
         else:
             logging.info('Unknown message received %s + %s'%(event,payload))
         return True

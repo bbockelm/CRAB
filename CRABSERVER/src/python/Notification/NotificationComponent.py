@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.29 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.29 2010/07/12 19:33:33 mcinquil Exp $"
+__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.30 2010/07/13 08:08:53 mcinquil Exp $"
 
 import os
 import socket
@@ -58,9 +58,14 @@ class NotificationComponent:
         self.args = {}
         
         self.args['Logfile'] = None
-    
+        self.args.setdefault("HeartBeatDelay", "00:05:00")
+   
         self.args.update(args)
-           
+        if len(self.args["HeartBeatDelay"]) != 8:
+            self.HeartBeatDelay="00:05:00" 
+        else: 
+            self.HeartBeatDelay=self.args["HeartBeatDelay"]
+
         if self.args['Logfile'] == None:
             self.args['Logfile'] = os.path.join(self.args['ComponentDir'],
                                                 "ComponentLog")
@@ -152,6 +157,11 @@ class NotificationComponent:
 	self.ms.subscribeTo("NotificationSetup")
         self.ms.subscribeTo("ProxyExpiring")
         self.ms.subscribeTo("TaskLifeManager::CleanStorage")
+
+        self.ms.subscribeTo("NotificationComponent:HeartBeat")
+        self.ms.remove("NotificationComponent:HeartBeat")
+        self.ms.publish("NotificationComponent:HeartBeat","",self.HeartBeatDelay)
+        self.ms.commit()
 
         # Start the thread Consumer
         threadList = []
@@ -284,6 +294,11 @@ class NotificationComponent:
             tasks = []
             mails = ""
             txt   = ""
+
+            if type == "NotificationComponent:HeartBeat":
+                logging.info("HeartBeat: I'm alive ")
+                self.ms.publish("NotificationComponent:HeartBeat","",self.HeartBeatDelay)
+                self.ms.commit()
 
 	    if type == "TaskSuccess" or type == "TaskNotSubmitted":
 	    	if not self.PERTASK:

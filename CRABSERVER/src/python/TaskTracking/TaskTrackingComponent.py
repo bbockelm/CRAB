@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.170 2010/08/10 07:43:27 farinafa Exp $"
-__version__ = "$Revision: 1.170 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.171 2010/08/10 08:18:16 spiga Exp $"
+__version__ = "$Revision: 1.171 $"
 
 import os
 import time
@@ -84,10 +84,17 @@ class TaskTrackingComponent:
         self.args.setdefault("CacheDir", None)
         self.args.setdefault("Thread", 5)
         self.args.setdefault("allow_anonymous", "0")
+        self.args.setdefault("HeartBeatDelay", "00:05:00")
+      
         
         # update parameters
         self.args.update(args)
         logging.info("Using "+str(self.args['CacheDir'])+" as DropBox")
+
+        if len(self.args["HeartBeatDelay"]) != 8:
+            self.HeartBeatDelay="00:05:00"
+        else:
+            self.HeartBeatDelay=self.args["HeartBeatDelay"]
 
         # define log file
         if self.args['Logfile'] == None:
@@ -206,6 +213,12 @@ class TaskTrackingComponent:
         _loginfo.setdefault('ev', str(event))
 
         # new task to insert
+
+        if event == "TaskTracking:HeartBeat":
+            logging.info("HeartBeat: I'm alive ")
+            self.ms.publish("TaskTracking:HeartBeat","",self.HeartBeatDelay)
+            self.ms.commit() 
+            return
         if event == "CRAB_Cmd_Mgr:NewTask":
             if payload != None or payload != "" or len(payload) > 0:
                 logBuf = self.__log(logBuf, "NewTask: %s" % taskName)
@@ -1236,6 +1249,9 @@ class TaskTrackingComponent:
         #self.ms.subscribeTo("KillTask")
         self.ms.subscribeTo("TTXmlLogging")
 
+        self.ms.subscribeTo("TaskTracking:HeartBeat")
+        self.ms.remove("TaskTracking:HeartBeat")
+        self.ms.publish("TaskTracking:HeartBeat","",self.HeartBeatDelay)
 
         #reset all work_status
         ttdb = TaskStateAPI()

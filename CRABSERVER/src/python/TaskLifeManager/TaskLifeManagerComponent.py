@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.45 2010/07/10 22:03:16 mcinquil Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.46 2010/07/15 14:42:48 mcinquil Exp $"
+__version__ = "$Revision: 1.46 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -73,8 +73,15 @@ class TaskLifeManagerComponent:
         self.args.setdefault("credentialType", "Proxy")
         self.args.setdefault("checkProxy", "off")
         self.args.setdefault('glExecDelegation', 'false')
+        self.args.setdefault("HeartBeatDelay", "00:05:00")
+
         # update parameters
         self.args.update(args)
+
+        if len(self.args["HeartBeatDelay"]) != 8:
+            self.HeartBeatDelay="00:05:00"
+        else:
+            self.HeartBeatDelay=self.args["HeartBeatDelay"]
 
         # define log file
         if self.args['Logfile'] == None:
@@ -179,6 +186,11 @@ class TaskLifeManagerComponent:
             return            #
         #######################
 
+        if event == "TaskLifeManager:HeartBeat":
+            logging.info("HeartBeat: I'm alive ")
+            self.ms.publish("TaskLifeManager:HeartBeat","",self.HeartBeatDelay)
+            self.ms.commit()
+            return
         if event == "CRAB_Cmd_Mgr:GetOutputNotification":
             taskname, jobstr = payload.split('::')
             logging.info("Deleting osb of task: " + str(taskname) + \
@@ -443,6 +455,9 @@ class TaskLifeManagerComponent:
         self.ms.subscribeTo("CRAB_Cmd_Mgr:GetOutputNotification")
         self.ms.subscribeTo("CRAB_Cmd_Mgr:CleanRequest")
 
+        self.ms.subscribeTo("TaskLifeManager:HeartBeat")
+        self.ms.remove("TaskLifeManager:HeartBeat")
+        self.ms.publish("TaskLifeManager:HeartBeat","",self.HeartBeatDelay)
         # generate first polling cycle
         self.ms.remove("TaskLifeManager::poll")
         self.ms.publish("TaskLifeManager::poll", "")

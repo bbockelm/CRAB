@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.103 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.103 2010/05/05 10:32:02 spiga Exp $"
+__version__ = "$Revision: 1.104 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.104 2010/05/26 08:25:24 farinafa Exp $"
 
 import os, pickle, time
 
@@ -62,7 +62,13 @@ class CrabServerWorkerComponent:
         self.args.setdefault('storageName', 'localhost')
         self.args.setdefault('storagePort', '')
         self.args.setdefault('storagePath', self.args["CacheDir"])
+        self.args.setdefault("HeartBeatDelay", "00:05:00")
         self.args.update(args)
+
+        if len(self.args["HeartBeatDelay"]) != 8:
+            self.HeartBeatDelay="00:05:00"                          
+        else:
+            self.HeartBeatDelay=self.args["HeartBeatDelay"]
 
         # define log file
         if self.args['Logfile'] == None:
@@ -148,6 +154,11 @@ class CrabServerWorkerComponent:
         self.ms.subscribeTo("CrabServerWorkerComponent:StartDebug")
         self.ms.subscribeTo("CrabServerWorkerComponent:EndDebug")
 
+        self.ms.subscribeTo("CrabServerWorker:HeartBeat")
+        self.ms.remove("CrabServerWorker:HeartBeat")
+        self.ms.publish("CrabServerWorker:HeartBeat","",self.HeartBeatDelay)
+        self.ms.commit()
+
         # initialize the local message services pool and schedule logic
         self.schedLogic = SchedulingLogic(self.maxThreads, logging, self.fwResultsQ, 600)
         # no parametric for now: 10*self.ms.pollTime. a deterministic deadline time seem to be properly set around 5-6 minutes
@@ -208,6 +219,10 @@ class CrabServerWorkerComponent:
             logging.getLogger().setLevel(logging.DEBUG)
         elif event == "CrabServerWorkerComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
+        elif event == "CrabServerWorker:HeartBeat":
+            logging.info("HeartBeat: I'm alive ")
+            self.ms.publish("CrabServerWorker:HeartBeat","",self.HeartBeatDelay)
+            self.ms.commit()
         else:
             logging.info('Unknown message received %s'%event)
 

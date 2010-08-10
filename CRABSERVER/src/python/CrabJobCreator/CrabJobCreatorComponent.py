@@ -4,7 +4,7 @@
 _CrabJobCreatorComponent_
 
 """
-__version__ = "$Revision: 1.4 $"
+__version__ = "$Revision: 1.5 $"
 __revision__ = "$Id: CrabJobCreatorComponent.py,\
                 v 1.2 2009/10/13 15:19:38 riahi Exp $"
 
@@ -54,7 +54,13 @@ class CrabJobCreatorComponent:
         self.args.setdefault('glExecDelegation', 'false')
 
         self.args.setdefault('PollInterval',60)
+        self.args.setdefault("HeartBeatDelay", "00:05:00")
         self.args.update(args)
+
+        if len(self.args["HeartBeatDelay"]) != 8:
+            self.HeartBeatDelay="00:05:00"
+        else:
+            self.HeartBeatDelay=self.args["HeartBeatDelay"]
         
         # define log file
         if self.args['Logfile'] == None:
@@ -114,6 +120,10 @@ class CrabJobCreatorComponent:
         self.newMsgService.registerAs("CrabJobCreatorComponent")
         self.myThread.transaction.commit()
 
+        self.ms.subscribeTo("CrabJobCreatorComponent:HeartBeat")
+        self.ms.remove("CrabJobCreatorComponent:HeartBeat")
+        self.ms.publish("CrabJobCreatorComponent:HeartBeat","",self.HeartBeatDelay)
+        self.ms.commit()
         self.workerCfg = self.prepareBaseStatus()      
         compWMObject = WMObject()
         manager = WorkerThreadManager(compWMObject)
@@ -156,6 +166,10 @@ class CrabJobCreatorComponent:
             logging.getLogger().setLevel(logging.DEBUG)
         elif event == "CrabJobCreatorComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
+        elif event == "CrabJobCreatorComponent:HeartBeat":
+            logging.info("HeartBeat: I'm alive ")
+            self.ms.publish("CrabJobCreatorComponent:HeartBeat","",self.HeartBeatDelay)
+            self.ms.commit()
         else:
             logging.info('Unknown message received %s + %s' %(event, payload))
         return True
