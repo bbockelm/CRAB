@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.169 2010/08/09 06:16:49 farinafa Exp $"
-__version__ = "$Revision: 1.169 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.170 2010/08/10 07:43:27 farinafa Exp $"
+__version__ = "$Revision: 1.170 $"
 
 import os
 import time
@@ -927,23 +927,22 @@ class TaskTrackingComponent:
                 jsub  = str(jobbe.runningJob['submission'])
 
             # Fabio. Check for 200Submitting and fix
-            try:
-                # Deactivated because of Daniele's fixes on BL side
-                if False and action == "SubRequested" and sstat != "Created" :
-                    # this action is WRONG! Force correction
-                    msg = "check: correct task %s job %s : SubRequested but statusScheduler = %s"%(taskName, job, sstat)
-                    if sstat in ["Submitted", "Waiting", "Ready", "Running"]:
-                        action = "SubSuccess"
-                    elif sstat in ["Aborted", "Cleared"]:
-                        action = sstat
-                    elif sstat == "Done":
-                        action = "Terminated"  
-
-                    jobbe.runningJob['state'] = action
-                    mySession.updateDB(jobbe)
-                    logging.debug(msg)
-            except Exception, e:
-                logging.info("Failed to correct misleading Submitting state for task %s. %s"%(taskName, str(e) )) 
+          #  try:
+          #      # Deactivated because of Daniele's fixes on BL side
+          #      if False and action == "SubRequested" and sstat != "Created" :
+          #          # this action is WRONG! Force correction
+          #          msg = "check: correct task %s job %s : SubRequested but statusScheduler = %s"%(taskName, job, sstat)
+          #          if sstat in ["Submitted", "Waiting", "Ready", "Running"]:
+          #              action = "SubSuccess"
+          #          elif sstat in ["Aborted", "Cleared"]:
+          #              action = sstat
+          #          elif sstat == "Done":
+          #              action = "Terminated"  
+          #          jobbe.runningJob['state'] = action
+          #          mySession.updateDB(jobbe)
+          #          logging.debug(msg)
+          #  except Exception, e:
+          #      logging.info("Failed to correct misleading Submitting state for task %s. %s"%(taskName, str(e) )) 
 
 
             del jobbe
