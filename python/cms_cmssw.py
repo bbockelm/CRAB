@@ -1,15 +1,16 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.360 2010/05/28 09:46:00 fanzago Exp $"
-__version__ = "$Revision: 1.360 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.362 2010/07/06 16:33:23 ewv Exp $"
+__version__ = "$Revision: 1.362 $"
 
 from JobType import JobType
 from crab_exceptions import *
 from crab_util import *
 import common
+import re
 import Scram
 from Splitter import JobSplitter
 from Downloader import Downloader
-try: 
+try:
     import json
 except:
     import simplejson as json
@@ -321,7 +322,7 @@ class Cmssw(JobType):
 
             self.var_filter = json.dumps(filter_dict)
             common.logger.debug("(test) var_filter for multi =  "+self.var_filter)
-            
+
             edmOutput = edmOutputDict.keys()
             if int(self.cfg_params.get('CMSSW.get_edm_output',0)):
                 if edmOutput:
@@ -356,6 +357,12 @@ class Cmssw(JobType):
             common.logger.info(str(msg))
             msg='Error while manipulating ParameterSet (see previous message, if any): exiting...'
             raise CrabException(msg)
+
+        valid = re.compile('^[\w\.\-]+$')
+        for fileName in self.output_file:
+            if not valid.match(fileName):
+                msg = "The file %s may only contain alphanumeric characters and -, _, ." % fileName
+                raise CrabException(msg)
 
 
     def DataDiscoveryAndLocation(self, cfg_params):
@@ -1051,7 +1058,7 @@ class Cmssw(JobType):
             #txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
-            ### removing some arguments 
+            ### removing some arguments
             #args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $OutUniqueID for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml json $RUNTIME_AREA/resultCopyFile n_job $OutUniqueID PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH'
 
