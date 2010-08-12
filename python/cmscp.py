@@ -283,7 +283,10 @@ class cmscp:
         elif (implName == 'cp'):
            protocol = 'local'
         else: protocol = implName 
-            
+        
+        self.params['protocol']=protocol
+        self.params['option']=option
+
         if self.debug:
             print '\t siteCFG %s \n'%siteCfg
             print '\t catalog %s \n'%catalog 
@@ -315,20 +318,18 @@ class cmscp:
         self.params['se_name']=seName
             
         if self.debug:
-            print "\t self.params['destination']%s \n"%self.params['destination']
-            print "\t protocol %s \n"%protocol
-            print "\t option %s \n"%option
+            print '\tIn LocalCopy trying the stage out with: \n'
+            print "\tself.params['destination'] %s \n"%self.params['destination']
+            print "\tself.params['protocol'] %s \n"%self.params['protocol']
+            print "\tself.params['option'] %s \n"%self.params['option']
 
-        if self.debug: 
-            print '\tIn LocalCopy trying the stage out with %s utils \n'%protocol
-            print '\tUsing as option %s \n'%option
 
-        localCopy_results = self.copy( self.params['inputFileList'], protocol, option, backup='yes' )
+        localCopy_results = self.copy( self.params['inputFileList'], self.params['protocol'], self.params['option'], backup='yes' )
            
         if localCopy_results.keys() == [''] or localCopy_results.keys() == '' :
             results.update(localCopy_results)
         else:
-            localCopy_results, list_ok, list_retry, list_fallback = self.checkCopy(localCopy_results, len(list_files), protocol)
+            localCopy_results, list_ok, list_retry, list_fallback = self.checkCopy(localCopy_results, len(list_files), self.params['protocol'])
                 
             results.update(localCopy_results)
         if self.debug:
