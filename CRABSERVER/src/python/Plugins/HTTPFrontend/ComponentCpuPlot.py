@@ -14,7 +14,6 @@ from numpy import *
 import time, os, random, datetime
 from matplotlib.font_manager import FontProperties
 from matplotlib.backends.backend_agg import RendererAgg
-from matplotlib.transforms import Value
 from graphtool.graphs.common_graphs import PieGraph, BarGraph, CumulativeGraph
 from graphtool.graphs.graph import TimeGraph
 import API
