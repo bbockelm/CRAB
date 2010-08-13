@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.171 2010/08/10 08:18:16 spiga Exp $"
-__version__ = "$Revision: 1.171 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.172 2010/08/10 21:55:56 spiga Exp $"
+__version__ = "$Revision: 1.172 $"
 
 import os
 import time
@@ -1252,7 +1252,7 @@ class TaskTrackingComponent:
         self.ms.subscribeTo("TaskTracking:HeartBeat")
         self.ms.remove("TaskTracking:HeartBeat")
         self.ms.publish("TaskTracking:HeartBeat","",self.HeartBeatDelay)
-
+        self.ms.commit()
         #reset all work_status
         ttdb = TaskStateAPI()
         ttdb.resetAllWorkStatus()
