@@ -7,12 +7,11 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPoller.py,v 1.3 \
             2009/11/06 12:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.12 $"
+__version__ = "$Revision: 1.13 $"
 
 import logging
 import os
 import time
-import sha
 from xml.dom import minidom
 from IMProv.IMProvNode import IMProvNode
 import traceback

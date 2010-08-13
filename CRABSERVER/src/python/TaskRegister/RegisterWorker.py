@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.40 2010/06/04 08:25:14 riahi Exp $"
-__version__ = "$Revision: 1.40 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.41 2010/06/10 11:41:58 spiga Exp $"
+__version__ = "$Revision: 1.41 $"
 
 import string
 import sys, os
@@ -18,8 +18,6 @@ from threading import Thread
 import threading
 from xml.dom import minidom
 import pickle
-
-import sha
 
 from MessageService.MessageService import MessageService
 from ProdAgentDB.Config import defaultConfig as dbConfig
