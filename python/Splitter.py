@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.43 2010/07/16 14:23:24 ewv Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: Splitter.py,v 1.44 2010/07/26 19:50:02 ewv Exp $"
+__version__ = "$Revision: 1.44 $"
 
 import common
 from crab_exceptions import *
@@ -675,7 +675,7 @@ class JobSplitter:
 
         # Make the list of WMBS files for job splitter
         fileList = pubdata.getListFiles()
-        thefiles = Fileset(name='FilesToSplit')
+        wmFileList = []
         for jobFile in fileList:
             block = jobFile['Block']['Name']
             try:
@@ -689,7 +689,10 @@ class JobSplitter:
             wmbsFile['block'] = block
             for lumi in lumisPerFile[jobFile['LogicalFileName']]:
                 wmbsFile.addRun(Run(lumi[0], lumi[1]))
-            thefiles.addFile(wmbsFile)
+            wmFileList.append(wmbsFile)
+
+        fileSet = set(wmFileList)
+        thefiles = Fileset(name='FilesToSplit', files = fileSet)
 
         # Create the factory and workflow
         work = Workflow()
