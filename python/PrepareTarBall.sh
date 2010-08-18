@@ -55,6 +55,9 @@ cd external
 echo ">> downloading crablib from CRAB web page"
 wget --user-agent="" --no-check-certificate $repo_url/crablib.tgz
 
+echo ">> downloading py2-sqlalchemy from CRAB web page"
+wget --user-agent="" --no-check-certificate $repo_url/py2-sqlalchemy.tgz
+
 ## download pbs_python
 echo ">> downloading pbs_python from CRAB web page"
 wget --user-agent="" --no-check-certificate $repo_url/pbs_python.tgz
@@ -112,6 +115,8 @@ cvs co -r ${WMCOREtag} -d WMCore/Algorithms        COMP/WMCORE/src/python/WMCore
 cvs co -r ${WMCOREtag} -d WMCore/                  COMP/WMCORE/src/python/WMCore/WMException.py
 cvs co -r ${WMCOREtag} -d WMCore/Wrappers          COMP/WMCORE/src/python/WMCore/Wrappers
 cvs co -r ${WMCOREtag} -d WMQuality                COMP/WMCORE/src/python/WMQuality
+cvs co -r ${WMCOREtag} -d WMCore/                  COMP/WMCORE/src/python/WMCore/DAOFactory.py
+cvs co -r ${WMCOREtag} -d WMCore/Database          COMP/WMCORE/src/python/WMCore/Database
 
 ## Use the Head
 #cvs co  -d WMCore                   COMP/WMCORE/src/python/WMCore/__init__.py
@@ -124,6 +129,8 @@ cvs co -r ${WMCOREtag} -d WMQuality                COMP/WMCORE/src/python/WMQual
 #cvs co  -d WMCore/                  COMP/WMCORE/src/python/WMCore/WMException.py
 #cvs co  -d WMCore/Wrappers          COMP/WMCORE/src/python/WMCore/Wrappers
 #cvs co  -d WMQuality                COMP/WMCORE/src/python/WMQuality
+#cvs co  -d WMCore/                  COMP/WMCORE/src/python/WMCore/DAOFactory.py
+#cvs co  -d WMCore/Database          COMP/WMCORE/src/python/WMCore/Database
 
 #cd ..
 ## exit from external

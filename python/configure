@@ -31,6 +31,9 @@ cd $ExtDir
 tar zxf crablib.tgz 
 rm crablib.tgz
 
+tar zxf py2-sqlalchemy.tgz 
+rm py2-sqlalchemy.tgz
+
 tar zxf sqlite.tgz 
 rm sqlite.tgz
 
@@ -115,6 +118,7 @@ export CRAB_PBSPYTHON_ROOT=\${CRABPBSPYTHON}/\${CRAB_PBSPYTHON_VERSION}
 
 export PYTHONPATH=\${CRAB_PBSPYTHON_ROOT}/lib/python2.4/site-packages/pbs:\$PYTHONPATH
 
+export PYTHONPATH=\${EXTERNALDIR}/py2-sqlalchemy/0.5.2-cmp7/lib/python2.6/site-packages/:\$PYTHONPATH
 
 EOF
 
@@ -186,6 +190,7 @@ setenv CRAB_PBSPYTHON_ROOT \${CRABPBSPYTHON}/\${CRAB_PBSPYTHON_VERSION}
 
 setenv PYTHONPATH \${CRAB_PBSPYTHON_ROOT}/lib/python2.4/site-packages/pbs:\$PYTHONPATH
 
+setenv PYTHONPATH \${EXTERNALDIR}/py2-sqlalchemy/0.5.2-cmp7/lib/python2.6/site-packages/:\$PYTHONPATH
 
 EOF
 return
