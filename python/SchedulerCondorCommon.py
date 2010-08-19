@@ -24,8 +24,8 @@ try:
 except:
     from sha import sha as sha1
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.42 2009/12/16 17:40:08 ewv Exp $"
-__version__ = "$Revision: 1.42 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.43 2010/01/20 16:22:26 ewv Exp $"
+__version__ = "$Revision: 1.43 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -254,17 +254,6 @@ class SchedulerCondorCommon(SchedulerGrid):
         self.checkCondorVariablePointsToFile('GT2_GAHP', alternateName='GAHP')
         self.checkCondorVariablePointsToFile('GRID_MONITOR')
         self.checkCondorVariableIsTrue('ENABLE_GRID_MONITOR')
-
-        maxSubmit = self.queryCondorVariable('GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE', 100).strip()
-        maxPending = self.queryCondorVariable('GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE', 'Unlimited').strip()
-
-        msg  = '[Condor-G Scheduler]\n'
-        msg += 'Maximum number of jobs submitted to the grid   : '
-        msg += 'GRIDMANAGER_MAX_SUBMITTED_JOBS_PER_RESOURCE  = ' + maxSubmit + '\n'
-        msg += 'Maximum number of parallel submits to the grid : '
-        msg += 'GRIDMANAGER_MAX_PENDING_SUBMITS_PER_RESOURCE = ' + maxPending + '\n'
-        msg += 'Increase these variables to enable more jobs to be executed on the grid in parallel.\n'
-        common.logger.debug( msg)
 
         return
 
