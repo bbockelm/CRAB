@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-__revision__ = "$Id: DataDiscovery.py,v 1.47 2010/06/29 17:46:42 ewv Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: DataDiscovery.py,v 1.48 2010/07/06 16:31:55 ewv Exp $"
+__version__ = "$Revision: 1.48 $"
 
 import exceptions
 import DBSAPI.dbsApi
@@ -108,6 +108,7 @@ class DataDiscovery:
         self.lumis = {}           # DBS output: lumis in each file
         self.lumiMask = None
         self.splitByLumi = False
+        self.splitDataByEvent = 0
 
     def fetchDBSInfo(self):
         """
@@ -135,6 +136,7 @@ class DataDiscovery:
             runList = LumiList(runs = runselection)
 
         self.splitByRun = int(self.cfg_params.get('CMSSW.split_by_run', 0))
+        self.splitDataByEvent = int(self.cfg_params.get('CMSSW.split_by_event', 0))
         common.logger.log(10-1,"runselection is: %s"%runselection)
 
         if not self.splitByRun:
@@ -164,7 +166,8 @@ class DataDiscovery:
         primDSs = api.listPrimaryDatasets(pdsName)
         dataType = primDSs[0]['Type']
         common.logger.debug("Datatype is %s" % dataType)
-        if dataType == 'data' and not (self.splitByRun or self.splitByLumi):
+        if dataType == 'data' and not \
+            (self.splitByRun or self.splitByLumi or self.splitDataByEvent):
             msg = 'Data must be split by lumi or by run. ' \
                   'Please see crab -help for the correct settings'
             raise  CrabException(msg)
