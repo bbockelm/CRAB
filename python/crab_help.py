@@ -513,6 +513,10 @@ The number of events to be accessed by each job. Since a job cannot cross the bo
 
 Define the number of jobs to be run for the task. The number of events for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
 
+=head4 B<split_by_event *>
+
+This setting is for experts only. If you don't know why you want to use it, you don't want to use it.  Set the value to 1 to enabe split by event on data. CRAB then behaves like old versions of CRAB which did not enforce split by lumi for data.
+
 =head3 B<split_by_run>
 
 To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not available.
