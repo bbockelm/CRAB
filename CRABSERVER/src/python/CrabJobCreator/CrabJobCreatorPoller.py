@@ -7,7 +7,7 @@ It will be parallelized if needed through WorkQueue using a new class.
 __all__ = []
 __revision__ = "$Id: CrabJobCreatorPoller.py,v 1.3 \
             2009/11/06 12:21:44 hriahi Exp $"
-__version__ = "$Revision: 1.13 $"
+__version__ = "$Revision: 1.14 $"
 
 import logging
 import os
@@ -200,8 +200,23 @@ class CrabJobCreatorPoller(BaseWorkerThread):
                                                 conn = myThread.transaction.conn,
                                                 transaction = True)
 
+                  if spliAlgo == 'RunBased':
 
-                  tempDict['arguments'] = (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber
+                      runNumber = ''
+                      if type(jI['input_files'])==Fileset:
+                          for inputFile in jI['input_files'].files:
+                              for runs in inputFile['runs']:
+                                  runNumber=int(runs.run)
+                                  break
+
+                      tempDict['arguments'] = str( (jobGroups[jobGroups.index(jG)].jobs).index(jI) + 1 + jobNumber + groupNumber ) + " " + str(runNumber) 
+
+                  else:
+
+                      tempDict['arguments'] =  (jobGroups[jobGroups.index(jG)].jobs).index(jI)  + 1 + jobNumber + groupNumber  
+
+
+
                   tempDict['taskId'] =  self.taskToComplete['id']
 
                   rjAttrs[tempDict["name"]] = attrtemp
