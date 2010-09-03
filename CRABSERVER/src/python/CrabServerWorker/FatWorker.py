@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.208 2010/07/05 15:51:20 mcinquil Exp $"
-__version__ = "$Revision: 1.208 $"
+__revision__ = "$Id: FatWorker.py,v 1.212 2010/08/12 20:55:45 spiga Exp $"
+__version__ = "$Revision: 1.212 $"
 
 import string
 import sys, os
@@ -242,6 +242,8 @@ class FatWorker(Thread):
             ## already set in the message
             # self.cmdRng =  eval( cmdXML.getAttribute('Range'), {}, {} )
             ##
+            self.splittingAlgorithm  = str( cmdXML.getAttribute('splitting_algorithm') )
+            self.type = str( cmdXML.getAttribute('Type') )
             self.owner = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
 
@@ -479,18 +481,22 @@ class FatWorker(Thread):
             if len(sub_bulk)>0:
                 count = 1
                 for sub_list in sub_bulk:
-                    # update arguments for unique output naming 
-                    for j in task.jobs:
-                        if j['jobId'] in sub_list:
-                            self.blDBsession.getRunningInstance(j)                            
-                            try:
-                                resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
-                            except Exception, e:
-                                resubNum = j.runningJob['submission'] 
-                            newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
-                            j['arguments'] = newArgs
+                    # update arguments for unique output naming
 
-                    self.blDBsession.updateDB( task )
+                    # Only for fullySpec tasks or automated tasks using another algo than RunBased 
+                    if self.type == "fullySpecified" or ( self.type == "partiallySpecified" and self.splittingAlgorithm != "RunBased" ) :
+                        for j in task.jobs:
+                            if j['jobId'] in sub_list:
+                                self.blDBsession.getRunningInstance(j)                            
+                             
+                                try:
+                                    resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
+                                except Exception, e:
+                                    resubNum = j.runningJob['submission'] 
+                                newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
+                                j['arguments'] = newArgs
+
+                        self.blDBsession.updateDB( task )
 
                     try:
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
@@ -542,17 +548,21 @@ class FatWorker(Thread):
                     errorTrace = ''
             else:
                 # update arguments for unique output naming
-                for j in task.jobs:
-                    if j['jobId'] in sub_jobs[ii]:
-                        self.blDBsession.getRunningInstance(j)
-                        try:
-                            resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
-                        except Exception, e:
-                            resubNum = j.runningJob['submission'] 
-                        newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
-                        j['arguments'] = newArgs
 
-                self.blDBsession.updateDB( task )
+                # Only for fullySpec tasks or automated tasks using another algo than RunBased
+                if self.type == "fullySpecified" or ( self.type == "partiallySpecified" and self.splittingAlgorithm != "RunBased" ) :
+
+                    for j in task.jobs:
+                        if j['jobId'] in sub_jobs[ii]:
+                            self.blDBsession.getRunningInstance(j)
+                            try:
+                                resubNum = int(str(j['arguments']).split(' ')[1]) + 1 
+                            except Exception, e:
+                                resubNum = j.runningJob['submission'] 
+                            newArgs = "%d %d"%(j.runningJob['jobId'], resubNum)
+                            j['arguments'] = newArgs
+
+                    self.blDBsession.updateDB( task )
 
                 try:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
