@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.362 2010/07/06 16:33:23 ewv Exp $"
-__version__ = "$Revision: 1.362 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.363 2010/08/11 19:28:12 ewv Exp $"
+__version__ = "$Revision: 1.363 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1042,24 +1042,10 @@ class Cmssw(JobType):
         if (self.copy_data == 1):
             txt = '\n#Written by cms_cmssw::wsModifyReport\n'
 
-            ### FEDE not more necessary, we are using json file
-            #txt += 'if [ $StageOutExitStatus -eq 0 ] || [ $StageOutExitStatus -eq 60308 ] ; then\n'
-            #txt += '    FOR_LFN=$LFNBaseName\n'
-            #txt += 'else\n'
-            #txt += '    FOR_LFN=/copy_problems/ \n'
-            #txt += 'fi\n'
-
             txt += 'echo ">>> Modify Job Report:" \n'
             txt += 'chmod a+x $RUNTIME_AREA/ProdCommon/FwkJobRep/ModifyJobReport.py\n'
-            #txt += 'echo "SE = $SE"\n'
-            #txt += 'echo "endpoint = $endpoint"\n'
-            #txt += 'SE_PATH=$endpoint\n'
-            #txt += 'echo "SE_PATH = $endpoint"\n'
-            #txt += 'echo "FOR_LFN = $FOR_LFN" \n'
             txt += 'echo "CMSSW_VERSION = $CMSSW_VERSION"\n\n'
 
-            ### removing some arguments
-            #args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml n_job $OutUniqueID for_lfn $FOR_LFN PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH se_name $SE se_path $SE_PATH file_list $file_list'
             args = 'fjr $RUNTIME_AREA/crab_fjr_$NJob.xml json $RUNTIME_AREA/resultCopyFile n_job $OutUniqueID PrimaryDataset $PrimaryDataset  ApplicationFamily $ApplicationFamily ApplicationName $executable cmssw_version $CMSSW_VERSION psethash $PSETHASH'
 
             if (self.publish_data == 1):
@@ -1107,40 +1093,12 @@ class Cmssw(JobType):
           #### Patch to check input data reading for CMSSW16x Hopefully we-ll remove it asap
         txt += '    if [ $executable_exit_status -eq 0 ];then\n'
         txt += '        echo ">>> Executable succeded  $executable_exit_status"\n'
-        ## This cannot more work given the changes on the Job argumentsJob
-        """
-        if (self.datasetPath and not (self.dataset_pu or self.useParent==1)) :
-          # VERIFY PROCESSED DATA
-            txt += '        echo ">>> Verify list of processed files:"\n'
-            txt += '        echo $InputFiles |tr -d \'\\\\\' |tr \',\' \'\\n\'|tr -d \'"\' > input-files.txt\n'
-            txt += '        python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --lfn > processed-files.txt\n'
-            txt += '        cat input-files.txt  | sort | uniq > tmp.txt\n'
-            txt += '        mv tmp.txt input-files.txt\n'
-            txt += '        echo "cat input-files.txt"\n'
-            txt += '        echo "----------------------"\n'
-            txt += '        cat input-files.txt\n'
-            txt += '        cat processed-files.txt | sort | uniq > tmp.txt\n'
-            txt += '        mv tmp.txt processed-files.txt\n'
-            txt += '        echo "----------------------"\n'
-            txt += '        echo "cat processed-files.txt"\n'
-            txt += '        echo "----------------------"\n'
-            txt += '        cat processed-files.txt\n'
-            txt += '        echo "----------------------"\n'
-            txt += '        diff -qbB input-files.txt processed-files.txt\n'
-            txt += '        fileverify_status=$?\n'
-            txt += '        if [ $fileverify_status -ne 0 ]; then\n'
-            txt += '            executable_exit_status=30001\n'
-            txt += '            echo "ERROR ==> not all input files processed"\n'
-            txt += '            echo "      ==> list of processed files from crab_fjr.xml differs from list in pset.cfg"\n'
-            txt += '            echo "      ==> diff input-files.txt processed-files.txt"\n'
-            txt += '        fi\n'
-        """
         txt += '    fi\n'
         txt += 'else\n'
         txt += '    echo "CRAB FrameworkJobReport crab_fjr.xml is not available, using exit code of executable from command line."\n'
         txt += 'fi\n'
         txt += '\n'
-        txt += 'if [ $executable_exit_status -ne 0 ] && [ $executable_exit_status -ne 50115 ] && [ $executable_exit_status -ne 50117 ] && [ $executable_exit_status -ne 30001 ];then\n'
+        txt += 'if [ $executable_exit_status -ne 0 ];then\n'
         txt += '    echo ">>> Executable failed  $executable_exit_status"\n'
         txt += '    echo "ExeExitCode=$executable_exit_status" | tee -a $RUNTIME_AREA/$repo\n'
         txt += '    echo "EXECUTABLE_EXIT_STATUS = $executable_exit_status"\n'
