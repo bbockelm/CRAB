@@ -45,7 +45,7 @@ class DLSInfo:
         showProd = int(self.cfg_params.get('CMSSW.show_prod', 0)) 
         if showProd == 1: self.showProd = True
 
-        phedexURL='http://cmsweb.cern.ch/phedex/datasvc/xml/prod/'
+        phedexURL='https://cmsweb.cern.ch/phedex/datasvc/xml/prod/'
         global_url="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
 
         if type=="DLS_TYPE_DBS":
