@@ -39,6 +39,9 @@ class DataLocation:
         global_url = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         if not useDBS and scheduler in ['condor']:
             useDBS = global_url
+        ## to be simplified once condor constraint will be clarified
+        if useDBS==global_url  and scheduler != 'condor':
+            useDBS = None
         if useDBS:
             dlstype='dbs'
             DLS_type="DLS_TYPE_%s"%dlstype.upper()
