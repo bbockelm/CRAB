@@ -461,6 +461,7 @@ Within a dataset you can ask to run over the related parent files too. E.g., thi
 =head3 B<publish_zero_event>
 
 To force zero event files publication specify I<publish_zero_event> = 1
+
 =head3 B<pset *>
 
 The python ParameterSet to be used.
