@@ -318,8 +318,6 @@ Warnings about publication:
 
 CRAB publishes only EDM files (in the FJR they are written in the tag <File>)
 
-By default the publication of files containing 0 events is desabled. If you want to enable it you have to set the parameter [USER].publish_zero_event=1 in crab.cfg.
-
 CRAB publishes in the same USER dataset more EDM files if they are produced by a job and written in the tag <File> of FJR.
 
 It is not possible for the user to select only one file to publish, nor to publish two files in two different USER datasets.
@@ -458,10 +456,6 @@ Within a dataset you can restrict to run on a specific run number or run number 
 
 Within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
 This setting is supposed to works both with Splitting by Lumis and Splitting by Events. 
-
-=head3 B<publish_zero_event>
-
-To force zero event files publication specify I<publish_zero_event> = 1
 
 =head3 B<pset *>
 
