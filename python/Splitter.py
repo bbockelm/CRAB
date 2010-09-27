@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.44 2010/07/26 19:50:02 ewv Exp $"
-__version__ = "$Revision: 1.44 $"
+__revision__ = "$Id: Splitter.py,v 1.45 2010/08/16 19:26:47 ewv Exp $"
+__version__ = "$Revision: 1.45 $"
 
 import common
 from crab_exceptions import *
@@ -664,7 +664,7 @@ class JobSplitter:
         so the job will have AT LEAST as many lumis as requested, perhaps
         more
         """
-
+        self.useParent = int(self.cfg_params.get('CMSSW.use_parent',0))
         common.logger.debug('Splitting by Lumi')
         self.checkLumiSettings()
 
@@ -672,7 +672,7 @@ class JobSplitter:
         pubdata = self.args['pubdata']
 
         lumisPerFile  = pubdata.getLumis()
-
+        self.parentFiles=pubdata.getParent()
         # Make the list of WMBS files for job splitter
         fileList = pubdata.getListFiles()
         wmFileList = []
@@ -721,6 +721,10 @@ class JobSplitter:
                     break
                 lumis = []
                 lfns  = []
+                if self.useParent==1:
+                 parentlfns  = []  
+                 pString =""
+
                 locations = []
                 blocks = []
                 firstFile = True
@@ -743,10 +747,19 @@ class JobSplitter:
                                 lumis.append( (theRun, theLumi) )
                     if doFile:
                         lfns.append(jobFile['lfn'])
+                        if self.useParent==1:
+                           parent = self.parentFiles[jobFile['lfn']]
+                           for p in parent :
+                               pString += p  + ','
                 fileString = ','.join(lfns)
                 lumiLister = LumiList(lumis = lumis)
                 lumiString = lumiLister.getCMSSWString()
-                list_of_lists.append([fileString, str(-1), str(0), lumiString])
+                if self.useParent==1:
+                  common.logger.debug("Files: "+fileString+" with the following parents: "+pString[:-1])
+                  pfileString = pString[:-1]
+                  list_of_lists.append([fileString, pfileString, str(-1), str(0), lumiString])
+                else: 
+                 list_of_lists.append([fileString, str(-1), str(0), lumiString])
                 list_of_blocks.append(blocks)
                 jobDestination.append(locations)
                 jobCount += 1
@@ -759,6 +772,8 @@ class JobSplitter:
         # Prepare dict output matching back to non-WMBS job creation
         dictOut = {}
         dictOut['params'] = ['InputFiles', 'MaxEvents', 'SkipEvents', 'Lumis']
+        if self.useParent==1:   
+         dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents','Lumis']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs'] = jobCount
