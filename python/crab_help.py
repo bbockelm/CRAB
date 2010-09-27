@@ -457,6 +457,7 @@ Within a dataset you can restrict to run on a specific run number or run number 
 =head3 B<use_parent>
 
 Within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
+This setting is supposed to works both with Splitting by Lumis and Splitting by Events. 
 
 =head3 B<publish_zero_event>
 
