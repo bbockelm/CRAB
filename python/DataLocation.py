@@ -37,11 +37,14 @@ class DataLocation:
         useDBS    = self.cfg_params.get('CMSSW.dbs_url',None)
         scheduler = self.cfg_params.get('CRAB.scheduler',None).lower()
         global_url = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
-        if not useDBS and scheduler in ['condor']:
-            useDBS = global_url
-        ## to be simplified once condor constraint will be clarified
-        if useDBS==global_url  and scheduler != 'condor':
+
+        # Condor must use show_prod = 1 to find data at local site which may be a Tier1
+        # Don't switch to DBS just because user specified the global URL in config
+        if scheduler in ['condor']:
+            self.cfg_params['CMSSW.show_prod'] = 1
+        if useDBS == global_url:
             useDBS = None
+
         if useDBS:
             dlstype='dbs'
             DLS_type="DLS_TYPE_%s"%dlstype.upper()
