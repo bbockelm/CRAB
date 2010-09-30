@@ -800,6 +800,8 @@ I<crab> creates by default a working directory 'crab_0_E<lt>dateE<gt>_E<lt>timeE
 
 I<crab> saves all command lines in the file I<crab.history>.
 
+I<crab> downloads some configuration files from internet and keeps cached copies in ~/.cms_crab and ~/.cms_sitedbcache directories. The location of those caches can be redirected using the enviromental variables CMS_SITEDB_CACHE_DIR and  CMS_CRAB_CACHE_DIR
+
 =head1 HISTORY
 
 B<CRAB> is a tool for the CMS analysis on the Grid environment. It is based on the ideas from CMSprod, a production tool originally implemented by Nikolai Smirnov.
