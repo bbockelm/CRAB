@@ -58,7 +58,8 @@ class PsetManipulator:
         """
         Set max event in the standalone untracked module
         """
-        self.cfg.inputSource.setSkipEvents(skipEv)
+        if self.cfg.inputSource.sourceType not in ['EmptySource']:
+            self.cfg.inputSource.setSkipEvents(skipEv)
         return
 
     def psetWriter(self, name):

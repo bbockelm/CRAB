@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.28 2010/04/15 13:29:34 ewv Exp $"
-__version__ = "$Revision: 1.28 $"
+__revision__ = "$Id: writeCfg.py,v 1.29 2010/04/26 16:12:16 ewv Exp $"
+__version__ = "$Revision: 1.29 $"
 
 import getopt
 import imp
@@ -146,7 +146,7 @@ def main(argv) :
     if maxEvents:
         cfg.maxEvents.setMaxEventsInput(maxEvents)
 
-    if skipEvents:
+    if skipEvents and inModule.sourceType not in ['EmptySource']:
         inModule.setSkipEvents(skipEvents)
 
     # Set "skip events" for various generators
