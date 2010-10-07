@@ -1,5 +1,5 @@
-__revision__ = "$Id: CopyData.py,v 1.26 2010/05/28 09:46:00 fanzago Exp $"
-__version__  = "$Revision: 1.26 $"
+__revision__ = "$Id: CopyData.py,v 1.27 2010/07/02 15:34:37 fanzago Exp $"
+__version__  = "$Revision: 1.27 $"
 
 from Actor import *
 from crab_util import *
@@ -109,7 +109,7 @@ class CopyData(Actor):
                         "source": key,
                         "inputFileList": to_copy[key],
                         "protocol": self.protocol,
-                        "debug":'1'
+                        #"debug":'1'
                       }
             cmscpConfig.update(dest)
 
