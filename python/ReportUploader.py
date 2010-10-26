@@ -10,7 +10,7 @@ class ReportUploader( Actor ):
 
     uploadFileServer = "http://gangamon.cern.ch/django/cmserrorreports/"
     dashbtaskmon = 'http://dashb-cms-job-task.cern.ch/taskmon.html'
-    centralservermon = ''
+    centralservermon = 'http://glidein-mon.t2.ucsd.edu:8080/dashboard/ajaxproxy.jsp?p='
 
     def __init__(self, cfg_params, jobid = -1): 
         """
@@ -57,17 +57,17 @@ class ReportUploader( Actor ):
         
         self.scheduler = common.scheduler.name()
 
-        val = getCentralConfigLink('reportLogURL')
+        val = getCentralConfigLink('reportLogURL', 'http://cms.pg.infn.it/~cinquilli/files/crab2/')
         if val is not None and len(val) > 0:
             self.uploadFileServer = val
         common.logger.debug('Using %s as remote repository server for uploading logs' % self )
 
-        val = getCentralConfigLink('dashbTaskMon')
+        val = getCentralConfigLink('dashbTaskMon', 'http://cms.pg.infn.it/~cinquilli/files/crab2/')
         if val is not None and len(val) > 0:
             self.dashbtaskmon = val
         common.logger.debug('Using %s as link for dashboard task monitoring' % self.dashbtaskmon )
 
-        val = getCentralConfigLink('servTaskMon')
+        val = getCentralConfigLink('servTaskMon', 'http://cms.pg.infn.it/~cinquilli/files/crab2/')
         if val is not None and len(val) > 0:
             self.centralservermon = val
         common.logger.debug('Using %s as link for central server monitoring (it allows to bypass cern firewall)' % self.centralservermon )
@@ -86,7 +86,7 @@ class ReportUploader( Actor ):
                      'username:%s\n' % self.username + \
                      'version:%s\n' % os.path.basename(os.path.normpath(os.getenv('CRABDIR'))) + \
                      'jobuuid:%s\n' % self.taskname + \
-                     'monitoringlink:Dashboard monitoring,%s%s \n' %(self.centralservermon,self.taskname) + \
+                     'monitoringlink:Dashboard monitoring,%s%s \n' %(self.dashbtaskmon,self.taskname) + \
                      'monitoringlink:CentralServer monitoring,%s%s\n' % (self.centralservermon, cservermon.replace('logtype=Status&', 'logtype=Status|')) + \
                      'monitoringlink:CrabServer monitoring,%s\n' % cservermon
                    )

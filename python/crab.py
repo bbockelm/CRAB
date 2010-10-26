@@ -798,7 +798,7 @@ class Crab:
                 jobid = -1
                 jobs = self.parseRange_(val)
                 if len( jobs ) > 1:
-                    raise CrabException( "Only single job id allowed for %s command!" % opt )
+                    common.logger.info("Only single job id allowed for %s command!" % opt )
                 elif len (jobs) == 1:
                     jobid = jobs[0]
                 from ReportUploader import ReportUploader
