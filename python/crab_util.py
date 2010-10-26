@@ -188,6 +188,31 @@ def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/"
     return False
 
 ###########################################################################
+def getCentralConfigLink(linkname, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/", fileName = "URLs.conf"):
+    """
+    _getCentralConfigLink_
+
+    This retrieves the remote URLs file containing a dictionary of a central manager URLs
+    {
+       'reportLogURL': 'http://gangamon.cern.ch/django/cmserrorreports/',
+       'dashbTaskMon': 'http://dashb-cms-job-task.cern.ch/taskmon.html#task=',
+       'servTaskMon' : 'http://glidein-mon.t2.ucsd.edu:8080/dashboard/ajaxproxy.jsp?p='
+    }
+    """
+    result = {}
+    from Downloader import Downloader
+    links = Downloader(url)
+    try:
+        result = eval(links.config(fileName))
+        common.logger.debug(str(result))
+    except:
+        common.logger.info("ERROR: Problem reading URLs releases file...")
+    if result.has_key(linkname):
+        return result[linkname]
+    common.logger.info("ERROR: Problem reading URLs releases file: no %s present!" % linkname)
+    return ''       
+
+###########################################################################
 def importName(module_name, name):
     """
     Import a named object from a Python module,

@@ -37,7 +37,7 @@ class Crab:
                              '-listMatch', '-match', '-postMortem', '-clean',
                              '-printId', '-createJdl','-printJdl', '-publish', '-checkPublication',
                              '-copyData', '-renewCredential', '-extend','-validateCfg',
-                             '-report', '-cleanCache', '-stopWorkflow' ]
+                             '-report', '-cleanCache', '-stopWorkflow', '-uploadLog' ]
 
         # Dictionary of actions, e.g. '-create' -> object of class Creator
         self.actions = {}
@@ -793,6 +793,16 @@ class Crab:
             elif ( opt == '-cleanCache' ):
                 from CacheCleaner import CacheCleaner
                 self.actions[opt] = CacheCleaner()
+
+            elif ( opt == '-uploadLog' ):
+                jobid = -1
+                jobs = self.parseRange_(val)
+                if len( jobs ) > 1:
+                    raise CrabException( "Only single job id allowed for %s command!" % opt )
+                elif len (jobs) == 1:
+                    jobid = jobs[0]
+                from ReportUploader import ReportUploader
+                self.actions[opt] = ReportUploader( self.cfg_params, jobid )
 
             pass
         return

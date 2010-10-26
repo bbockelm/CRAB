@@ -40,6 +40,7 @@ The most useful general options (use '-h' to get complete help):
   -createJdl [range]                      -- provide files with a complete Job Description (JDL).
   -validateCfg [fname]                    -- parse the ParameterSet using the framework's Python API.
   -cleanCache                             -- clean SiteDB and CRAB caches.
+  -uploadLog [jobid]                      -- upload main log files to a central repository
   -continue|-c [dir]                      -- Apply command to task stored in [dir].
   -h [format]                             -- Detailed help. Formats: man (default), tex, html, txt.
   -cfg fname                              -- Configuration file name. Default is 'crab.cfg'.
@@ -389,6 +390,13 @@ Clean up (i.e. erase) the task working directory after a check whether there are
 
 Clean up (i.e. erase) the SiteDb and CRAB cache content.
 
+=head2 B<-uploadLog [jobid]>
+
+Upload main log files to a central repository. It prints a link to be forwared to supporting people (eg: crab feedback hypernews).
+
+It can optionally take a job id as input. It does not allow job ranges/lists. 
+
+Uploaded files are: crab.log, crab.cfg, job logging info, job standard output, summary file and a metadata file.
 
 =head2 B<-validateCfg [fname]>
 
