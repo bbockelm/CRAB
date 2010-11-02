@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.45 2010/08/16 19:26:47 ewv Exp $"
-__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: Splitter.py,v 1.46 2010/09/27 08:56:08 spiga Exp $"
+__version__ = "$Revision: 1.46 $"
 
 import common
 from crab_exceptions import *
@@ -707,7 +707,10 @@ class JobSplitter:
         lumisCreated = 0
         list_of_blocks = []
         if not self.limitJobLumis:
-            self.lumisPerJob = pubdata.getMaxLumis() // self.theNumberOfJobs + 1
+            if self.totalNLumis:
+                self.lumisPerJob = max(self.totalNLumis // self.theNumberOfJobs,1)
+            else:
+                self.lumisPerJob = pubdata.getMaxLumis() // self.theNumberOfJobs + 1
             common.logger.info('Each job will process about %s lumis.' %
                                 self.lumisPerJob)
 
@@ -722,7 +725,7 @@ class JobSplitter:
                 lumis = []
                 lfns  = []
                 if self.useParent==1:
-                 parentlfns  = []  
+                 parentlfns  = []
                  pString =""
 
                 locations = []
@@ -758,7 +761,7 @@ class JobSplitter:
                   common.logger.debug("Files: "+fileString+" with the following parents: "+pString[:-1])
                   pfileString = pString[:-1]
                   list_of_lists.append([fileString, pfileString, str(-1), str(0), lumiString])
-                else: 
+                else:
                  list_of_lists.append([fileString, str(-1), str(0), lumiString])
                 list_of_blocks.append(blocks)
                 jobDestination.append(locations)
@@ -772,7 +775,7 @@ class JobSplitter:
         # Prepare dict output matching back to non-WMBS job creation
         dictOut = {}
         dictOut['params'] = ['InputFiles', 'MaxEvents', 'SkipEvents', 'Lumis']
-        if self.useParent==1:   
+        if self.useParent==1:
          dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents','Lumis']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
