@@ -8,7 +8,7 @@ import socket
 
 class ReportUploader( Actor ):
 
-    uploadFileServer = "http://gangamon.cern.ch/django/cmserrorreports/"
+    uploadFileServer = "http://analysisops.cern.ch/cmserrorreports"
     dashbtaskmon = 'http://dashb-cms-job-task.cern.ch/taskmon.html'
     #centralservermon = 'http://glidein-mon.t2.ucsd.edu:8080/dashboard/ajaxproxy.jsp?p='
 
