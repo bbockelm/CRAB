@@ -59,7 +59,7 @@ def get_fjrs (directory) :
     return fjrs.split('\n')
 
 def get_nodes () :
-    cmd = "wget -O- -q http://cmsweb.cern.ch/phedex/datasvc/xml/prod/nodes"
+    cmd = "wget --no-check-certificate -O- -q http://cmsweb.cern.ch/phedex/datasvc/xml/prod/nodes"
     (stat, nodes) = getstatusoutput(cmd)
     if stat != 0:
         print prog_name + ":", "aborting retrieval, error:", nodes
@@ -118,7 +118,7 @@ def local_stageout_filenames_from_datasvc (doc) :
     for node in doc.getElementsByTagName("LFN"):
         if node.parentNode.tagName == "File":
             lfn = node.firstChild.nodeValue.strip()
-    cmd = "wget -O- -q \"http://cmsweb.cern.ch/phedex/datasvc/xml/prod/lfn2pfn?node=" + nodeName + "&lfn=" + lfn + "&protocol=srmv2\""
+    cmd = "wget --no-check-certificate -O- -q \"http://cmsweb.cern.ch/phedex/datasvc/xml/prod/lfn2pfn?node=" + nodeName + "&lfn=" + lfn + "&protocol=srmv2\""
     (stat, pfnXml) = getstatusoutput(cmd)
     if stat != 0:
         print prog_name + ":", "aborting retrieval, error:", pfnXml
