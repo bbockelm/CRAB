@@ -28,7 +28,7 @@ class cmscp:
              return 60303 if file already exists in the SE
         """
         self.params = {"source":'', "destination":'','destinationDir':'', "inputFileList":'', "outputFileList":'', \
-                           "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "for_lfn":'', "se_name":'' }
+                           "protocol":'', "option":'', "middleware":'', "srm_version":'srmv2', "for_lfn":'', "se_name":'', "surl_for_grid":''}
         self.debug = 0
         #### for fallback copy
         self.local_stage = 0
@@ -303,9 +303,21 @@ class cmscp:
         if ( self.params['for_lfn'][-1] != '/' ) : self.params['for_lfn'] = self.params['for_lfn'] + '/'
             
         file_backup=[]
+        file_backup_surlgrid=[]
         for input in self.params['inputFileList']:
             file = self.params['for_lfn'] + os.path.basename(input)
             surl = tfc.matchLFN(tfc.preferredProtocol, file)
+            
+            ###### FEDE TEST_FOR_SURL_GRID
+            surl_for_grid = tfc.matchLFN('srmv2', file)
+            if (surl_for_grid == None):
+                surl_for_grid = tfc.matchLFN('srmv2-lcg', file)
+                if (surl_for_grid == None):
+                    surl_for_grid = tfc.matchLFN('srm', file)
+            if surl_for_grid:
+                file_backup_surlgrid.append(surl_for_grid)
+            ###### 
+
             file_backup.append(surl)
             if self.debug:
                 print '\t for_lfn %s \n'%self.params['for_lfn']
@@ -315,14 +327,25 @@ class cmscp:
         destination=os.path.dirname(file_backup[0])
         if ( destination[-1] != '/' ) : destination = destination + '/'
         self.params['destination']=destination
+
         self.params['se_name']=seName
-            
+
+        ###### 
+        if (len(file_backup_surlgrid)>0) :
+            surl_for_grid=os.path.dirname(file_backup_surlgrid[0])
+            if ( surl_for_grid[-1] != '/' ) : surl_for_grid = surl_for_grid + '/'
+        else:
+            surl_for_grid=''
+
+        print "surl_for_grid = ", surl_for_grid    
+        self.params['surl_for_grid']=surl_for_grid
+        #####
+
         if self.debug:
             print '\tIn LocalCopy trying the stage out with: \n'
             print "\tself.params['destination'] %s \n"%self.params['destination']
             print "\tself.params['protocol'] %s \n"%self.params['protocol']
             print "\tself.params['option'] %s \n"%self.params['option']
-
 
         localCopy_results = self.copy( self.params['inputFileList'], self.params['protocol'], self.params['option'], backup='yes' )
            
@@ -741,7 +764,10 @@ class cmscp:
             jobStageInfo['for_lfn']=self.params['for_lfn']
         jobStageInfo['se_name']=self.params['se_name']
         jobStageInfo['endpoint']=self.hostname
-
+        ### ADDING SURLFORGRID FOR COPYDATA
+        if not self.params['surl_for_grid']: self.params['surl_for_grid']=''
+        jobStageInfo['surl_for_grid']=self.params['surl_for_grid']
+        #####
         report = { file : jobStageInfo}
         return report
 

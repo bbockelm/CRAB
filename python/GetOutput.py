@@ -22,6 +22,11 @@ class GetOutput(Actor):
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
         self.dontCheckSpaceLeft = int(self.cfg_params.get('USER.dontCheckSpaceLeft' ,0))
+        
+        print common.scheduler.name().upper()
+        if common.scheduler.name().upper() not in ['LSF', 'CAF', 'PBS']:
+           print "ok not in funziona"
+
 
         return
 
@@ -82,13 +87,6 @@ class GetOutput(Actor):
         if not os.path.isdir(self.logDir) or not os.path.isdir(self.outDir):
             msg =  ' Output or Log dir not found!! check '+self.logDir+' and '+self.outDir
             raise CrabException(msg)
-        #else:
-        #    submission_id = common._db.queryRunJob('submission',self.list_id)
-        #    submission_id.sort()
-        #    submission_id.reverse()
-        #    max_id=submission_id[0]
-        #    if max_id > 1: self.moveOutput(max_id)
-
         return 
 
     def getOutput(self):
@@ -129,8 +127,6 @@ class GetOutput(Actor):
         listCode = []
         job_id = []
 
-        #cwd = os.getcwd()
-        #os.chdir( self.outDir )
         success_ret = 0
         size = 0 # in kB
         for id in list_id:
@@ -156,7 +152,6 @@ class GetOutput(Actor):
                     cmd = 'tar zxf ' + self.outDir + file + ' ' + '-C ' + self.outDir
                     cmd_out = runCommand(cmd)
                     cmd_2 ='rm ' + self.outDir + 'out_files_'+ str(id)+'.tgz'
-                    #cmd_2 ='rm out_files_'+ str(id)+'.tgz'
                     cmd_out2 = runCommand(cmd_2)
                     msg = 'Results of Jobs # '+str(id)+' are in '+self.outDir
                     common.logger.info(msg)
@@ -177,7 +172,6 @@ class GetOutput(Actor):
                 msg = "Problems with "+str(input)+". File not available.\n"
                 common.logger.info(msg) 
             success_ret +=1 
-        #os.chdir( cwd )
         common._db.updateRunJob_(job_id , listCode)
 
         if self.logDir != self.outDir:
@@ -201,7 +195,6 @@ class GetOutput(Actor):
         """
         from ProdCommon.FwkJobRep.ReportParser import readJobReport
         
-        #input = self.outDir + '/crab_fjr_' + str(jobid) + '.xml'  
         codeValue = {} 
 
         jreports = readJobReport(input)
@@ -251,40 +244,31 @@ class GetOutput(Actor):
         #### Filling BOSS DB with SE name and LFN, for edm and not_edm files ####        
         lfns=[]
         pfns=[]
+
         if (len(jobReport.files) != 0):
             for f in jobReport.files:
                 if f['LFN']:
                     lfns.append(f['LFN'])
-                ### FEDE for MULTI ###    
-                ### FEDE to have the endpoint in the boss db ###    
-                #if f['SEName']:    
-                #    codeValue["storage"] = f['SEName']
                 if f['PFN']:
-                    pfns.append(os.path.dirname(f['PFN'])+'/')
-                    #codeValue["storage"] = os.path.dirname(f['PFN'])+'/' 
-                ##########    
-                    
+                    #### FEDE to have the correct endpoit to use in the copyData (we modify the bossDB value and not the fjr ) 
+                    if common.scheduler.name().upper() not in ['LSF', 'CAF', 'PBS'] and codeValue["wrapperReturnCode"] == 60308:
+                        pfns.append(os.path.dirname(f['SurlForGrid'])+'/')
+                    else:
+                        pfns.append(os.path.dirname(f['PFN'])+'/')
+                    ##########    
         if (len(jobReport.analysisFiles) != 0):
             for aFile in jobReport.analysisFiles:
                 if aFile['LFN']:
                     lfns.append(aFile['LFN'])
-                ### FEDE for MULTI ####    
-                ### FEDE to have the endpoint in the boss db ###    
-                #if aFile['SEName']:    
-                #    codeValue["storage"] = aFile['SEName']
-                if aFile['PFN']:   
-                    pfns.append(os.path.dirname(aFile['PFN'])+'/')
-                    #codeValue["storage"] = os.path.dirname(aFile['PFN'])+'/'
-                #########    
-                    
-        ### FEDE for MULTI ####    
-        #if not codeValue.has_key('storage'):
-        #    codeValue["storage"] = ''
-        #else:
+                if aFile['PFN']:
+                    #### FEDE to have the correct endpoit to use in the copyData (we modify the bossDB value and not the fjr ) 
+                    if common.scheduler.name().upper() not in ['LSF', 'CAF', 'PBS'] and codeValue["wrapperReturnCode"] == 60308:
+                        pfns.append(os.path.dirname(aFile['SurlForGrid'])+'/')
+                    else:    
+                        pfns.append(os.path.dirname(aFile['PFN'])+'/')
+                    #########    
         codeValue["storage"] = pfns 
-        
         codeValue["lfn"] = lfns
-         
         return codeValue
 
     def moveOutput(self,id, max_id,path,file):
