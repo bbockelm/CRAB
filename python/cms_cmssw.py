@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.363 2010/08/11 19:28:12 ewv Exp $"
-__version__ = "$Revision: 1.363 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.364 2010/09/23 15:10:23 fanzago Exp $"
+__version__ = "$Revision: 1.364 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -37,8 +37,10 @@ class Cmssw(JobType):
                       self.cfg_params.get('CRAB.use_server',0)
         self.local  = common.scheduler.name().upper() in ['LSF','CAF','CONDOR','SGE','PBS']
         size = 9.5
-        if self.server or self.local:
-            size = 99999
+        if self.server :
+            size = 1000
+        elif self.local:
+            size = 9999999
         self.MaxTarBallSize = float(self.cfg_params.get('GRID.maxtarballsize',size))
 
         # number of jobs requested to be created, limit obj splitting
@@ -652,11 +654,15 @@ class Cmssw(JobType):
 
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
-            msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + str(self.MaxTarBallSize) \
-               +'MB input sandbox limit \n'
-            msg += '      and not supported by the direct GRID submission system.\n'
-            msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
-            msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
+            if not self.server:
+                msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + \
+                         str(self.MaxTarBallSize) +'MB input sandbox limit \n'
+                msg += '      and not supported by the direct GRID submission system.\n'
+                msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
+                msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
+            else: 
+                msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' +  \
+                        str(self.MaxTarBallSize) +'MB input sandbox limit in the server.'
             raise CrabException(msg)
 
         ## create tar-ball with ML stuff
