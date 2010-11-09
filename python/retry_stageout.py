@@ -19,11 +19,12 @@ class CopyError(Exception):
 quiet = False
 dryrun = False
 remove_after_copy = False
+copy_to_ui = False
 
 prog_name = ""
 
 def usage () :
-    print prog_name + ":", "usage: retry_stageout.py -c <crab directory> [--help | -h] [--dry-run | -n] [--quiet | -q] [--verbose | -v | -vv | -vvv]"
+    print prog_name + ":", "usage: retry_stageout.py -c <crab directory> [--help | -h] [--dry-run | -n] [--copy-to-ui | -l] [--quiet | -q] [--verbose | -v | -vv | -vvv]"
 
 def help () :
     usage()
@@ -31,6 +32,7 @@ def help () :
     print prog_name + ":",  "-c\t\t\t (Mandatory) CRAB project directory to parse"
     print prog_name + ":",  "--help, -h\t\t Print this message"
     print prog_name + ":",  "--dry--run, -n\t Do not copy anything, only print a list of local PFN's that need to be copied"
+    print prog_name + ":",  "--copy-to-ui, -l\t Copy output to local UI in the res dir of crab directory"
     print prog_name + ":",  "--quiet, -q\t\t Print only error messages or the list of PFN's produced by -n"
     print prog_name + ":",  "--verbose, -v, -vv, -vvv\t Be verbose."
     print prog_name + ":",  "\t The first level of verbosity prints what the program is doing and whether external commands succeeded"
@@ -57,7 +59,7 @@ def get_fjrs (directory) :
     return fjrs.split('\n')
 
 def get_nodes () :
-    cmd = "wget -O- -q http://cmsweb.cern.ch/phedex/datasvc/xml/prod/nodes"
+    cmd = "wget --no-check-certificate -O- -q https://cmsweb.cern.ch/phedex/datasvc/xml/prod/nodes"
     (stat, nodes) = getstatusoutput(cmd)
     if stat != 0:
         print prog_name + ":", "aborting retrieval, error:", nodes
@@ -116,7 +118,7 @@ def local_stageout_filenames_from_datasvc (doc) :
     for node in doc.getElementsByTagName("LFN"):
         if node.parentNode.tagName == "File":
             lfn = node.firstChild.nodeValue.strip()
-    cmd = "wget -O- -q \"http://cmsweb.cern.ch/phedex/datasvc/xml/prod/lfn2pfn?node=" + nodeName + "&lfn=" + lfn + "&protocol=srmv2\""
+    cmd = "wget --no-check-certificate -O- -q \"https://cmsweb.cern.ch/phedex/datasvc/xml/prod/lfn2pfn?node=" + nodeName + "&lfn=" + lfn + "&protocol=srmv2\""
     (stat, pfnXml) = getstatusoutput(cmd)
     if stat != 0:
         print prog_name + ":", "aborting retrieval, error:", pfnXml
@@ -142,10 +144,22 @@ def cp_target () :
         raise CopyError
     return grep_output.replace("export endpoint=", "")
 
+def cp_ui_target():
+    ### FEDE FOR COPY OF FILE WITH EXITCODE 60308 TO UI
+    path =  os.getcwd() + '/' + directory + '/res/'
+    endpoint = 'file:/' + path
+    return path, endpoint
+
 def copy_local_to_remote_pfn (fjr) :
     (local_lfn, local_pfn) = local_stageout_filenames_from_datasvc(fjr)
     remote_filename = os.path.split(local_lfn)[1]
-    remote_pfn = cp_target() + remote_filename
+    ### FEDE FOR COPY OF FILE WITH EXITCODE 60308 TO UI
+    if copy_to_ui:
+        path, endpoint = cp_ui_target()
+        remote_pfn = endpoint + remote_filename
+        remote_path = path + remote_filename 
+    else:
+        remote_pfn = cp_target() + remote_filename
     list_stageout.append(local_pfn)
     if not quiet:
         print prog_name + ":", "copying from local:", local_pfn, "to remote:", remote_pfn
@@ -164,7 +178,11 @@ def copy_local_to_remote_pfn (fjr) :
     if lcg_ls_source_stat != 0:
         print prog_name + ":", "aborting retrieval, size check error:", lcg_ls_source
         raise CopyError
-    (lcg_ls_dest_stat, lcg_ls_dest) = getstatusoutput("lcg-ls -l -D srmv2 " + remote_pfn)
+
+    if copy_to_ui:
+        (lcg_ls_dest_stat, lcg_ls_dest) = getstatusoutput("ls -l " + remote_path)
+    else:
+        (lcg_ls_dest_stat, lcg_ls_dest) = getstatusoutput("lcg-ls -l -D srmv2 " + remote_pfn)
     if lcg_ls_dest_stat != 0:
         print prog_name + ":", "aborting retrieval, size check error:", lcg_ls_dest
         raise CopyError
@@ -212,7 +230,7 @@ def rewrite_fjr (file, doc) :
 (prog_path, prog_name) = os.path.split(sys.argv[0])
 
 try:
-    opts, argv = getopt.getopt(sys.argv[1:], "hc:vqn", ["help", "verbose", "quiet", "dry-run"])
+    opts, argv = getopt.getopt(sys.argv[1:], "hc:vqnl", ["help", "verbose", "quiet", "dry-run", "copy-to-ui"])
 except getopt.GetoptError, err:
     # print prog_name + ":", help information and exit:
     print prog_name + ": " + str(err) # will print prog_name + ":", something like "option -a not recognized"
@@ -226,6 +244,8 @@ for o, a in opts:
         verbosity += 1
     elif o in ("-n", "--dry-run"):
         dryrun = True
+    elif o in ("-l", "--copy-to-ui"):
+        copy_to_ui = True
     elif o in ("-q", "--quiet"):
         quiet = True
     elif o in ("-h", "--help"):
@@ -266,7 +286,7 @@ for j in fjrs:
             if not quiet:
                 print prog_name + ":", "fjr", j, "indicates remote stageout failure with local copy"
             copy_local_to_remote_pfn(doc)
-            if not dryrun:
+            if not dryrun and not copy_to_ui:
                 rewrite_fjr(j, doc)
         else:
             list_not_stageout.append(j)
