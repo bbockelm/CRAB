@@ -178,11 +178,17 @@ def checkCRABVersion(current, url = "http://cmsdoc.cern.ch/cms/LCG/crab/config/"
     for version in result:
         if version.find('.') != -1:
             version_dot = version.split('.')
+            temp = False
             for compare in map(None, current_dot, version_dot):
                 if compare[1].find('*') != -1:
                     return True
                 elif int(compare[0]) != int(compare[1]):
+                    temp = False
                     break
+                else:
+                    temp = True
+            if temp:
+                return temp
         elif version == '*':
             return True
     return False
