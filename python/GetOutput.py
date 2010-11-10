@@ -22,12 +22,6 @@ class GetOutput(Actor):
         self.return_data = self.cfg_params.get('USER.return_data',0)
 
         self.dontCheckSpaceLeft = int(self.cfg_params.get('USER.dontCheckSpaceLeft' ,0))
-        
-        print common.scheduler.name().upper()
-        if common.scheduler.name().upper() not in ['LSF', 'CAF', 'PBS']:
-           print "ok not in funziona"
-
-
         return
 
     def run(self):
