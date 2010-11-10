@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.364 2010/09/23 15:10:23 fanzago Exp $"
-__version__ = "$Revision: 1.364 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.365 2010/11/09 21:10:07 spiga Exp $"
+__version__ = "$Revision: 1.365 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -38,7 +38,7 @@ class Cmssw(JobType):
         self.local  = common.scheduler.name().upper() in ['LSF','CAF','CONDOR','SGE','PBS']
         size = 9.5
         if self.server :
-            size = 1000
+            size = 100
         elif self.local:
             size = 9999999
         self.MaxTarBallSize = float(self.cfg_params.get('GRID.maxtarballsize',size))
