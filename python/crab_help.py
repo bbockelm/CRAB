@@ -296,7 +296,8 @@ See also I<-continue>.
 =head2 B<-submit [range]>
 
 Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. The default is all.
-If 'n' is passed as an argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted.
+If 'n' is passed as an argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted. In order to only submit job number M use this syntax (note the trailing comma): I<crab -submit M,> 
+
 This option may be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default) to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
 
 =head2 B<-continue [dir] | -c [dir]>
