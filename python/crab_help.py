@@ -381,7 +381,7 @@ Dump technical information about jobs: for developers only.
 
 =head2 B<-report>
 
-Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the dataset path, a summary of the status of the jobs, and so on. A summary file of the runs and luminosity sections processed is written to res/. In principle -report should generate all the info needed for an analysis. Work in progress.
+Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the dataset path, a summary of the status of the jobs, and so on. A summary file of the runs and luminosity sections processed is written to res subdirecttory as lumiSummary.json and can be used as input to tools that compute the luminosity like lumiCalc.py
 
 =head2 B<-clean [dir]>
 
