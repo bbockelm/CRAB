@@ -34,6 +34,7 @@ class JobXml:
         self.ENDED          = "ended" 
         self.ACTION         = 'action'
         self.JOBSUBISSION   = "submission"         
+        self.PROCSTATUS     = "procestatus"
 
         self.jobid      = ""
         self.status     = ""
@@ -47,13 +48,14 @@ class JobXml:
         self.ended      = ""
         self.action     = ""
         self.jobsubmission = ""
-        
+        self.procstatus = ""
+
         self.doc            = xml.dom.minidom.Document()
 	#self.root           = self.doc.createElement( self.ROOTNAME )
 	#self.init           = False
         
     #------------------------------------------------------------------------
-    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "", act = "", jsub= "" ):
+    def initialize(self, jobid, status, job_exit, exe_exit, job_cleared, resub, site, sched_status, sId = "", ended = "", act = "", jsub= "", procs = "" ):
         self.jobid      = jobid
         self.status     = status
         self.exitstatus = exe_exit
@@ -64,6 +66,7 @@ class JobXml:
         self.ended      = ended
         self.action     = act
         self.jobsubmission = jsub
+        self.procstatus = procs
 
         jobrep = self.doc.createElement(self.JOBREPORT)
         jobrep.setAttribute(self.JOBID, str(self.jobid))
@@ -79,6 +82,7 @@ class JobXml:
         jobrep.setAttribute(self.ENDED, str(self.ended))
         jobrep.setAttribute(self.ACTION, str(self.action))
         jobrep.setAttribute(self.JOBSUBISSION, str(self.jobsubmission))
+        jobrep.setAttribute(self.PROCSTATUS, str(self.procstatus))
 
         self.report = jobrep
         return self
@@ -186,6 +190,7 @@ class CreateXmlJobReport:
         self.SCHEDID        = "sched_id"
         self.TASKSTATUS     = "TaskStatus"
         self.ACTION         = "action"
+        self.PROCSTATUS     = "procestatus"
 
         self.doc            = xml.dom.minidom.Document()
         self.root           = self.doc.createElement( self.ROOTNAME )

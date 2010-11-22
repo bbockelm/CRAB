@@ -4,8 +4,8 @@ _TaskTracking_
 
 """
 
-__revision__ = "$Id: TaskTrackingComponent.py,v 1.172 2010/08/10 21:55:56 spiga Exp $"
-__version__ = "$Revision: 1.172 $"
+__revision__ = "$Id: TaskTrackingComponent.py,v 1.173 2010/08/13 07:48:55 spiga Exp $"
+__version__ = "$Revision: 1.173 $"
 
 import os
 import time
@@ -542,10 +542,10 @@ class TaskTrackingComponent:
                     eMail = valuess[2]
                     ## XML report file
                     if status == self.taskState[2]:
-                        dictionaryReport =  {"all": ["CannotSubmit", "", "", 0, '', 'C']}
+                        dictionaryReport =  {"all": ["CannotSubmit", "", "", 0, '', 'C', '', '', '', '', '', '', '']}
                         self.prepareReport( payload, uuid, eMail, valuess[3], 0, 0, dictionaryReport, 0, 0 )
                     elif status == self.taskState[4]:
-                        dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C']}
+                        dictionaryReport =  {"all": ["Killed", "", "", 0, '', 'C', '', '', '', '', '', '', '']}
                         self.prepareReport( payload, uuid, eMail, valuess[3], 0, 0, dictionaryReport, 0, 0 )
         except Exception, ex:
             logBuf = self.__log(logBuf, "ERROR while reporting info about the task " + str(payload) )
@@ -706,9 +706,9 @@ class TaskTrackingComponent:
         dictionaryReport =  {}
         for job in xrange(1, int(totjobs)+1):
             if job in listsubmit:
-                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'CS', '', 'N', 'SubmissionReq', '', ''])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'CS', '', 'N', 'SubmissionReq', '', '', ''])
             else:
-                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', ' ', 'Created', '', ''])
+                dictionaryReport.setdefault(job, ["Created", "", "", 0, 0, '', 'C', '', '', 'Created', '', '', ''])
         self.prepareReport( taskName, "", "", "", 0, 0, dictionaryReport, int(totjobs), 0, taskstatus )
 
     def singleTaskPoll(self, taskObj, ttdb, taskName, mySession):
@@ -783,7 +783,8 @@ class TaskTrackingComponent:
                               ttutil.getListEl(dictReportTot[singleJob], 9), \
                               ttutil.getListEl(dictReportTot[singleJob], 8), \
                               ttutil.getListEl(dictReportTot[singleJob], 10), \
-                              dictReportTot[singleJob][11] \
+                              dictReportTot[singleJob][11], \
+                              ttutil.getListEl(dictReportTot[singleJob], 11) \
                             )
                 c.addJob( J )
 
@@ -928,6 +929,7 @@ class TaskTrackingComponent:
             eec   = str( jobbe.runningJob['applicationReturnCode'] )
             joboff = str( jobbe.runningJob['closed'] )
             action = jobbe.runningJob['state']
+            procstat = jobbe.runningJob['processStatus']
             site  = ""
             if jobbe.runningJob['destination'] != None and \
                jobbe.runningJob['destination'] != '':
@@ -967,10 +969,10 @@ class TaskTrackingComponent:
             vect = []
             if eec == "NULL" and jec == "NULL":
                 vect = [ sstat, "", "", 0, Resub, site, \
-                         stato, joboff, resubmitting, sId, action, jsub ]
+                         stato, joboff, resubmitting, sId, action, jsub, procstat ]
             else:
                 vect = [ sstat, eec, jec, 0, Resub, site, \
-                         stato, joboff, resubmitting, sId, action, jsub ]
+                         stato, joboff, resubmitting, sId, action, jsub, procstat ]
 
             if action in ["SubSuccess", "KillFailed"]:
                 if stato in ["E"]:  #["SD","E","DA"]:
