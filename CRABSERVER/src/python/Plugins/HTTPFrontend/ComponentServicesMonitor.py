@@ -217,6 +217,7 @@ class ShowCompStatus:
         outqueue = API.getOutputQueue()
         outqueuefail = API.getOutputFailedQueue()
         JTload   = API.jobTrackingLoad()
+        dequeued = API.dequeuedJobs()
         jobdistr = API.processStatusDistribution()
         jobbyst = ''
         for couple in jobdistr:
@@ -226,6 +227,7 @@ class ShowCompStatus:
 
         html += "<br/>Jobs in the GetOutput queue: %s Done + %s Failed = %s"%(str(outqueue[0][0]), str(outqueuefail[0][0]), str(outqueue[0][0]+outqueuefail[0][0]))
         html += "<br/>Jobs being processed by the JobTracking: %s"%str(JTload[0][0])
+        html += "<br/>Jobs already processed by the GetOutput: %s"%str(dequeued[0][0])
         html += "<br/>Jobs by processing status: <br/>%s"%table_job
 
         html += "</body></html>"

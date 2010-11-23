@@ -354,6 +354,11 @@ def jobTrackingLoad():
     results = queryMethod(query)
     return results
 
+def dequeuedJobs():
+    query = "select count(*) from bl_runningjob where status = 'processed'";
+    results = queryMethod(query)
+    return results
+
 def processStatusDistribution():
     query = "select process_status, count(*) from bl_runningjob where closed = 'N' group by process_status;";
     results = queryMethod(query)
