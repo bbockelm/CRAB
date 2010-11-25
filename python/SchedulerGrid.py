@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.133 2010/06/14 13:10:00 farinafa Exp $"
-__version__ = "$Revision: 1.133 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.134 2010/07/30 14:58:42 fanzago Exp $"
+__version__ = "$Revision: 1.134 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -174,10 +174,13 @@ class SchedulerGrid(Scheduler):
         txt += "out_files=out_files_${NJob}; export out_files\n"
         txt += "echo $out_files\n"
         txt += jbt.outList()
-        txt += 'if [ $JobRunCount ] && [ `expr $JobRunCount - 1` -gt 0 ] && [ $Glidein_MonitorID ]; then \n'
-        txt += '   attempt=`expr $JobRunCount - 1` \n'
-        txt += '   MonitorJobID=${NJob}_${Glidein_MonitorID}__${attempt}\n'
-        txt += '   SyncGridJobId=${Glidein_MonitorID}__${attempt}\n'
+      #  txt += 'if [ $JobRunCount ] && [ `expr $JobRunCount - 1` -gt 0 ] && [ $Glidein_MonitorID ]; then \n'
+        txt += 'if [ $Glidein_MonitorID ]; then \n'
+#        txt += '   attempt=`expr $JobRunCount - 1` \n'
+#        txt += '   MonitorJobID=${NJob}_${Glidein_MonitorID}__${attempt}\n'
+#        txt += '   SyncGridJobId=${Glidein_MonitorID}__${attempt}\n'
+        txt += '   MonitorJobID=${NJob}_${Glidein_MonitorID}\n'
+        txt += '   SyncGridJobId=${Glidein_MonitorID}\n'
         txt += 'else \n'
         txt += '   MonitorJobID=${NJob}_'+self.environment_unique_identifier+'\n'
         txt += '   SyncGridJobId='+self.environment_unique_identifier+'\n'
