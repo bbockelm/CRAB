@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.46 2010/09/27 08:56:08 spiga Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: Splitter.py,v 1.47 2010/11/02 15:27:46 ewv Exp $"
+__version__ = "$Revision: 1.47 $"
 
 import common
 from crab_exceptions import *
@@ -707,7 +707,7 @@ class JobSplitter:
         lumisCreated = 0
         list_of_blocks = []
         if not self.limitJobLumis:
-            if self.totalNLumis:
+            if self.totalNLumis > 0:
                 self.lumisPerJob = max(self.totalNLumis // self.theNumberOfJobs,1)
             else:
                 self.lumisPerJob = pubdata.getMaxLumis() // self.theNumberOfJobs + 1
