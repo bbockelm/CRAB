@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.212 2010/08/12 20:55:45 spiga Exp $"
-__version__ = "$Revision: 1.212 $"
+__revision__ = "$Id: FatWorker.py,v 1.213 2010/09/03 07:59:46 riahi Exp $"
+__version__ = "$Revision: 1.213 $"
 
 import string
 import sys, os
@@ -19,6 +19,7 @@ from xml.dom import minidom
 import traceback
 import copy
 import re
+import logging
 
 # CW DB API
 from CrabWorkerAPI import CrabWorkerAPI
@@ -294,7 +295,7 @@ class FatWorker(Thread):
         self.bossSchedName = {'GLITE': self.SchedulerGlitePlugin(),
                               'CONDOR_G':'SchedulerCondorG',
                               'GLIDEIN' :'SchedulerGlidein',
-                              'ARC':'arc',
+                              'ARC':'SchedulerARC',
                               'LSF':'SchedulerLsf',
                               'CAF':'SchedulerLsf'}[self.schedName]
         schedulerConfig = {'name': self.bossSchedName, 
@@ -772,6 +773,8 @@ class FatWorker(Thread):
                 tags_tmp = str(taskObj['jobType']).split('"')
                 tags = [str(tags_tmp[1]), str(tags_tmp[3])]
                 requirements.append( self.sched_parameter_Glite(id_job, taskObj) )
+            elif self.bossSchedName == 'SchedulerARC':
+                requirements.append( self.sched_parameter_Arc(id_job, taskObj) )
             else:
                 continue
 
@@ -1054,6 +1057,52 @@ class FatWorker(Thread):
         sched_param += 'ShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
         sched_param += 'DefaultNodeShallowRetryCount = '+str(self.cfg_params['EDG_shallow_retry_count'])+';\n'
         return sched_param
+
+
+    def sched_parameter_Arc(self,i,task):
+        #
+        # RTE:s
+        #
+        xrsl = ""
+        for s in task['jobType'].split('&&'):
+            if re.search('Member\(".*", .*RunTimeEnvironment', s):
+                # Found an RTE; extract its name
+                rte = re.sub(" *Member\(\"", "", s)
+                rte = re.sub("\", .*", "", rte)
+                if re.search('VO-cms-CMSSW_', rte):
+                    # If it's a CMSSW RTE, convert it's name from
+                    # VO-cms-CMSSW_x_y_z to APPS/HEP/CMSSW-x.y.z
+                    rte = re.sub("VO-cms-", "APPS/HEP/", rte)
+                    rte = re.sub("_", "-", rte, 1)
+                    rte = re.sub("_", ".", rte)
+                    rte = rte.upper()
+                xrsl += "(runTimeEnvironment=%s)" % rte
+
+        #
+        # User supplied parameters
+        #
+        if self.cfg_params.has_key("GRID.max_cpu_time"):
+            s = self.cfg_params["GRID.max_cpu_time"]
+            if s.strip()[0] not in ['"', "'"] and s.strip()[-1] not in ['"', "'"]:
+                s = '"' + s.strip() + '"'
+            xrsl += '(cpuTime=%s)' % s
+
+        if self.cfg_params.has_key('GRID.max_wall_clock_time'):
+            s = self.cfg_params["GRID.max_wall_clock_time"]
+            if s.strip()[0] not in ['"', "'"] and s.strip()[-1] not in ['"', "'"]:
+                s = '"' + s.strip() + '"'
+            xrsl += '(wallTime=%s)' % s
+
+        if self.cfg_params.has_key("GRID.additional_xrsl_parameters"):
+            common.logger.warning("additional_xrsl_parameters is deprecated; use 'additional_jdl_parameters' instead!")
+            xrsl += self.cfg_params["GRID.additional_xrsl_parameters"]
+
+        if self.cfg_params.has_key("GRID.additional_jdl_parameters"):
+            xrsl += self.cfg_params["GRID.additional_jdl_parameters"]
+
+        return xrsl
+
+
 
     def se_list(self, id, dest):
         """

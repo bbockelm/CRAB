@@ -6,8 +6,8 @@ Implements thread logic used to perform Crab task reconstruction on server-side.
 
 """
 
-__revision__ = "$Id: RegisterWorker.py,v 1.41 2010/06/10 11:41:58 spiga Exp $"
-__version__ = "$Revision: 1.41 $"
+__revision__ = "$Id: RegisterWorker.py,v 1.42 2010/08/13 07:06:42 spiga Exp $"
+__version__ = "$Revision: 1.42 $"
 
 import string
 import sys, os
@@ -340,13 +340,13 @@ class RegisterWorker(Thread):
         self.log.info(str(remoteSBlist))
 
         if len(remoteSBlist) > 0:
-            if self.schedName in ['GLITE']:
+            if self.schedName in ['GLITE', 'ARC'] :
                 # get TURL for WMS bypass and manage paths
                 self.log.info('Worker %s getting TURL (Scheduler Name %s)  '%(self.myName, self.schedName))
                 turlFileCandidate = remoteSBlist[0]
                 self.preamble = SBinterface(self.seEl).getTurl( turlFileCandidate, self.credential )
                 self.preamble = self.preamble.split(remoteSBlist[0])[0]
-            elif self.schedName in ['LSF', 'CAF', 'CONDOR_G', 'ARC', 'GLIDEIN']:
+            elif self.schedName in ['LSF', 'CAF', 'CONDOR_G', 'GLIDEIN']:
                 self.log.info('Worker %s  NO TURL needed (Scheduler Name %s)  '%(self.myName, self.schedName))
                 self.preamble = ''
             else:
@@ -392,8 +392,9 @@ class RegisterWorker(Thread):
                 if 'crab_fjr_%d.xml'%(jid+1) not in j['outputFiles']:
                     j['outputFiles'].append('crab_fjr_%d.xml'%(jid+1))
                     #'file://' + destDir +'_spec/crab_fjr_%d.xml'%(jid+1) )
-                if '.BrokerInfo' not in j['outputFiles']:
-                    j['outputFiles'].append('.BrokerInfo')
+                if self.schedName not in ['ARC'] :
+                   if '.BrokerInfo' not in j['outputFiles']:
+                       j['outputFiles'].append('.BrokerInfo')
             else:
                 self.log.info(' ')
                 pass   
