@@ -363,6 +363,10 @@ def spanRanges(jobArray):
 
 def displayReport(self, header, lines, xml=''):
 
+    horizontalRuler=''
+    for i in range(80):
+        horizontalRuler+='-'
+    horizontalRuler+='\n'
     counter = 0
     printline = ''
     printline+= header
@@ -370,7 +374,7 @@ def displayReport(self, header, lines, xml=''):
 
     for i in range(len(lines)):
         if counter != 0 and counter%10 == 0 :
-            msg += '-------------------------------------------------------------------------------------------------------\n'
+            msg += horizontalRuler
         msg+=  '%s\n'%lines[i]
         counter += 1
     if xml != '' :

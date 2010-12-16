@@ -13,6 +13,7 @@ class Status(Actor):
     def __init__(self, *args):
         self.cfg_params = args[0]
         self.verbose = (str(self.cfg_params.get("CRAB.status",'')) in ('verbose','v'))
+        self.verbose = True
         self.xml = self.cfg_params.get("USER.xml_report",'')
         ## needed to check server name and difference from SA
         self.server_name = ''
@@ -98,7 +99,7 @@ class Status(Actor):
                     listJobField.append(jobToSave)
                     jobState = 'Aborted'
 
-            if (self.verbose) :printline+="%-6s %-18s %-14s %-36s %-13s %-16s %-4s" % (id,jobStatus,jobState,dest,exe_exit_code,job_exit_code,ended)
+            if (self.verbose) :printline+="%-5s %-3s %-17s %-13s %-10s %-11s %s" % (id,ended,jobStatus,jobState,exe_exit_code,job_exit_code,dest)
             else: printline+="%-6s %-18s %-36s %-13s %-16s " % (id,jobStatus,dest,exe_exit_code,job_exit_code)
             toPrint.append(printline)
 
@@ -112,11 +113,12 @@ class Status(Actor):
         header = ''
        
         if (self.verbose):
-            header+= "%-6s %-18s %-14s %-36s %-13s %-16s %-4s\n" % ('ID','STATUS','ACTION','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS','ENDED')
-            header+=  '------------------------------------------------------------------------------------------------------------------\n'
+            header+= "%-5s %-3s %-17s %-13s%-11s %-11s %s\n" % ('ID','END','STATUS','ACTION','ExeExitCode','JobExitCode','E_HOST')
+            header+=  '----- --- ----------------- ------------  ---------- ----------- ---------\n'
         else: 
             header+= "%-6s %-18s %-36s %-13s %-16s\n" % ('ID','STATUS','E_HOST','EXE_EXIT_CODE','JOB_EXIT_STATUS')
-            header+=  '--------------------------------------------------------------------------------------------\n'
+            header+=  '--------------------------------------------------------------------------------\n'
+
 
         if display: displayReport(self,header,toPrint,self.xml)
 
