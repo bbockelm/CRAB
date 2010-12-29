@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.365 2010/11/09 21:10:07 spiga Exp $"
-__version__ = "$Revision: 1.365 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.366 2010/11/10 15:46:26 spiga Exp $"
+__version__ = "$Revision: 1.366 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -660,7 +660,7 @@ class Cmssw(JobType):
                 msg += '      and not supported by the direct GRID submission system.\n'
                 msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
                 msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
-            else: 
+            else:
                 msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' +  \
                         str(self.MaxTarBallSize) +'MB input sandbox limit in the server.'
             raise CrabException(msg)
@@ -1162,6 +1162,7 @@ class Cmssw(JobType):
 
         downloader = Downloader(url)
         goodRelease = False
+        tagCollectorUrl = url + fileName
 
         try:
             result = downloader.config(fileName)
@@ -1173,24 +1174,22 @@ class Cmssw(JobType):
 
             arch     = None
             release  = None
-            relType  = None
             relState = None
             for (event, node) in events:
                 if event == pulldom.START_ELEMENT:
                     if node.tagName == 'architecture':
                         arch = node.attributes.getNamedItem('name').nodeValue
                     if node.tagName == 'project':
-                        relType = node.attributes.getNamedItem('type').nodeValue
                         relState = node.attributes.getNamedItem('state').nodeValue
-                        if relType == 'Production' and relState == 'Announced':
+                        if relState == 'Announced':
                             release = node.attributes.getNamedItem('label').nodeValue
                 if self.executable_arch == arch and self.version == release:
                     goodRelease = True
                     return goodRelease
 
             if not goodRelease:
-                msg = "WARNING: %s on %s is not a supported release. " % \
-                        (self.version, self.executable_arch)
+                msg = "WARNING: %s on %s is not among supported releases listed at %s ." % \
+                        (self.version, self.executable_arch, tagCollectorUrl)
                 msg += "Submission may fail."
                 common.logger.info(msg)
         except:
