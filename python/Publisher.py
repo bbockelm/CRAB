@@ -117,7 +117,12 @@ class Publisher(Actor):
             start = time.time()
             common.logger.debug("start import parents time: " + str(start))
             for block in api_reader.listBlocks(datasetpath):
-                api_writer.dbsMigrateBlock(globalDBS,self.DBSURL,block['Name'] )
+                if (str(block['OpenForWriting']) != '1'):
+                    api_writer.dbsMigrateBlock(globalDBS,self.DBSURL,block['Name'] )
+                else:
+                    common.logger.debug("Skipping the import of " + block['Name'] + " it is an open block")
+                    continue
+                ################
             stop = time.time()
             common.logger.debug("stop import parents time: " + str(stop))
             common.logger.info("--->>> duration of all parents import (sec): "+str(stop - start))
