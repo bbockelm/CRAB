@@ -72,11 +72,6 @@ class ReportUploader( Actor ):
             self.dashbtaskmon = val
         common.logger.debug('Using %s as link for dashboard task monitoring' % self.dashbtaskmon )
 
-        #val = getCentralConfigLink('servTaskMon')
-        #if val is not None and len(val) > 0:
-        #    self.centralservermon = val
-        #common.logger.debug('Using %s as link for central server monitoring (it allows to bypass cern firewall)' % self.centralservermon )
-
 
     def __prepareMetadata( self, datafile ):
         """
@@ -89,11 +84,12 @@ class ReportUploader( Actor ):
         strmeta = 'username:%s\n' % self.username + \
                   'version:%s\n' % '%s_%s' % (common.prog_name.upper(), common.prog_version_str) + \
                   'jobuuid:%s\n' % self.taskname + \
-                  'monitoringlink:Dashboard monitoring,%s%s \n' %(self.dashbtaskmon,self.taskname) # + \
+                  'monitoringlink:Dashboard Task Mon,%s%s \n' %(self.dashbtaskmon,self.taskname) # + \
         if self.server_name != 'No server':
-            cservermon = 'http://%s:8888/visualog/?logtype=Status&taskname=%s\n' % (self.server_name, self.taskname)
-            strmeta += 'monitoringlink:CrabServer monitoring,%s\n' % cservermon # + \
-                       #'monitoringlink:CentralServer monitoring,%s%s\n' % (self.centralservermon, cservermon.replace('logtype=Status&', 'logtype=Status|')) + \
+            cserverStatus = 'http://%s:8888/visualog/?logtype=Status&taskname=%s\n' % (self.server_name, self.taskname)
+            strmeta += 'monitoringlink:CrabServer Status,%s\n' % cserverStatus
+            cserverLog = 'http://%s:8888/visualog/?logtype=Logging&taskname=%s\n' % (self.server_name, self.taskname)
+            strmeta += 'monitoringlink:CrabServer Logging,%s\n' % cserverLog
 
         fmeta.write( strmeta )
         fmeta.close()
