@@ -305,9 +305,9 @@ This option may be used in conjunction with -create (to create and submit immedi
 Apply the action on the task stored in directory [dir]. If the task directory is the standard one (crab_0_date_time), the most recent in time is assumed. Any other directory must be specified.
 Basically all commands (except -create) need -continue, so it is automatically assumed. Of course, the standard task directory is used in this case.
 
-=head2 B<-status [v|verbose]>
+=head2 B<-status>
 
-Check the status of the jobs, in all states. With the server, the full status, including  application and wrapper exit codes, is available as soon as the jobs end. In StandAlone mode it is necessary to retrieve (-get) the job output first. With B<v|verbose> some more information is displayed.
+Check the status of all jobs. With the server, the full status, including  application and wrapper exit codes, is available as soon as a job end. In StandAlone mode it is necessary to retrieve (crab -get) the job output first to obtain the exit codes. The status is printed on the console as a table with 7 columns: ID (identifier in the task), END (job completed or not. Crab server resubmit failed jobs, therefore: N=server is still working on this job, Y=server has done and status will not change anymore), STATUS (the job status), ACTION (some additional status info useful for experts), ExeExitCode (exit code from cmsRun, if not zero it means cmsRun failed), JobExitCode (the exit code assigned by Crab and reported by dashboard), E_HOST (the CE where the job executed)
 
 =head2 B<-getoutput|-get [range]>
 
