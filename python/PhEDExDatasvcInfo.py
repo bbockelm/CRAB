@@ -11,7 +11,7 @@ class PhEDExDatasvcInfo:
     def __init__( self , cfg_params=None, config=None ):
  
         ## PhEDEx Data Service URL
-        self.datasvc_url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
+        self.datasvc_url="https://cmsweb-testbed.cern.ch/phedex/datasvc/xml/prod"
 
         self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
         self.stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Stageout_and_publication' 

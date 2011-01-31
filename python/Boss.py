@@ -175,7 +175,7 @@ class Boss:
         """
 
         try:
-            statusRes =  self.schedSession().query( str(taskid))
+               statusRes =  self.schedSession().query( str(taskid))
         except SchedulerError, err :
             msg = "Status Query failed with message : " +str(err)
             common.logger.debug(msg) 

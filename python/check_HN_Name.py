@@ -13,7 +13,7 @@ class check_HN_name:
         dn = dn.split('\n')[-1]
         dn  = urllib.urlencode({'dn':dn})
         print 'Using urlencoded DN: \n\t %s '%dn
-        f = urllib.urlopen("https://cmsweb.cern.ch/sitedb/json/index/dnUserName?%s" % dn)
+        f = urllib.urlopen("https://cmsweb-testbed.cern.ch/sitedb/json/index/dnUserName?%s" % dn)
         print 'my HN user name is: %s \n'%str(f.read())
         f.close()
         print '\nend check.....................'
