@@ -28,14 +28,18 @@ class ReportUploader( Actor ):
         try:
             CliServerParams(self)
             self.requestedserver = 'default'
-            if self.cfg_params.has_key("server_name"):
-                self.requestedserver = self.cfg_params['server_name']
+            if self.cfg_params.has_key("CRAB.server_name"):
+                self.requestedserver = self.cfg_params['CRAB.server_name']
+            if self.cfg_params.has_key("CRAB.use_server"):
+                if int(self.cfg_params['CRAB.use_server']) == 0:
+                    self.server_name = 'No server'
         except Exception, ex:
             common.logger.debug("Problem '%s'" % str(ex))
+            import traceback
+            common.logger.debug(str(traceback.format_exc()))
             self.server_name = 'No server'
             self.requestedserver = 'No server'
 
-            
         self.taskpath = common.work_space.topDir()
 
         if os.path.exists( self.taskpath ) is True:
