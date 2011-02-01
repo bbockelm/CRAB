@@ -640,12 +640,13 @@ class cmscp:
         ErCode = '0'
         msg = ''
 
+        copy_option = option
         if  self.params['option'].find('space_token')>=0: 
             space_token=self.params['option'].split('=')[1] 
-            if protocol == 'srmv2': option = '%s -space_token=%s'%(option,space_token)
-            if protocol == 'srm-lcg': option = '%s -S %s'%(option,space_token)
+            if protocol == 'srmv2': copy_option = '%s -space_token=%s'%(option,space_token)
+            if protocol == 'srm-lcg': copy_option = '%s -S %s'%(option,space_token)
         try:
-            sbi.copy( source_file , dest_file , opt = option, tout = self.subprocesstimeout['copy'])
+            sbi.copy( source_file , dest_file , opt = copy_option, tout = self.subprocesstimeout['copy'])
         except TransferException, ex:
             msg  = "Problem copying %s file" % filetocopy
             msg += str(ex)
