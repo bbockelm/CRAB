@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.44 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.44 2010/05/30 20:53:39 riahi Exp $"
+__version__ = "$Revision: 1.45 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.45 2010/05/31 20:10:52 riahi Exp $"
 
 import threading
 import os
@@ -225,19 +225,15 @@ class CRAB_AS_beckend:
             cmdFlavour = str(xmlCmd.getAttribute('Flavour'))
             cmdType = str(xmlCmd.getAttribute('Type'))
 
+            # submission limit part
+            if cmdKind in ['submit', 'resubmit'] and len( eval(cmdRng, {}, {}) ) > self.maxAllowedRange:
+                self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
+                return 101
 
             msg = '%s::%s::%s::%s'%(taskUniqName, str(self.cmdAttempts), str(cmdRng), str(cmdKind))
             self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
             self.log.info("NewCommand %s for task %s"%(cmdKind, taskUniqName))
             self.ms.commit()
-            # submission part
-            if cmdKind in ['submit', 'resubmit']:
-                # check for too large submissions
-                if len( eval(cmdRng, {}, {}) ) > self.maxAllowedRange:
-                    self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
-                    return 101
-                # send submission directive
-                return 0
 
             # getoutput
             if cmdKind == 'outputRetrieved':
