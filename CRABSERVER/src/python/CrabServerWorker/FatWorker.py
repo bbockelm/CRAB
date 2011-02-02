@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.213 2010/09/03 07:59:46 riahi Exp $"
-__version__ = "$Revision: 1.213 $"
+__revision__ = "$Id: FatWorker.py,v 1.214 2010/12/14 16:16:26 spiga Exp $"
+__version__ = "$Revision: 1.214 $"
 
 import string
 import sys, os
@@ -341,20 +341,20 @@ class FatWorker(Thread):
 ####################################
     def preSubmissionCheck(self, task):
         newRange = self.cmdRng
-        doNotSubmitStatusMask = ['R','S'] # ,'K','Y','D'] # to avoid resubmission of final state jobs
+        # With the fix about https://savannah.cern.ch/bugs/?68702 these have just role of sanity check
+        # I prefer to not remove them for the moment 
+        doNotSubmitStatusMask = ['R','S'] 
         tryToSubmitMask = ['C', 'A', 'RC', 'Z'] + ['K','Y','D','E', 'SD']
+
         skippedSubmissions = []
-        requested = []
 
         # closed running jobs regeneration and osb manipulation
-        needUpd = False
         backupFiles = []
         try:
             bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
         except Exception, ex:
             logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName
             logMsg += str(ex)
-          #  self.log.info( logMsg )
             raise Exception(logMsg)
 
         credential = task['user_proxy']
@@ -374,7 +374,17 @@ class FatWorker(Thread):
                 raise Exception(logMsg)
 
         for j in task.jobs:
-            if j['jobId'] in self.cmdRng and j.runningJob['closed'] == 'Y':
+            if j['jobId'] not in self.cmdRng:
+                continue  
+
+            # fix candidate for empty submission range issue # Fabio
+            # if the submission request is related to a "Done(failed)" job, then close and regenerate it
+            # see https://savannah.cern.ch/bugs/?68702
+            if j.runningJob['status'] != 'C' or j.runningJob['state'] != 'Created': 
+                j.runningJob['closed'] = 'Y'
+            ###
+
+            if j.runningJob['closed'] == 'Y':
                 # backup for job output (tgz files only, less load)
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
@@ -401,6 +411,7 @@ class FatWorker(Thread):
 
                 # reproduce closed runningJob instances
                 try:
+                    self.blDBsession.updateDB(j)
                     self.blDBsession.getNewRunningInstance(j)
                 except Exception, e:
                     logMsg = ("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
@@ -411,26 +422,31 @@ class FatWorker(Thread):
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
                     continue
+
                 j.runningJob['status'] = 'C'
                 j.runningJob['statusScheduler'] = 'Created'
-                needUpd = True
-            if j['jobId'] in self.cmdRng:
-                requested.append(j['jobId'])
-                j.runningJob['state'] = 'SubRequested'
 
-        self.log.info("Submission requested for %s"%str(requested))
+                try:
+                    self.blDBsession.updateDB(j)
+                except Exception, e:
+                    logMsg = "Worker %s. Error saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
+                    logMsg += str(e)
+                    self.log.info( logMsg )
+                    newRange.remove(j['jobId'])
+                    skippedSubmissions.append(j['jobId'])
+                    continue
 
-        if len(backupFiles) > 0:
-            self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
-
-        if needUpd == True:
+            # request for submission
+            j.runningJob['state'] = 'SubRequested'
             try:
                 self.blDBsession.updateDB(task)
             except Exception, e:
                 logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                 logMsg += str(e)
                 self.log.info( logMsg )
-                return None, None
+                newRange.remove(j['jobId'])
+                skippedSubmissions.append(j['jobId'])
+                continue
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
@@ -443,6 +459,14 @@ class FatWorker(Thread):
                 if j.runningJob['status'] not in tryToSubmitMask:
                     newRange.remove(j['jobId'])
                     skippedSubmissions.append(j['jobId'])
+
+        # summary printout for the jobs requested for submission
+        self.log.info("Submission requested for %s"%str(newRange))
+        if len(skippedSubmissions) > 0:
+            self.log.info("Skipped submission requests: %s"%str(skippedSubmissions))
+        if len(backupFiles) > 0:
+            self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
+
         return newRange, skippedSubmissions
 
     def submitTaskBlocks(self, task, sub_jobs, reqs_jobs, matched):
@@ -681,36 +705,29 @@ class FatWorker(Thread):
 ####################################
 
     def markJobsAsFailed(self, taskObj, toMarkAsFailed):
-        jobSpecId = []
         for j in taskObj.jobs:
             if j['jobId'] in toMarkAsFailed:
                 try:
                     self.blDBsession.getRunningInstance(j)
-                    jobSpecId.append(j['name'])
                 except Exception, exc: ## TODO handle proper exception
-                    self.log.error("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
+                    self.log.info("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
                     continue
-                        
-                self.log.debug("Changing status for %s "%str(j['jobId']))
-                j.runningJob['state'] = "SubFailed"
-                j.runningJob['closed'] = "Y"
+                
+                try:
+                    j.runningJob['state'] = "SubFailed"
+                    j.runningJob['closed'] = "Y"
+                    self.blDBsession.updateDB( j )
+                except Exception, e:
+                    logMsg = "Problem updating BossLite status. Cannot mark task %s job %s as failed\n"%(self.taskName, str( j['jobId']))
+                    logMsg +=  traceback.format_exc()
+                    self.log.info (logMsg)
 
-        try:
-            self.blDBsession.updateDB( taskObj )
-        except Exception, exc:
-            logMsg = "WorkerError %s. Task %s. Error marking jobs as failed."%(self.myName, self.taskName)
-            self.preLog(mess = "Failure in pre-submission check", err = logMsg, exc = exc)
-            self.sendResult(66, logMsg, logMsg, exc)
-            return  
-
-        for jId in jobSpecId:
-            try:
-                self.cwdb.updateWEStatus(jId, 'reallyFinished')
-            except Exception, e:
-                logMsg = "Problem updating WE status:\n"
-                logMsg +=  traceback.format_exc()
-                self.log.info (logMsg)
-                continue
+                try:
+                    self.cwdb.updateWEStatus(j['name'], 'reallyFinished')
+                except Exception, e:
+                    logMsg = "Problem updating WE status.Cannot mark task %s job %s as failed\n"%(self.taskName, str( j['jobId']))
+                    logMsg +=  traceback.format_exc()
+                    self.log.info (logMsg)
         return
 
     def submissionListCreation(self, taskObj, jobRng):
