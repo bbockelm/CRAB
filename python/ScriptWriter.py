@@ -229,5 +229,14 @@ class ScriptWriter:
             txt += "# Rewrite cfg for this job\n"
             txt += "echo  $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.py pset.py\n"
             txt += "python $RUNTIME_AREA/writeCfg.py "+str(self.debug_wrapper)+" pset.py pset.py\n"
+            txt += """
+        result=$?
+        if [ $result -ne 0 ]; then
+            echo "ERROR ==> problem re-writing config file"
+            job_exit_code=10040
+            func_exit
+        fi
+        """
+
 
         return txt
