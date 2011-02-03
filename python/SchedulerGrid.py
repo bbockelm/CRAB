@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.134 2010/07/30 14:58:42 fanzago Exp $"
-__version__ = "$Revision: 1.134 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.135 2010/11/25 11:27:05 spadhi Exp $"
+__version__ = "$Revision: 1.135 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -300,26 +300,30 @@ class SchedulerGrid(Scheduler):
                 txt += '    echo ".SEinteraction.log file not found"\n'
                 txt += 'fi\n'
                 txt += 'echo "#####################################"\n'
-            #### FEDE FOR MULTI ### 
+            
+            txt += 'echo "#####################################"\n'
+            txt += 'ls \n'
+            txt += 'echo "#####################################"\n'
+            
             txt += 'if [ -f resultCopyFile ] ;then\n'
             txt += '    cat resultCopyFile\n'
             txt += '    pwd\n'
             txt += 'else\n'
-            txt += '    echo "resultCopyFile file not found"\n'
-            txt += '    StageOutExitStatus=60307\n'
+            ### FEDE to avoid some 70500 error ....
+            txt += '    echo "ERROR ==> resultCopyFile file not found. Problem during the stageout"\n'
+            txt += '    job_exit_code=60318\n'
+            txt += '    func_exit \n'
             txt += 'fi\n'
             ################################
 
             txt += 'if [ -f cmscpReport.sh ] ;then\n'
             txt += '    cat cmscpReport.sh\n'
             txt += '    source cmscpReport.sh\n'
-            #### FEDE 
             txt += '    source_result=$? \n'
             txt += '    if [ $source_result -ne 0 ]; then\n'
             txt += '        echo "problem with the source of cmscpReport.sh file"\n'
             txt += '        StageOutExitStatus=60307\n'
             txt += '    fi\n'
-            ########
             txt += 'else\n'
             txt += '    echo "cmscpReport.sh file not found"\n'
             txt += '    StageOutExitStatus=60307\n'
