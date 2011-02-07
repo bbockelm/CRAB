@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.366 2010/11/10 15:46:26 spiga Exp $"
-__version__ = "$Revision: 1.366 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.367 2010/12/29 21:16:05 ewv Exp $"
+__version__ = "$Revision: 1.367 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -29,7 +29,7 @@ class Cmssw(JobType):
         self.NumEvents=0
         self._params = {}
         self.cfg_params = cfg_params
-        ### FEDE FOR MULTI ###
+        ### FOR MULTI ###
         self.var_filter=''
 
         ### Temporary patch to automatically skip the ISB size check:
@@ -87,26 +87,27 @@ class Cmssw(JobType):
         ### Temporary: added to remove input file control in the case of PU
         self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
 
-        tmp =  cfg_params['CMSSW.datasetpath']
-        common.logger.log(10-1, "CMSSW::CMSSW(): datasetPath = "+tmp)
-
-        if tmp =='':
-            msg = "Error: datasetpath not defined "
+        #### FEDE ADDED CHECK FOR DATASETPATH ##############################################
+        if not cfg_params.has_key('CMSSW.datasetpath'):
+            msg = "Error: datasetpath not defined in the section [CMSSW] of crab.cfg file "
             raise CrabException(msg)
-        elif string.lower(tmp)=='none':
-            self.datasetPath = None
-            self.selectNoInput = 1
-            self.primaryDataset = 'null'
-        else:
-            self.datasetPath = tmp
-            self.selectNoInput = 0
-            ll = len(self.datasetPath.split("/"))
-            if (ll < 4):
-                msg = 'Your datasetpath has a invalid format ' + self.datasetPath + '\n'
-                msg += 'Expected a path in format /PRIMARY/PROCESSED/TIER1-TIER2 or /PRIMARY/PROCESSED/TIER/METHOD for ADS'
-                raise CrabException(msg)
-            self.primaryDataset = self.datasetPath.split("/")[1]
-            self.dataTier = self.datasetPath.split("/")[2]
+        else:     
+            tmp =  cfg_params['CMSSW.datasetpath']
+            common.logger.log(10-1, "CMSSW::CMSSW(): datasetPath = "+tmp)
+            if string.lower(tmp)=='none':
+                self.datasetPath = None
+                self.selectNoInput = 1
+                self.primaryDataset = 'null'
+            else:
+                self.datasetPath = tmp
+                self.selectNoInput = 0
+                ll = len(self.datasetPath.split("/"))
+                if (ll < 4):
+                    msg = 'Your datasetpath has a invalid format ' + self.datasetPath + '\n'
+                    msg += 'Expected a path in format /PRIMARY/PROCESSED/TIER1-TIER2 or /PRIMARY/PROCESSED/TIER/METHOD for ADS'
+                    raise CrabException(msg)
+                self.primaryDataset = self.datasetPath.split("/")[1]
+                self.dataTier = self.datasetPath.split("/")[2]
 
         # Analysis dataset is primary/processed/tier/definition
         self.ads = False
@@ -311,7 +312,7 @@ class Cmssw(JobType):
                 pass
 
             # If requested, add PoolOutputModule to output files
-            ### FEDE FOR MULTI ###
+            ### FOR MULTI ###
             #edmOutput = PsetEdit.getPoolOutputModule()
             edmOutputDict = PsetEdit.getPoolOutputModule()
             common.logger.debug("(test) edmOutputDict = "+str(edmOutputDict))
@@ -860,7 +861,7 @@ class Cmssw(JobType):
             txt += 'edmConfigHash ' + psetName + ' \n'
             txt += 'PSETHASH=`edmConfigHash ' + psetName + '` \n'
             txt += 'echo "PSETHASH = $PSETHASH" \n'
-            #### FEDE temporary fix for noEdm files #####
+            #### temporary fix for noEdm files #####
             txt += 'if [ -z "$PSETHASH" ]; then \n'
             txt += '   export PSETHASH=null\n'
             txt += 'fi \n'
