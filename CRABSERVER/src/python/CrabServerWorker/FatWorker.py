@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.214 2010/12/14 16:16:26 spiga Exp $"
-__version__ = "$Revision: 1.214 $"
+__revision__ = "$Id: FatWorker.py,v 1.215 2011/02/02 13:32:55 spiga Exp $"
+__version__ = "$Revision: 1.215 $"
 
 import string
 import sys, os
@@ -1111,7 +1111,7 @@ class FatWorker(Thread):
             xrsl += '(wallTime=%s)' % s
 
         if self.cfg_params.has_key("GRID.additional_xrsl_parameters"):
-            common.logger.warning("additional_xrsl_parameters is deprecated; use 'additional_jdl_parameters' instead!")
+            self.log.warning("additional_xrsl_parameters is deprecated; use 'additional_jdl_parameters' instead!")
             xrsl += self.cfg_params["GRID.additional_xrsl_parameters"]
 
         if self.cfg_params.has_key("GRID.additional_jdl_parameters"):
