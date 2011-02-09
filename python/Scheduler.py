@@ -177,6 +177,7 @@ class Scheduler :
     def checkRemoteDir(self, endpoint, fileList):
         """
         """
+    
         common.logger.info('Checking remote location')
         ## temporary hack for OctX:
         if endpoint.find('${PSETHASH}')>1:
@@ -193,6 +194,8 @@ class Scheduler :
             msg =  'Problems trying remote dir check: \n\t%s'%str(ex)
             raise CrabException(msg)
         if remoteListTmp is False:
+            return
+        if remoteListTmp == []:
             return
         if remoteListTmp:
             listJob = common._db.nJobs('list')
@@ -217,6 +220,7 @@ class Scheduler :
         else:
             msg = 'Remote directory is empty or not existis\n'
             common.logger.debug(msg)
+        
         return
 
     def listRemoteDir(self, endpoint):
@@ -235,7 +239,13 @@ class Scheduler :
             raise Exception(str(ex))
 
         try:
-            remoteList = action.dirContent(opt=self.protocolOpt[protocol])
+            options=self.protocolOpt[protocol]
+            if protocol == 'srm-lcg':
+                options="-d " + options
+            check = action.checkExists(opt=options)
+            if check is True :
+                common.logger.info("WARNING: The stageout directory already exists. Be careful not to accidentally mix outputs from different tasks")
+            remoteList=[]
         except Exception, e:
             common.logger.debug(traceback.format_exc())
             raise CrabException("Failure while checking remote dir: "+str(e))
