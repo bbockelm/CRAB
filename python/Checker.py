@@ -37,12 +37,12 @@ class Checker(Actor):
             # only if some dest i s available or if dataset is None
             if len(dest) > 0 or not self.datasetpath: 
                 if ','.join(dest) in allMatch.keys():
-                    common.logger.info("As previous job: "+str(allMatch[','.join(dest)]))
+                    pass
                 else:
                     match = common.scheduler.listMatch(dest, True)
                     allMatch[','.join(dest)] = match 
                     if len(match)>0:
-                        common.logger.info("Found "+str(len(match))+" compatible site(s) for job "+str(id_job)+" : "+str(match))
+                        common.logger.info("Found "+str(len(match))+" compatible CE(s) for job "+str(id_job)+" : "+str(match))
                     else:
                         common.logger.info("No compatible site found, will not submit jobs "+str(id_job))
                     pass
