@@ -27,7 +27,7 @@ elif os.environ["SCRAM_ARCH"].split("_")[1].find('32')>1:
     except :
         try:
             from CRAB_Server_API_36X import CRAB_Server_Session as C_AS_Session 
-         except :
+        except :
             from CRAB_Server_API_311X import CRAB_Server_Session as C_AS_Session 
 else:
     try:
