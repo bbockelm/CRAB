@@ -128,9 +128,7 @@ fi
 
 echo "ExeStart=$executable" >>  $RUNTIME_AREA/$repo
 dumpStatus $RUNTIME_AREA/$repo
-# cp pset.py pippo.py
-# echo "print process.dumpPython()" >> pippo.py
-# python  pippo.py
+
 echo ">>> $executable started at `date -u`"
 start_exe_time=`date +%s`
 #CRAB run_executable

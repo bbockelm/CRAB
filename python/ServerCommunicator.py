@@ -25,12 +25,18 @@ elif os.environ["SCRAM_ARCH"].split("_")[1].find('32')>1:
     try:
         from CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
     except :
-        from CRAB_Server_API_36X import CRAB_Server_Session as C_AS_Session 
+        try:
+            from CRAB_Server_API_36X import CRAB_Server_Session as C_AS_Session 
+        except :
+            from CRAB_Server_API_311X import CRAB_Server_Session as C_AS_Session 
 else:
     try:
         from lib64.CRAB_Server_API_1_1 import CRAB_Server_Session as C_AS_Session
     except:
-        from lib64.CRAB_Server_API_36X_amd64 import CRAB_Server_Session as C_AS_Session
+        try:
+            from lib64.CRAB_Server_API_36X_amd64 import CRAB_Server_Session as C_AS_Session
+        except:
+            from lib64.CRAB_Server_API_311X_amd64 import CRAB_Server_Session as C_AS_Session
 
 class ServerCommunicator:
     """
