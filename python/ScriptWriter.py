@@ -235,8 +235,11 @@ class ScriptWriter:
             echo "ERROR ==> problem re-writing config file"
             job_exit_code=10040
             func_exit
-        fi
+        fi\n
         """
-
+            txt += "  \n"
+            txt += "cat inputsReport.txt  \n"
+            txt += "cat inputsReport.txt >> $RUNTIME_AREA/$repo \n"
+            txt += "dumpStatus $RUNTIME_AREA/$repo\n"
 
         return txt

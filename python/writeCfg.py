@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.29 2010/04/26 16:12:16 ewv Exp $"
-__version__ = "$Revision: 1.29 $"
+__revision__ = "$Id: writeCfg.py,v 1.30 2010/10/06 13:57:46 ewv Exp $"
+__version__ = "$Revision: 1.30 $"
 
 import getopt
 import imp
@@ -120,9 +120,12 @@ def main(argv) :
                 firstLumi = int(elem.getAttribute("FirstLumi"))
 
             generator      = str(elem.getAttribute('Generator'))
+            inputBlocks    = str(elem.getAttribute('InputBlocks'))
             inputFiles     = str(elem.getAttribute('InputFiles'))
             parentFiles    = str(elem.getAttribute('ParentFiles'))
             lumis          = str(elem.getAttribute('Lumis'))
+
+    report(inputBlocks,inputFiles,parentFiles,lumis)
 
   # Read Input python config file
 
@@ -231,6 +234,28 @@ def main(argv) :
         print "writeCfg output (May not be exact):"
         print "import FWCore.ParameterSet.Config as cms"
         print cmsProcess.dumpPython()
+
+
+def report( inputBlocks='', inputFiles='', parentFiles='', lumis='' ):
+    """
+    Writes the 4 parameters to a file, one parameter per line.
+    """
+    outFile = open('inputsReport.txt',"a")
+
+  #  InputFileList=inputFiles.split(',') 
+  #  parentFilesList= parentFiles.split(',')
+  #  lumisList= lumis.split(',')
+
+    ## replacing , with ; otherwise report.py will split it as a new parameter
+    txt = ''
+    txt += 'inputBlocks='+inputBlocks.replace(',',';')+'\n'
+    txt += 'inputFiles='+inputFiles.replace(',',';')+'\n'
+    txt += 'parentFiles='+parentFiles.replace(',',';')+'\n'
+    txt += 'lumisRange='+lumis.replace(',',';')+'\n'
+    print txt
+    outFile.write(str(txt))
+    outFile.close()
+    return
 
 
 if __name__ == '__main__' :

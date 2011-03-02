@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.47 2010/11/02 15:27:46 ewv Exp $"
-__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: Splitter.py,v 1.48 2010/12/01 15:44:09 ewv Exp $"
+__version__ = "$Revision: 1.48 $"
 
 import common
 from crab_exceptions import *
@@ -279,9 +279,9 @@ class JobSplitter:
                                 fullString = parString[:-1]
                                 if self.useParent==1:
                                     fullParentString = pString[:-1]
-                                    list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)])
+                                    list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)],block)
                                 else:
-                                    list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)])
+                                    list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)],block)
                                 msg += "Job %s can run over %s  events (last file in block).\n"%(str(jobCount+1), str(filesEventCount - jobSkipEventCount))
                                 jobDestination.append(blockSites[block])
                                 msg += "Job %s Destination: %s\n"%(str(jobCount+1),str(SE2CMS(jobDestination[jobCount])))
@@ -308,9 +308,9 @@ class JobSplitter:
                         fullString = parString[:-1]
                         if self.useParent==1:
                             fullParentString = pString[:-1]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
                         else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
                         msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
                         msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(SE2CMS(jobDestination[jobCount])))
@@ -333,9 +333,9 @@ class JobSplitter:
                         fullString = parString[:-1]
                         if self.useParent==1:
                             fullParentString = pString[:-1]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
                         else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)])
+                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
                         msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
                         msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(SE2CMS(jobDestination[jobCount])))
@@ -368,8 +368,8 @@ class JobSplitter:
 
        # prepare dict output
         dictOut = {}
-        dictOut['params']= ['InputFiles','MaxEvents','SkipEvents']
-        if self.useParent: dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents']
+        dictOut['params']= ['InputFiles','MaxEvents','SkipEvents','InputBlocks']
+        if self.useParent: dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents','InputBlocks']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=self.total_number_of_jobs
@@ -494,19 +494,19 @@ class JobSplitter:
                 parString = ''
                 for file in res['lfns']:
                     parString += file + ','
+                list_of_blocks.append(res['block'])
                 fullString = parString[:-1]
-                list_of_lists.append([fullString,str(-1),str(0)])
+                blockString=','.join(list_of_blocks)
+                list_of_lists.append([fullString,str(-1),str(0)],blockString)
                 #need to check single file location
                 jobDestination.append(res['locations'])
-                list_of_blocks.append(res['block'])
                 count +=1
         # prepare dict output
         dictOut = {}
-        dictOut['params']= ['InputFiles','MaxEvents','SkipEvents']
+        dictOut['params']= ['InputFiles','MaxEvents','SkipEvents','InputBlocks']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs']=count
-
         self.cacheBlocks(list_of_blocks,jobDestination)
 
         return dictOut
@@ -757,12 +757,13 @@ class JobSplitter:
                 fileString = ','.join(lfns)
                 lumiLister = LumiList(lumis = lumis)
                 lumiString = lumiLister.getCMSSWString()
+                blockString=','.join(blocks) 
                 if self.useParent==1:
                   common.logger.debug("Files: "+fileString+" with the following parents: "+pString[:-1])
                   pfileString = pString[:-1]
-                  list_of_lists.append([fileString, pfileString, str(-1), str(0), lumiString])
+                  list_of_lists.append([fileString, pfileString, str(-1), str(0), lumiString,blockString])
                 else:
-                 list_of_lists.append([fileString, str(-1), str(0), lumiString])
+                 list_of_lists.append([fileString, str(-1), str(0), lumiString, blockString])
                 list_of_blocks.append(blocks)
                 jobDestination.append(locations)
                 jobCount += 1
@@ -774,13 +775,12 @@ class JobSplitter:
 
         # Prepare dict output matching back to non-WMBS job creation
         dictOut = {}
-        dictOut['params'] = ['InputFiles', 'MaxEvents', 'SkipEvents', 'Lumis']
+        dictOut['params'] = ['InputFiles', 'MaxEvents', 'SkipEvents', 'Lumis','InputBlocks']
         if self.useParent==1:
-         dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents','Lumis']
+         dictOut['params']= ['InputFiles','ParentFiles','MaxEvents','SkipEvents','Lumis','InputBlocks']
         dictOut['args'] = list_of_lists
         dictOut['jobDestination'] = jobDestination
         dictOut['njobs'] = jobCount
-
         self.cacheBlocks(list_of_blocks,jobDestination)
 
         return dictOut
