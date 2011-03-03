@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.215 2011/02/02 13:32:55 spiga Exp $"
-__version__ = "$Revision: 1.215 $"
+__revision__ = "$Id: FatWorker.py,v 1.216 2011/02/09 10:32:31 spiga Exp $"
+__version__ = "$Revision: 1.216 $"
 
 import string
 import sys, os
@@ -866,7 +866,9 @@ class FatWorker(Thread):
         #self.log.info(gridName)
       #  gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
-        taskType = 'analysis'
+        ### FEDE for savannah 76950 
+        taskType=self.cfg_params.get("USER.tasktype", 'analysis')
+        #taskType = 'analysis'
         datasetPath = self.cfg_params['CMSSW.datasetpath']
         if datasetPath.lower() == 'none': datasetPath = None
         executable = self.cfg_params.get('CMSSW.executable','cmsRun')
