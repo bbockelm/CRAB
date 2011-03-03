@@ -280,7 +280,9 @@ class Submitter(Actor):
         taskId = common._db.queryTask('name')
         gridName = string.strip(common.scheduler.userName())
         common.logger.debug("GRIDNAME: %s "%gridName)
-        taskType = 'analysis'
+        #### FEDE for taskType (savannah 76950)
+        taskType = self.cfg_params.get('USER.tasktype','analysis') 
+        #### taskType = 'analysis'
 
         self.executable = self.cfg_params.get('CMSSW.executable','cmsRun')
         VO = self.cfg_params.get('GRID.virtual_organization','cms')
