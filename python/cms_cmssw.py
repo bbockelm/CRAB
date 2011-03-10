@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.367 2010/12/29 21:16:05 ewv Exp $"
-__version__ = "$Revision: 1.367 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.368 2011/02/07 17:21:36 fanzago Exp $"
+__version__ = "$Revision: 1.368 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1156,7 +1156,8 @@ class Cmssw(JobType):
         if list : return self.output_file
         return txt
 
-    def checkCMSSWVersion(self, url = "https://cmstags.cern.ch/cgi-bin/CmsTC/", fileName = "ReleasesXML"):
+    ### FEDE FOR SAVANNAH 79277 ###
+    def checkCMSSWVersion(self, url = "https://cmstags.cern.ch/tc/", fileName = "ReleasesXML"):
         """
         compare current CMSSW release and arch with allowed releases
         """
