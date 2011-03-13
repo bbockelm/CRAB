@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.48 2010/12/01 15:44:09 ewv Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: Splitter.py,v 1.49 2011/03/02 10:48:46 spiga Exp $"
+__version__ = "$Revision: 1.49 $"
 
 import common
 from crab_exceptions import *
@@ -279,9 +279,9 @@ class JobSplitter:
                                 fullString = parString[:-1]
                                 if self.useParent==1:
                                     fullParentString = pString[:-1]
-                                    list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount)],block)
+                                    list_of_lists.append([fullString,fullParentString,str(-1),str(jobSkipEventCount),block])
                                 else:
-                                    list_of_lists.append([fullString,str(-1),str(jobSkipEventCount)],block)
+                                    list_of_lists.append([fullString,str(-1),str(jobSkipEventCount),block])
                                 msg += "Job %s can run over %s  events (last file in block).\n"%(str(jobCount+1), str(filesEventCount - jobSkipEventCount))
                                 jobDestination.append(blockSites[block])
                                 msg += "Job %s Destination: %s\n"%(str(jobCount+1),str(SE2CMS(jobDestination[jobCount])))
@@ -308,9 +308,9 @@ class JobSplitter:
                         fullString = parString[:-1]
                         if self.useParent==1:
                             fullParentString = pString[:-1]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
+                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount),block])
                         else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
+                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount),block])
                         msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
                         msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(SE2CMS(jobDestination[jobCount])))
@@ -333,9 +333,9 @@ class JobSplitter:
                         fullString = parString[:-1]
                         if self.useParent==1:
                             fullParentString = pString[:-1]
-                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
+                            list_of_lists.append([fullString,fullParentString,str(eventsPerJobRequested),str(jobSkipEventCount),block])
                         else:
-                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount)],block)
+                            list_of_lists.append([fullString,str(eventsPerJobRequested),str(jobSkipEventCount),block])
                         msg += "Job %s can run over %s events.\n"%(str(jobCount+1),str(eventsPerJobRequested))
                         jobDestination.append(blockSites[block])
                         msg+= "Job %s Destination: %s\n"%(str(jobCount+1),str(SE2CMS(jobDestination[jobCount])))
