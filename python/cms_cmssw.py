@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.368 2011/02/07 17:21:36 fanzago Exp $"
-__version__ = "$Revision: 1.368 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.369 2011/03/10 15:40:41 fanzago Exp $"
+__version__ = "$Revision: 1.369 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -878,7 +878,7 @@ class Cmssw(JobType):
 
     def executableArgs(self):
         if self.scriptExe:
-            return self.scriptExe + " $NJob $AdditionalArgs"
+            return os.path.basename(self.scriptExe) + " $NJob $AdditionalArgs" 
         else:
             return " -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p pset.py"
 
