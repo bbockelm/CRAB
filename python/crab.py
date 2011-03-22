@@ -35,7 +35,7 @@ class Crab:
         self.aux_actions = [ '-list', '-kill', '-status', '-getoutput','-get',
                              '-resubmit', '-forceResubmit', '-testJdl',
                              '-listMatch', '-match', '-postMortem', '-clean',
-                             '-printId', '-createJdl','-printJdl', '-publish', '-checkPublication',
+                             '-printId', '-createJdl','-printJdl', '-publish', '-publishNoInp','-checkPublication',
                              '-copyData', '-renewCredential', '-extend','-validateCfg',
                              '-report', '-cleanCache', '-stopWorkflow', '-uploadLog' ]
 
@@ -741,8 +741,13 @@ class Crab:
                 from JdlWriter import JdlWriter
                 self.actions[opt] = JdlWriter(self.cfg_params, jobs)
 
-            elif ( opt == '-publish' ):
+            elif ( opt == '-publish'):
                 from Publisher import Publisher
+                self.actions[opt] = Publisher(self.cfg_params)
+            ### FEDE FOR PUBLICATION WITH NO INPUT FILES### 
+            elif ( opt == '-publishNoInp'):
+                from Publisher import Publisher
+                self.cfg_params['USER.no_inp'] = 1
                 self.actions[opt] = Publisher(self.cfg_params)
 
             elif ( opt == '-checkPublication' ):
