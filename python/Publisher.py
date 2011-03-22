@@ -93,6 +93,12 @@ class Publisher(Actor):
         self.noEventsFiles=[]
         self.noLFN=[]
 
+        #### FEDE to allow publication without input data in <file>
+        if cfg_params.has_key('USER.no_inp'):
+            self.no_inp = cfg_params['USER.no_inp']
+        else:
+            self.no_inp = 0
+        ############################################################
     def importParentDataset(self,globalDBS, datasetpath):
         """
            WARNING: it works only with DBS_2_0_9_patch_6
@@ -276,6 +282,61 @@ class Publisher(Actor):
             common.logger.debug("--->>> Insert file error: %s"%ex)
         return Blocks
 
+    def remove_input_from_fjr(self, list_of_good_files):
+            """
+              to remove the input file from fjr in the case of problem with lfn
+            """
+            from xml.etree.ElementTree import ElementTree, Element
+            new_good_list = []               
+            no_inp_dir = self.fjrDirectory + 'no_inp'
+            if not os.path.isdir(no_inp_dir):
+                try:
+                    os.mkdir(no_inp_dir)
+                    print "no_inp_dir = ", no_inp_dir
+                except:
+                    print "problem during no_inp_dir creation: ", no_inp_dir
+            for file in  list_of_good_files:
+                name_of_file = os.path.basename(file)
+                #print "name_of_file = " , name_of_file
+                oldxmlfile = ElementTree()
+                oldxmlfile.parse(file)
+                newxmlfile = ElementTree(Element(oldxmlfile.getroot().tag))
+                self.recurse(oldxmlfile.getroot(), newxmlfile.getroot())
+                new_good_file = no_inp_dir + '/' + name_of_file
+                newxmlfile.write(new_good_file)
+                new_good_list.append(new_good_file)
+            print "new_good_list = ", new_good_list    
+            return new_good_list   
+
+    def recurse(self,oldnode,newnode):
+            """
+               recursive function to remove 
+            """
+            from xml.etree.ElementTree import ElementTree, Element
+            try: 
+                newnode.text = oldnode.text
+            except AttributeError: pass
+            try: 
+                newnode.attrib = oldnode.attrib
+            except AttributeError: pass
+            try: 
+                newnode.tail = oldnode.tail
+            except AttributeError: pass
+
+            for oldi in oldnode.getchildren():
+                if oldi.tag != "Inputs" and oldi.tag == "DatasetInfo":
+                    newi = Element(oldi.tag)
+                    newtag = Element("Entry")
+                    newtag.attrib = {'Name':'Description'}
+                    newtag.text = 'Unknown provenance'
+                    newi.append(newtag)
+                    newnode.append(newi)
+                    self.recurse(oldi, newi)
+                elif oldi.tag != "Inputs" and oldi.tag != "DatasetInfo":    
+                    newi = Element(oldi.tag)
+                    newnode.append(newi)
+                    self.recurse(oldi, newi)
+
     def run(self):
         """
         parse of all xml file on res dir and creation of distionary
@@ -293,24 +354,15 @@ class Publisher(Actor):
             if len(reports)>0:
                if reports[0].status == "Success":
                   good_list.append(fjr)
-        file_list=good_list
-
-        #file_list = glob.glob(self.resDir+"crab_fjr*.xml")
         
-        ## Select only those fjr that are succesfull
-        #if (len(file_list)==0):
-        #    common.logger.info("--->>> "+self.resDir+" empty: no file to publish on DBS")
-        #    self.exit_status = '1'
-        #    return self.exit_status
+        ####################################################
+        if self.no_inp == 1:
+            file_list = self.remove_input_from_fjr(good_list)
+        else:
+            file_list=good_list
+        print "file_list = ", file_list    
+        ####################################################    
 
-        #good_list=[]
-        #for fjr in file_list:
-        #    reports = readJobReport(fjr)
-        #    if len(reports)>0:
-        #       if reports[0].status == "Success":
-        #          good_list.append(fjr)
-        #file_list=good_list
-        ##
         common.logger.log(10-1, "fjr with FrameworkJobReport Status='Success', file_list = "+str(file_list))
         common.logger.log(10-1, "len(file_list) = "+str(len(file_list)))
 
