@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.31 2011/03/02 10:48:46 spiga Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: writeCfg.py,v 1.32 2011/03/23 10:30:23 spiga Exp $"
+__version__ = "$Revision: 1.32 $"
 
 import getopt
 import imp
@@ -240,7 +240,7 @@ def report( inputBlocks='', inputFiles='', parentFiles='', lumis='' ):
     """
     Writes the 4 parameters to a file, one parameter per line.
     """
-    outFile = open('inputsReport.txt',"a")
+    outFile = open('%s/inputsReport.txt'%os.environ['RUNTIME_AREA'],"a")
 
   #  InputFileList=inputFiles.split(',') 
   #  parentFilesList= parentFiles.split(',')

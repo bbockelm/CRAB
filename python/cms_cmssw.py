@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.370 2011/03/13 18:07:46 spiga Exp $"
-__version__ = "$Revision: 1.370 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.371 2011/03/23 10:30:23 spiga Exp $"
+__version__ = "$Revision: 1.371 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1085,8 +1085,8 @@ class Cmssw(JobType):
         if self.debug_wrapper==1 :
             txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out"\n'
         txt += '        cmd_out_1=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --popularity $MonitorID,$MonitorJobID,$RUNTIME_AREA/inputsReport.txt '+self.debugWrap+'`\n'
-        if self.debug_wrapper==1 :
-            txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out_1"\n'
+#        if self.debug_wrapper==1 :
+        txt += '        echo "Result of parsing the FrameworkJobReport crab_fjr.xml: $cmd_out_1"\n'
         txt += '        executable_exit_status=`python $RUNTIME_AREA/parseCrabFjr.py --input $RUNTIME_AREA/crab_fjr_$NJob.xml --exitcode`\n'
         txt += '        if [ $executable_exit_status -eq 50115 ];then\n'
         txt += '            echo ">>> crab_fjr.xml contents: "\n'

@@ -231,16 +231,26 @@ class parseFjr:
                 if line.find("parentFiles")>=0:
                     inputParentList = line.split("=")[1].strip().split(";")
             file.close()
+        if len(inputList) == 1 and inputList[0] == '':
+            inputList=[]
+        if len(inputParentList) == 1 and inputParentList[0] == '':
+            inputParentList=[]
         basename = ''
-        if len(inputList):
+        if len(inputList) > 1:
             basename = os.path.commonprefix(inputList)
+        elif len(inputList) == 1:
+            basename =  "%s/"%os.path.dirname(inputList[0])
         basenameParent = '' 
-        if len(inputParentList):
+        if len(inputParentList) > 1:
             basenameParent = os.path.commonprefix(inputParentList)
-
+        elif len(inputParentList) == 1: 
+            basenameParent = "%s/"%os.path.dirname(inputParentList[0])
+ 
         readFile = {}  
 
         readFileParent = {} 
+        fileAttr = []
+        fileParentAttr = []
         for inputFile in  jobReport.inputFiles:
             if inputFile['LFN'].find(basename) >=0:
                 fileAttr = (inputFile.get("FileType"), "Local", inputFile.get("Runs")) 
@@ -300,9 +310,11 @@ class parseFjr:
         apmonSend(self.MonitorID, self.MonitorJobID, report_dict)
         apmonFree()
 
-        if self.debug == 1 : 
-            for k,v in report_dict.items():
-                print "%s : %s"%(k,v)
+       # if self.debug == 1 : 
+        print "Popularity start" 
+        for k,v in report_dict.items():
+            print "%s : %s"%(k,v)
+        print "Popularity stop" 
         return  
 
     def n_of_events(self,jobReport):
