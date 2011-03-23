@@ -239,7 +239,7 @@ class ScriptWriter:
         """
             txt += "  \n"
             txt += "cat inputsReport.txt  \n"
-            txt += "cat inputsReport.txt >> $RUNTIME_AREA/$repo \n"
-            txt += "dumpStatus $RUNTIME_AREA/$repo\n"
+        #    txt += "cat inputsReport.txt >> $RUNTIME_AREA/$repo \n"
+        #    txt += "dumpStatus $RUNTIME_AREA/$repo\n"
 
         return txt

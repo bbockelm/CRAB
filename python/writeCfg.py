@@ -4,8 +4,8 @@
 Re-write config file and optionally convert to python
 """
 
-__revision__ = "$Id: writeCfg.py,v 1.30 2010/10/06 13:57:46 ewv Exp $"
-__version__ = "$Revision: 1.30 $"
+__revision__ = "$Id: writeCfg.py,v 1.31 2011/03/02 10:48:46 spiga Exp $"
+__version__ = "$Revision: 1.31 $"
 
 import getopt
 import imp
@@ -252,7 +252,6 @@ def report( inputBlocks='', inputFiles='', parentFiles='', lumis='' ):
     txt += 'inputFiles='+inputFiles.replace(',',';')+'\n'
     txt += 'parentFiles='+parentFiles.replace(',',';')+'\n'
     txt += 'lumisRange='+lumis.replace(',',';')+'\n'
-    print txt
     outFile.write(str(txt))
     outFile.close()
     return

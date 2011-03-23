@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, getopt, string
+import sys, getopt, string, os
 
 from ProdCommon.FwkJobRep.ReportParser import readJobReport
 from DashboardAPI import apmonSend, apmonFree
@@ -23,7 +23,7 @@ class parseFjr:
         self.lfnList = False  
         self.debug = 0
         try:
-            opts, args = getopt.getopt(argv, "", ["input=", "dashboard=", "exitcode", "lfn" , "debug", "help"])
+            opts, args = getopt.getopt(argv, "", ["input=", "dashboard=", "exitcode", "lfn" , "debug", "popularity=", "help"])
         except getopt.GetoptError:
             print self.usage()
             sys.exit(2)
@@ -43,6 +43,16 @@ class parseFjr:
                 self.exitCode = True 
             elif opt == "--lfn":
                 self.lfnList = True 
+            elif opt == "--popularity":
+                self.popularity = True 
+                try: 
+                   self.MonitorID = arg.split(",")[0]
+                   self.MonitorJobID = arg.split(",")[1] 
+                   self.inputInfos = arg.split(",")[2] 
+                except:
+                   self.MonitorID = ''
+                   self.MonitorJobID = ''
+                   self.inputInfos = ''
             elif opt == "--dashboard":
                 self.info2dash = True 
                 try: 
@@ -54,7 +64,7 @@ class parseFjr:
             elif opt == "--debug" :
                 self.debug = 1
                 
-        if self.input == '' or (not self.info2dash and not self.lfnList and not self.exitCode)  :
+        if self.input == '' or (not self.info2dash and not self.lfnList and not self.exitCode and not self.popularity)  :
             print self.usage()
             sys.exit()
          
@@ -79,6 +89,8 @@ class parseFjr:
            self.lfn_List(jobReport)
         if self.info2dash : 
            self.reportDash(jobReport)
+        if self.popularity:
+           self.popularityInfos(jobReport)
         return
 
     def exitCodes(self, jobReport):
@@ -202,6 +214,95 @@ class parseFjr:
             print storage_report
             print throughput_report
         return storage_report, throughput_report
+
+    def popularityInfos(self, jobReport):
+        report_dict = {}
+        inputList = []
+        inputParentList = []                         
+        if (os.path.exists(self.inputInfos)):
+            file=open(self.inputInfos,'r')
+            lines = file.readlines()
+            for line in lines:
+                if line.find("inputBlocks")>=0:
+                    report_dict['inputBlocks']= line.split("=")[1].strip()
+                if line.find("inputFiles")>=0:
+                    inputList = line.split("=")[1].strip().split(";")
+                if line.find("parentFiles")>=0:
+                    inputParentList = line.split("=")[1].strip().split(";")
+            file.close()
+        basename = ''
+        if len(inputList):
+            basename = os.path.commonprefix(inputList)
+        basenameParent = '' 
+        if len(inputParentList):
+            basenameParent = os.path.commonprefix(inputParentList)
+
+        readFile = {}  
+
+        readFileParent = {} 
+        for inputFile in  jobReport.inputFiles:
+            if inputFile['LFN'].find(basename) >=0:
+                fileAttr = (inputFile.get("FileType"), "Local", inputFile.get("Runs")) 
+                readFile[inputFile.get("LFN").split(basename)[1]] = fileAttr
+            else:
+                fileParentAttr = (inputFile.get("FileType"), "Local", inputFile.get("Runs")) 
+                readParentFile[inputFile.get("LFN").split(basenameParent)[1]] = fileParentAttr
+        cleanedinputList = []
+        for file in inputList:        
+            cleanedinputList.append(file.split(basename)[1])
+        cleanedParentList = []
+        for file in inputParentList:        
+            cleanedParentList.append(file.split(basenameParent)[1])
+
+        inputString = ''
+        LumisString = ''
+        for f,t in readFile.items():
+            cleanedinputList.remove(f)     
+            inputString += '%s::%d::%s::%s;'%(f,1,t[0],t[1]) 
+            LumisString += '%s::%s;'%(t[2].keys()[0],t[2].values()[0])   
+
+        inputParentString = ''
+        LumisParentString  = ''
+        for fp,tp in readFileParent.items():
+            cleanedParentList.remove(fp)     
+            inputParentString += '%s::%d::%s::%s;'%(fp,1,tp[0],tp[1]) 
+            LumisParentString += '%s::%s;'%(tp[2].keys()[0],tp[2].values()[0])   
+
+        if len(cleanedinputList):
+           for file in cleanedinputList :
+               if len(jobReport.errors):
+                   if jobReport.errors[0]["Description"].find(file) >= 0:
+                       inputString += '%s::%d::%s::%s;'%(file,0,'Unknown','Local') 
+                   else:
+                       inputString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+               else:
+                   inputString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+
+        if len(cleanedParentList):
+           for file in cleanedParentList :
+               if len(jobReport.errors):
+                   if jobReport.errors[0]["Description"].find(file) >= 0:
+                       inputString += '%s::%d::%s::%s;'%(file,0,'Unknown','Local') 
+                   else:
+                       inputString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+               else:
+                   inputParentString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+
+        report_dict['inputFiles']= inputString
+        report_dict['parentFIles']= inputParentString
+        report_dict['lumisRange']= LumisString
+        report_dict['lumisParentRange']= LumisParentString
+        report_dict['Basename']= basename
+        report_dict['BasenameParent']= basenameParent
+
+         # send to DashBoard
+        apmonSend(self.MonitorID, self.MonitorJobID, report_dict)
+        apmonFree()
+
+        if self.debug == 1 : 
+            for k,v in report_dict.items():
+                print "%s : %s"%(k,v)
+        return  
 
     def n_of_events(self,jobReport):
         '''
