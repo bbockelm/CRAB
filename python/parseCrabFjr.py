@@ -219,6 +219,7 @@ class parseFjr:
         report_dict = {}
         inputList = []
         inputParentList = []                         
+        report_dict['inputBlocks'] = ''
         if (os.path.exists(self.inputInfos)):
             file=open(self.inputInfos,'r')
             lines = file.readlines()
