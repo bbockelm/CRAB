@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys, os
+import time, random
 try:
     import json
 except:    
@@ -385,6 +386,10 @@ class cmscp:
                     break
                 if len(list_retry):
                     list_files = list_retry
+                    #### FEDE added ramdom time before the retry copy with other protocol
+                    sec = 120 * random.random()
+                    print "seconds to sleep = " , sec
+                    time.sleep(sec)
                 else: break
 
         if self.local_stage:
