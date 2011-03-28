@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.135 2010/11/25 11:27:05 spadhi Exp $"
-__version__ = "$Revision: 1.135 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.136 2011/02/03 14:37:37 fanzago Exp $"
+__version__ = "$Revision: 1.136 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -301,16 +301,12 @@ class SchedulerGrid(Scheduler):
                 txt += 'fi\n'
                 txt += 'echo "#####################################"\n'
             
-            txt += 'echo "#####################################"\n'
-            txt += 'ls \n'
-            txt += 'echo "#####################################"\n'
-            
-            txt += 'if [ -f resultCopyFile ] ;then\n'
-            txt += '    cat resultCopyFile\n'
+            txt += 'if [ -f $RUNTIME_AREA/resultCopyFile ] ;then\n'
+            txt += '    cat $RUNTIME_AREA/resultCopyFile\n'
             txt += '    pwd\n'
             txt += 'else\n'
             ### FEDE to avoid some 70500 error ....
-            txt += '    echo "ERROR ==> resultCopyFile file not found. Problem during the stageout"\n'
+            txt += '    echo "ERROR ==> $RUNTIME_AREA/resultCopyFile file not found. Problem during the stageout"\n'
             txt += '    job_exit_code=60318\n'
             txt += '    func_exit \n'
             txt += 'fi\n'

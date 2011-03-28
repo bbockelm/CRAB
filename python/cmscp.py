@@ -100,12 +100,15 @@ class cmscp:
         if self.debug: 
             print 'in writeJsonFile() : \n'
             print "---->>>> in writeJsonFile results =  ", results
-        fp = open('resultCopyFile', 'w')
+        jsonOut = "resultCopyFile"
+        if os.getenv("RUNTIME_AREA")
+            jsonOut = "%s/resultCopyFile"%os.getenv("RUNTIME_AREA")
+        fp = open(jsonOut, 'w')
         json.dump(results, fp)
         fp.close()
         if self.debug: 
             print '    reading resultCopyFile : \n'
-            lp = open('resultCopyFile', "r")
+            lp = open(jsonOut, "r")
             inputDict = json.load(lp)
             lp.close()
             print "    inputDict = ", inputDict
