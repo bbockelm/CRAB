@@ -390,8 +390,8 @@ class cmscp:
                 if len(list_retry):
                     list_files = list_retry
                     #### FEDE added ramdom time before the retry copy with other protocol
-                    sec = 120 * random.random()
-                    print "seconds to sleep = " , sec
+                    sec =  240 * random.random()
+                    sec = sec + 60
                     time.sleep(sec)
                 else: break
 
