@@ -259,11 +259,8 @@ class ServerCommunicator:
     # Auxiliary methods
 ###################################################
 
-    ### FEDE for savannah 76950 ###
-    #def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, flavour='analysis', type='fullySpecified',jobs='-1'):
-    def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, type='fullySpecified',jobs='-1'):
+    def _createXMLcommand(self, taskUName, cmdSpec='status', rng='all', newTaskAddIns=False, flavour='analysis', type='fullySpecified',jobs='-1'):
 
-        print "create XML command" 
         xmlString = ''
         cfile = minidom.Document()
 
@@ -275,8 +272,6 @@ class ServerCommunicator:
         node.setAttribute("Range", str(rng) )
         node.setAttribute("TotJob", str(jobs) )
         node.setAttribute("Scheduler", str(self.cfg_params['CRAB.scheduler']) )
-        #node.setAttribute("Flavour", str(flavour) )
-        node.setAttribute("Flavour", (self.cfg_params.get("USER.tasktype", 'analysis')))
         node.setAttribute("Flavour", str(flavour) )
         node.setAttribute("Type", str(type) )
         node.setAttribute("ClientVersion", str(ver) )
