@@ -1,7 +1,7 @@
 # Business logic module for CRAB Server WS-based Proxy
 # Acts as a gateway between the gSOAP/C++ WebService and the MessageService Component
-__version__ = "$Revision: 1.46 $"
-__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.46 2011/02/02 13:19:56 spiga Exp $"
+__version__ = "$Revision: 1.47 $"
+__revision__ = "$Id: CRAB-CmdMgr-Backend.py,v 1.47 2011/03/28 14:37:05 spiga Exp $"
 
 import threading
 import os
@@ -230,13 +230,14 @@ class CRAB_AS_beckend:
                 if len( eval(cmdRng, {}, {}) ) > self.maxAllowedRange:
                     self.log.info("Task refused for too large submission requirements: "+ taskUniqName)
                     return 101
-                else:
-                    return 0
 
             msg = '%s::%s::%s::%s'%(taskUniqName, str(self.cmdAttempts), str(cmdRng), str(cmdKind))
             self.ms.publish("CRAB_Cmd_Mgr:NewCommand", msg)
             self.log.info("NewCommand %s for task %s"%(cmdKind, taskUniqName))
             self.ms.commit()
+
+            if cmdKind in ['submit', 'resubmit'] :
+                return 0
 
             # getoutput
             if cmdKind == 'outputRetrieved':
