@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.217 2011/03/03 12:29:42 fanzago Exp $"
-__version__ = "$Revision: 1.217 $"
+__revision__ = "$Id: FatWorker.py,v 1.218 2011/03/23 15:30:29 belforte Exp $"
+__version__ = "$Revision: 1.218 $"
 
 import string
 import sys, os
@@ -806,7 +806,7 @@ class FatWorker(Thread):
                     unmatched.append(sel)
             elif self.bossSchedName in ['SchedulerGLite']:
                 try: 
-                    sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements[0])
+                    sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements[sel])
                 except SchedulerError, e:
                     logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
                     logMsg += str(e.description())+'\n'
