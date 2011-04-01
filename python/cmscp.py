@@ -101,7 +101,7 @@ class cmscp:
             print 'in writeJsonFile() : \n'
             print "---->>>> in writeJsonFile results =  ", results
         jsonOut = "resultCopyFile"
-        if os.getenv("RUNTIME_AREA")
+        if os.getenv("RUNTIME_AREA"):
             jsonOut = "%s/resultCopyFile"%os.getenv("RUNTIME_AREA")
         fp = open(jsonOut, 'w')
         json.dump(results, fp)
