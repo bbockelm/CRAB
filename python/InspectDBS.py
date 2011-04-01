@@ -69,10 +69,14 @@ class InspectDBS(Actor):
         #//
             if len(dataset.get('PathList'))==0:
                 print "===== Empty dataset yet /%s/%s with tiers %s"%(dataset.get('PrimaryDataset')['Name'],dataset.get('Name'),dataset.get('TierList'))
-            else:    
+            else:
                 for datasetpath in dataset.get('PathList'):
                     nevttot=0
                     print "=== dataset %s"%datasetpath
+                    ### FEDE #######
+                    if dataset['Description'] != None:
+                        print "=== dataset description = ", dataset['Description']
+                    ################    
                     blocks=dbsreader.getFileBlocksInfo(datasetpath)
                     for block in blocks:
                         SEList=dbsreader.listFileBlockLocation(block['Name'])  # replace that with DLS query
