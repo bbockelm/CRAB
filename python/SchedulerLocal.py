@@ -155,6 +155,8 @@ class SchedulerLocal(Scheduler) :
             txt += 'else\n'
             ### FEDE to avoid some 70500 error ....
             txt += '    echo "ERROR ==> $RUNTIME_AREA/resultCopyFile file not found. Problem during the stageout"\n'
+            txt += '    echo "RUNTIME_AREA content: "\n'
+            txt += '    ls $RUNTIME_AREA \n'
             txt += '    job_exit_code=60318\n'
             txt += '    func_exit \n'
             txt += 'fi\n'

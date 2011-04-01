@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.136 2011/02/03 14:37:37 fanzago Exp $"
-__version__ = "$Revision: 1.136 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.137 2011/03/28 09:56:28 spiga Exp $"
+__version__ = "$Revision: 1.137 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -307,6 +307,8 @@ class SchedulerGrid(Scheduler):
             txt += 'else\n'
             ### FEDE to avoid some 70500 error ....
             txt += '    echo "ERROR ==> $RUNTIME_AREA/resultCopyFile file not found. Problem during the stageout"\n'
+            txt += '    echo "RUNTIME_AREA content: " \n'
+            txt += '    ls $RUNTIME_AREA \n'
             txt += '    job_exit_code=60318\n'
             txt += '    func_exit \n'
             txt += 'fi\n'
