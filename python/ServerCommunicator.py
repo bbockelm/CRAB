@@ -350,6 +350,10 @@ class ServerCommunicator:
         ## Additional field for DashBoard
         miniCfg['CMSSW.datasetpath'] = self.cfg_params.get('CMSSW.datasetpath', 'None')
 
+        ###################################################################################
+        ### FEDE for tasktype, savannah 76950 
+        miniCfg['USER.tasktype'] = self.cfg_params.get("USER.tasktype", 'analysis')
+        ###################################################################################
         ## Additional fields for Notification by the server
         miniCfg['eMail'] = self.cfg_params.get('USER.email', None)
         miniCfg['threshold'] = self.cfg_params.get('USER.thresholdlevel', 100)
