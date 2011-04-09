@@ -230,6 +230,22 @@ class ShowCompStatus:
         html += "<br/>Jobs already processed by the GetOutput: %s"%str(dequeued[0][0])
         html += "<br/>Jobs by processing status: <br/>%s"%table_job
 
+	
+        html += "<br/><br/> <b>Messages by destination component</b><br/>"
+	
+        query, data = API.messageListing("")
+        msgs = {}
+        for id, ev, fro, to, time, delay in data:
+	  if msgs.has_key(str(to)):
+	    msgs[str(to)] += 1
+	  else:
+	    msgs[str(to)] = 1
+
+	for comp in msgs.keys():
+	  html += "<br/>%s : %d" % (comp,msgs[comp])
+
+	html += "<br/>"
+
         html += "</body></html>"
 
         return html
