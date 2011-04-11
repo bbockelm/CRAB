@@ -231,7 +231,7 @@ class ShowCompStatus:
         html += "<br/>Jobs by processing status: <br/>%s"%table_job
 
 	
-        html += "<br/><br/> <b>Messages by destination component</b><br/>"
+        html += "<br/><br/> <b>Messages by destination component</b><br/><table>"
 	
         query, data = API.messageListing("")
         msgs = {}
@@ -242,9 +242,10 @@ class ShowCompStatus:
 	    msgs[str(to)] = 1
 
 	for comp in msgs.keys():
-	  html += "<br/>%s : %d" % (comp,msgs[comp])
+#	  html += "<br/>%s : %d" % (comp,msgs[comp])
+	  html += "<tr><td>%s : </td><td>%d</td></tr>" % (comp,msgs[comp])
 
-	html += "<br/>"
+	html += "<br/></table>"
 
         html += "</body></html>"
 
