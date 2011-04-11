@@ -153,7 +153,7 @@ class ShowCompStatus:
         html += "<body><h2>Components and Services State<br/>\n"
         html += "<small style=\"color:red; font-weight:normal;\">* Work in progress</small><br/></h2>\n"
 
-        html += "<table>\n"
+        html += '<table Class="Components">\n'
 #        html += "<tr><th></th><th></th><th colspan=2><small style=\"color:red;\">work in progress</th></tr>\n"
         html += tableHeader%"Components"
 
@@ -223,7 +223,7 @@ class ShowCompStatus:
         for couple in jobdistr:
             if len(couple) == 2:
                 jobbyst += "<tr><td>&nbsp;&nbsp;%s</td><td>%s</td></tr>"%(str(couple[0]),str(couple[1]))
-        table_job = "<table> %s </table><br/>"%jobbyst
+        table_job = '\n<table Class="Jobs"> %s </table><br/>'%jobbyst
 
         html += "<br/>Jobs in the GetOutput queue: %s Done + %s Failed = %s"%(str(outqueue[0][0]), str(outqueuefail[0][0]), str(outqueue[0][0]+outqueuefail[0][0]))
         html += "<br/>Jobs being processed by the JobTracking: %s"%str(JTload[0][0])
@@ -231,7 +231,7 @@ class ShowCompStatus:
         html += "<br/>Jobs by processing status: <br/>%s"%table_job
 
 	
-        html += "<br/><br/> <b>Messages by destination component</b><br/><table>"
+        html += '\n<br/><br/> <b>Messages by destination component</b><br/>\n<table Class="Messages" >'
 	
         query, data = API.messageListing("")
         msgs = {}
