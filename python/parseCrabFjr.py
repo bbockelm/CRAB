@@ -267,37 +267,41 @@ class parseFjr:
 
         inputString = ''
         LumisString = ''
+        countFile = 1
         for f,t in readFile.items():
             cleanedinputList.remove(f)     
-            inputString += '%s::%d::%s::%s;'%(f,1,t[0],t[1]) 
-            LumisString += '%s::%s;'%(t[2].keys()[0],t[2].values()[0])   
+            inputString += '%s::%d::%s::%s::%d;'%(f,1,t[0],t[1],countFile) 
+            LumisString += '%s::%s::%d;'%(t[2].keys()[0],t[2].values()[0],countFile)   
+            countFile += 1
 
         inputParentString = ''
         LumisParentString  = ''
+        countParentFile = 1
         for fp,tp in readFileParent.items():
             cleanedParentList.remove(fp)     
-            inputParentString += '%s::%d::%s::%s;'%(fp,1,tp[0],tp[1]) 
-            LumisParentString += '%s::%s;'%(tp[2].keys()[0],tp[2].values()[0])   
+            inputParentString += '%s::%d::%s::%s::%d;'%(fp,1,tp[0],tp[1],countParentFile) 
+            LumisParentString += '%s::%s::%d;'%(tp[2].keys()[0],tp[2].values()[0],countParentFile)   
+            countParentFile += 1
 
         if len(cleanedinputList):
            for file in cleanedinputList :
                if len(jobReport.errors):
                    if jobReport.errors[0]["Description"].find(file) >= 0:
-                       inputString += '%s::%d::%s::%s;'%(file,0,'Unknown','Local') 
+                       inputString += '%s::%d::%s::%s::%s;'%(file,0,'Unknown','Local','Unknown') 
                    else:
-                       inputString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+                       inputString += '%s::%d::%s::%s::%s;'%(file,2,'Unknown','Unknown','Unknown') 
                else:
-                   inputString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+                   inputString += '%s::%d::%s::%s::%s;'%(file,2,'Unknown','Unknown','Unknown') 
 
         if len(cleanedParentList):
            for file in cleanedParentList :
                if len(jobReport.errors):
                    if jobReport.errors[0]["Description"].find(file) >= 0:
-                       inputString += '%s::%d::%s::%s;'%(file,0,'Unknown','Local') 
+                       inputString += '%s::%d::%s::%s::%s;'%(file,0,'Unknown','Local','Unknown') 
                    else:
-                       inputString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+                       inputString += '%s::%d::%s::%s::%s;'%(file,2,'Unknown','Unknown','Unknown') 
                else:
-                   inputParentString += '%s::%d::%s::%s;'%(file,2,'Unknown','Unknown') 
+                   inputParentString += '%s::%d::%s::%s::%s;'%(file,2,'Unknown','Unknown','Unknown') 
 
         report_dict['inputFiles']= inputString
         report_dict['parentFIles']= inputParentString
