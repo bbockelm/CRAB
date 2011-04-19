@@ -156,7 +156,7 @@ class cmscp:
 
         supported_protocol = None
         if middleware.lower() in ['osg','lcg','condor','sge']:
-            supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']]])#,\
+            supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']])]#,\
                                #  (self.params['srm_version'],srmOpt[self.params['srm_version']])]
         elif middleware.lower() in ['lsf','caf']:
             supported_protocol = [('rfio',rfioOpt)]
@@ -561,9 +561,9 @@ class cmscp:
         if self.source_prot != 'local':f_tocopy = os.path.basename(filetocopy)
         try:
             checkSource = sbi_source.checkExists( f_tocopy , opt=option, tout = self.subprocesstimeout['exists'] )
-            if self.debug : print '\tCheck for local file %s exist succeded \n'%f_tocopy  
+            if self.debug : print '\tCheck for local file %s existance executed \n'%f_tocopy  
         except OperationException, ex:
-            msg  ='ERROR: problems checkig if source file %s exist'%filetocopy
+            msg  ='ERROR: problems checking source file %s existance'%filetocopy
             msg += str(ex)
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
@@ -571,7 +571,7 @@ class cmscp:
                 print dbgmsg 
             raise Exception(msg)
         except WrongOption, ex:
-            msg  ='ERROR problems checkig if source file % exist'%filetocopy
+            msg  ='ERROR: problems checking source file %s existance'%filetocopy
             msg += str(ex)
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
@@ -579,7 +579,7 @@ class cmscp:
                 print dbgmsg 
             raise Exception(msg)
         except MissingDestination, ex:
-            msg  ='ERROR problems checkig if source file % exist'%filetocopy
+            msg  ='ERROR: problems checking source file %s existance'%filetocopy
             msg += str(ex)
             if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
@@ -590,15 +590,15 @@ class cmscp:
             return ErCode, msg
         if not checkSource :
             ErCode = '60302'
-            msg = "ERROR file %s do not exist"%os.path.basename(filetocopy)
+            msg = "ERROR file %s does not exist"%os.path.basename(filetocopy)
             return ErCode, msg
         f_tocopy=os.path.basename(filetocopy)
         try:
             check = sbi_dest.checkExists( f_tocopy, opt=option, tout = self.subprocesstimeout['exists'] )
-            if self.debug : print '\tCheck for remote file %s exist done \n'%f_tocopy  
+            if self.debug : print '\tCheck for remote file %s existance executed \n'%f_tocopy  
             if self.debug : print '\twith exit code = %s \n'%check  
         except OperationException, ex:
-            msg  = 'ERROR: problems checkig if file %s already exist'%filetocopy
+            msg  = 'ERROR: problems checking if file %s already exist'%filetocopy
             msg += str(ex)
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
@@ -606,14 +606,14 @@ class cmscp:
                 print dbgmsg
             raise Exception(msg)
         except WrongOption, ex:
-            msg  = 'ERROR problems checkig if file % already exist'%filetocopy
+            msg  = 'ERROR problems checking if file % already exists'%filetocopy
             msg += str(ex)
             if self.debug :
                 msg += '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 msg += '\t'+str(ex.output)+'\n'
             raise Exception(msg)
         except MissingDestination, ex:
-            msg  ='ERROR problems checkig if source file % exist'%filetocopy
+            msg  ='ERROR problems checking if destination file % exists'%filetocopy
             msg += str(ex)
             if self.debug : print '\t'+msg+'\n\t'+str(ex.detail)+'\n'
             raise Exception(msg)
