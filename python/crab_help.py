@@ -329,6 +329,10 @@ It is not possible for the user to select only one file to publish, nor to publi
 
 Check if a dataset is published in a DBS. This option is automaticaly called at the end of the publication step, but it can be also used as a standalone command. By default it reads the parameters (USER.dbs_url_for_publication and USER.dataset_to_check) in your crab.cfg. You can overwrite the defaults in crab.cfg by passing these parameters as option. Using the -debug option, you will get detailed info about the files of published blocks.
 
+=head2 B<-publishNoInp>
+
+To be used only if you know why and you are of sure what you are doing, or if crab support persons told you to use it.It is meant for situations where crab -publish fails because framework job report xml file contains input files not present in DBS. It will publish the dataset anyhow, while marking it as Unknown Provenace to indicate that parentage information is partial. Those dataset will not be accepted for promotion to Global Scope DBS. In all other respects this works as crab -publish
+
 =head2 B<-resubmit [range]>
 
 Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
@@ -709,6 +713,10 @@ Set it to 1 to skip the check of free space left on your working directory befor
 =head3 B<check_user_remote_dir>
 
 To avoid stage out failures CRAB checks the remote location content at the creation time. By setting I<check_user_remote_dir>=0  crab will skip the check.
+
+=head3 B<tasktype>
+
+Expert only parameter. Not to be used.
 
 =head2 B<[GRID]>
 
