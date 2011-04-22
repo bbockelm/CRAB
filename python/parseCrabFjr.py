@@ -271,7 +271,7 @@ class parseFjr:
         for f,t in readFile.items():
             cleanedinputList.remove(f)     
             inputString += '%s::%d::%s::%s::%d;'%(f,1,t[0],t[1],countFile) 
-            LumisString += '%s::%s::%d;'%(t[2].keys()[0],t[2].values()[0],countFile)   
+            LumisString += '%s::%s::%d;'%(t[2].keys()[0],self.makeRanges(t[2].values()[0]),countFile)   
             countFile += 1
 
         inputParentString = ''
@@ -280,7 +280,7 @@ class parseFjr:
         for fp,tp in readFileParent.items():
             cleanedParentList.remove(fp)     
             inputParentString += '%s::%d::%s::%s::%d;'%(fp,1,tp[0],tp[1],countParentFile) 
-            LumisParentString += '%s::%s::%d;'%(tp[2].keys()[0],tp[2].values()[0],countParentFile)   
+            LumisParentString += '%s::%s::%d;'%(tp[2].keys()[0],self.makeRanges(tp[2].values()[0]),countParentFile)   
             countParentFile += 1
 
         if len(cleanedinputList):
@@ -304,7 +304,7 @@ class parseFjr:
                    inputParentString += '%s::%d::%s::%s::%s;'%(file,2,'Unknown','Unknown','Unknown') 
 
         report_dict['inputFiles']= inputString
-        report_dict['parentFIles']= inputParentString
+        report_dict['parentFiles']= inputParentString
         report_dict['lumisRange']= LumisString
         report_dict['lumisParentRange']= LumisParentString
         report_dict['Basename']= basename
@@ -385,6 +385,33 @@ class parseFjr:
 
         return
 
+    def makeRanges(self,lumilist):
+        """ convert list to range """ 
+        
+        counter = lumilist[0]
+        lumilist.remove(counter)
+        tempRange=[]
+        tempRange.append(counter)
+        string = ''
+        for i in lumilist:
+            if i == counter+1:
+                tempRange.append(i)
+                counter +=1
+            else:
+                if len(tempRange)==1:
+                    string += "%s,"%tempRange[0]
+                else:
+                    string += "%s-%s,"%(tempRange[:1][0],tempRange[-1:][0])
+                counter = i
+                tempRange=[]
+                tempRange.append(counter)
+            if i == lumilist[-1:][0]   :
+                if len(tempRange)==1:
+                    string += "%s"%tempRange[0]
+                else:
+                    string += "%s-%s"%(tempRange[:1][0],tempRange[-1:][0])
+        return string
+        
     def usage(self):
         
         msg=""" 
