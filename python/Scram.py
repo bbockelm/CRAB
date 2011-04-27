@@ -56,9 +56,8 @@ class Scram:
         pass
 
     def commandName(self):
-        """ return scram or scramv1 """
-        if self.scramVersion >= 1: return 'scramv1'
-        else: return 'scram'
+        """ return scram command name """
+        return 'scram'
 
     def getSWArea_(self):
         """

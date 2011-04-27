@@ -124,7 +124,7 @@ Modify the CRAB configuration file B<crab.cfg> according to your need: see below
 
 =item B<A)>
 
-Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup of run time environment (I<eval `scramv1 runtime -sh|csh`>), a suitable I<ParameterSet>, etc. It seems silly, but B<be extra sure that you actually did compile your code> I<scramv1 b>.
+Develop your code in your CMSSW working area.  Do anything which is needed to run interactively your executable, including the setup of run time environment (I<cmsenv>), a suitable I<ParameterSet>, etc. It seems silly, but B<be extra sure that you actually did compile your code> I<scram b>.
 
 =item B<B)>
 
@@ -296,7 +296,7 @@ See also I<-continue>.
 =head2 B<-submit [range]>
 
 Submit n jobs: 'n' is either a positive integer or 'all' or a [range]. The default is all.
-If 'n' is passed as an argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted. In order to only submit job number M use this syntax (note the trailing comma): I<crab -submit M,> 
+If 'n' is passed as an argument, the first 'n' suitable jobs will be submitted. Please note that this is behaviour is different from other commands, where -command N means act the command to the job N, and not to the first N jobs. If a [range] is passed, the selected jobs will be submitted. In order to only submit job number M use this syntax (note the trailing comma): I<crab -submit M,>
 
 This option may be used in conjunction with -create (to create and submit immediately) or with -continue (which is assumed by default) to submit previously created jobs. Failure to do so will stop CRAB and generate an error message.  See also I<-continue>.
 
@@ -399,7 +399,7 @@ Clean up (i.e. erase) the SiteDb and CRAB cache content.
 
 Upload main log files to a central repository. It prints a link to be forwared to supporting people (eg: crab feedback hypernews).
 
-It can optionally take a job id as input. It does not allow job ranges/lists. 
+It can optionally take a job id as input. It does not allow job ranges/lists.
 
 Uploaded files are: crab.log, crab.cfg, job logging info, job standard output, summary file and a metadata file.
 
@@ -468,7 +468,7 @@ Within a dataset you can restrict to run on a specific run number or run number 
 =head3 B<use_parent>
 
 Within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
-This setting is supposed to works both with Splitting by Lumis and Splitting by Events. 
+This setting is supposed to works both with Splitting by Lumis and Splitting by Events.
 
 =head3 B<pset *>
 
