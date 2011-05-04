@@ -39,12 +39,12 @@ class Scheduler :
         self.protocolDict = { 'CAF'      : 'rfio' , \
                               'LSF'      : 'rfio' , \
                               'PBS'      : 'rfio' , \
-                              'CONDOR_G' : 'srmv2' , \
+                              'CONDOR_G' : 'srm-lcg' , \
                               'GLITE'    : 'srm-lcg' , \
                               'GLIDEIN'  : 'srm-lcg' , \
-                              'CONDOR'    : 'srmv2',  \
-                              'SGE'      : 'srmv2', \
-                              'ARC'      : 'srmv2'
+                              'CONDOR'   : 'srm-lcg',  \
+                              'SGE'      : 'srm-lcg', \
+                              'ARC'      : 'srm-lcg'
                             }
 
         self.protocolOpt = { 'rfio' : '', \
