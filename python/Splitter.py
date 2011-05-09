@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.49 2011/03/02 10:48:46 spiga Exp $"
-__version__ = "$Revision: 1.49 $"
+__revision__ = "$Id: Splitter.py,v 1.50 2011/03/13 18:10:29 spiga Exp $"
+__version__ = "$Revision: 1.50 $"
 
 import common
 from crab_exceptions import *
@@ -497,7 +497,7 @@ class JobSplitter:
                 list_of_blocks.append(res['block'])
                 fullString = parString[:-1]
                 blockString=','.join(list_of_blocks)
-                list_of_lists.append([fullString,str(-1),str(0)],blockString)
+                list_of_lists.append([fullString,str(-1),str(0),blockStringa])
                 #need to check single file location
                 jobDestination.append(res['locations'])
                 count +=1
