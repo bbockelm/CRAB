@@ -26,8 +26,8 @@ The most useful general options (use '-h' to get complete help):
   -publish                                -- after the getouput, publish the data user in a local DBS instance.
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
-  -resubmit [range]                       -- resubmit killed/aborted/retrieved jobs.
-  -forceResubmit [range]                  -- resubmit jobs regardless to their status.
+  -resubmit range or all                  -- resubmit killed/aborted/retrieved jobs.
+  -forceResubmit range or all             -- resubmit jobs regardless to their status.
   -copyData [range [dest_se or dest_endpoint]] -- copy locally (in crab_working_dir/res dir) or on a remote SE your produced output,
                                                   already stored on remote SE.
   -renewCredential                        -- renew credential on the server.
@@ -333,11 +333,11 @@ Check if a dataset is published in a DBS. This option is automaticaly called at 
 
 To be used only if you know why and you are of sure what you are doing, or if crab support persons told you to use it.It is meant for situations where crab -publish fails because framework job report xml file contains input files not present in DBS. It will publish the dataset anyhow, while marking it as Unknown Provenace to indicate that parentage information is partial. Those dataset will not be accepted for promotion to Global Scope DBS. In all other respects this works as crab -publish
 
-=head2 B<-resubmit [range]>
+=head2 B<-resubmit range or all>
 
 Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
 
-=head2 B<-forceResubmit [range]>
+=head2 B<-forceResubmit range or all>
 
 iSame as -resubmit but without any check about the actual status of the job: please use with caution, you can have problem if both the original job and the resubmitted ones actually run and tries to write the output ona a SE. This command is meant to be used if the killing is not possible or not working but you know that the job failed or will. See I<range> below for syntax.
 
@@ -401,11 +401,14 @@ Upload main log files to a central repository. It prints a link to be forwared t
 
 It can optionally take a job id as input. It does not allow job ranges/lists.
 
-Uploaded files are: crab.log, crab.cfg, job logging info, job standard output, summary file and a metadata file.
+Uploaded files are: crab.log, crab.cfg, job logging info, summary file and a metadata file.
+If you specify the jobid, also the job standard output and fjr will be uploaded. Warning: in this case you need to run the getoutput before!!
+In the case of aborted jobs you can upload the postMortem file, creating it with crab -postMortem jobid and then uploading files specifying the jobid number.
 
 =head2 B<-validateCfg [fname]>
 
 Parse the ParameterSet using the framework\'s Python API in order to perform a sanity check of the CMSSW configuration file.
+You have to create your task with crab -create and then to validate the config file with crab -validateCfg.
 
 =head2 B<-help [format] | -h [format]>
 
