@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.220 2011/04/03 22:28:33 fanzago Exp $"
-__version__ = "$Revision: 1.220 $"
+__revision__ = "$Id: FatWorker.py,v 1.221 2011/04/13 23:40:29 fanzago Exp $"
+__version__ = "$Revision: 1.221 $"
 
 import string
 import sys, os
@@ -171,8 +171,10 @@ class FatWorker(Thread):
         try:
             sub_jobs, reqs_jobs, matched, unmatched, errorLogs = self.submissionListCreation(taskObj, newRange)
             if len(matched)==0:
-                errMsg = "Unable to submit jobs %s: no sites matched!"%str(sub_jobs)
-                errMsg += '\n%s'%str(errorLogs)
+                logMsg = "Unable to submit jobs %s: no sites matched!"%str(sub_jobs)
+                logMsg += '\n%s'%str(errorLogs)
+                self.log.info(logMsg)
+                errMsg = "NOMATCH: no site matched !!!" 
                 raise Exception(errMsg)
         except Exception, e:
             self.markJobsAsFailed(taskObj, self.cmdRng)
