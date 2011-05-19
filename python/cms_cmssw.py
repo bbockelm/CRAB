@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.371 2011/03/23 10:30:23 spiga Exp $"
-__version__ = "$Revision: 1.371 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.372 2011/03/23 16:48:53 spiga Exp $"
+__version__ = "$Revision: 1.372 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -587,7 +587,6 @@ class Cmssw(JobType):
             tar.dereference=False
 
             ## Now check if any data dir(s) is present
-            self.dataExist = False
             todo_list = [(i, i) for i in  os.listdir(swArea+"/src")]
             while len(todo_list):
                 entry, name = todo_list.pop()
@@ -596,11 +595,6 @@ class Cmssw(JobType):
                 if os.path.isdir(swArea+"/src/"+entry):
                     entryPath = entry + '/'
                     todo_list += [(entryPath + i, i) for i in  os.listdir(swArea+"/src/"+entry)]
-                    if name == 'data':
-                        self.dataExist=True
-                        common.logger.debug("data "+entry+" to be tarred")
-                        tar.add(swArea+"/src/"+entry,"src/"+entry)
-                    pass
                 pass
 
             ### CMSSW ParameterSet
@@ -830,9 +824,6 @@ class Cmssw(JobType):
         txt += 'rm -r lib/ module/ \n'
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
-        if self.dataExist == True:
-            txt += 'rm -r src/ \n'
-            txt += 'mv $RUNTIME_AREA/src/ . \n'
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
                 txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
