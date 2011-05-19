@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.46 2010/07/15 14:42:48 mcinquil Exp $"
-__version__ = "$Revision: 1.46 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.47 2010/08/10 21:55:56 spiga Exp $"
+__version__ = "$Revision: 1.47 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -197,7 +197,7 @@ class TaskLifeManagerComponent:
                          " for jobs " + str(jobstr) )
             try:
                 self.markJobsAsCleared( taskname, jobstr )
-                self.deleteRetrievedOSB( taskname, jobstr )
+                #self.deleteRetrievedOSB( taskname, jobstr )
             except Exception, ex:
                 import traceback
                 logging.error( "Exception raised: " + str(ex) )
