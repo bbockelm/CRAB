@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ `whoami` != 'root' ]; then
-    echo "You must to be root in order to do rpm install."
+    echo "You must to be root in order to use this script"
     echo "Exiting. "
     exit 1;
 fi
