@@ -152,10 +152,9 @@ if ! yum $YUMOPTIONS $INSTALL_PACKLIST 2>&1; then
 fi
 }
 
+### Configuration 
+
 configure(){
-#CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
-#CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
-# "https://cmsweb.cern.ch/crabconf"
 
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
 echo "*** Copying to $MYTESTAREA/GFTP_CFGfiles defaults config files"
@@ -164,8 +163,6 @@ if ! cp $RepoDir/files/* $MYTESTAREA/GFTP_CFGfiles/; then
     exit 1
 fi
 
-
-### Configuration 
 echo "*** Creating cmsXXX local users: "
 /usr/sbin/groupadd cms
 mkdir -p /etc/grid-security/gridmapdir/
