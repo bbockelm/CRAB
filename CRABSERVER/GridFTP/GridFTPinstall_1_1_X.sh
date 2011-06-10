@@ -15,6 +15,8 @@ fi
 #defaults
 SLVER=5
 
+RepoDir=`dirname $0`
+
 while [ $# -gt 0 ]; do
     case $1 in
         install )
@@ -152,21 +154,16 @@ fi
 
 configure(){
 #CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
-CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
+#CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
 # "https://cmsweb.cern.ch/crabconf"
 
 mkdir -p $MYTESTAREA/GFTP_CFGfiles
-echo "*** Downloading to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball"
-if ! wget --user-agent='' --no-check-certificate -O $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz $CMS_SERVER/GridFTPinstall.tar.gz; then
+echo "*** Copying to $MYTESTAREA/GFTP_CFGfiles defaults config files"
+if ! cp $RepoDir/files/* $MYTESTAREA/GFTP_CFGfiles/; then
     echo Exiting from $0
     exit 1
 fi
 
-echo "*** Untarring to $MYTESTAREA/GFTP_CFGfiles defaults config files tarball: "
-if ! tar -C $MYTESTAREA/GFTP_CFGfiles/ -xzvf $MYTESTAREA/GFTP_CFGfiles/GridFTPinstall.tar.gz; then
-    echo Exiting from $0
-    exit 1
-fi
 
 ### Configuration 
 echo "*** Creating cmsXXX local users: "
