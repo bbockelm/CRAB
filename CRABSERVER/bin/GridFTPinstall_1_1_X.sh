@@ -20,6 +20,9 @@ while [ $# -gt 0 ]; do
         install )
             command=install
             shift ;;
+        configure )
+            command=configure
+            shift;;
         uninstall )
             command=uninstall
             shift;;
@@ -145,7 +148,9 @@ if ! yum $YUMOPTIONS $INSTALL_PACKLIST 2>&1; then
     echo Exiting $0
     exit 1
 fi
+}
 
+configure(){
 #CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab"
 CMS_SERVER="http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/"
 # "https://cmsweb.cern.ch/crabconf"
@@ -188,12 +193,21 @@ if ! /opt/glite/sbin/gt4-interface-install.sh install; then
     echo  Exiting from $0
 fi
 
+MACH=$(uname -m)
+if [ "x${MACH}" = "xx86_64" ]; then
+  LIBDIR="lib64"
+else
+  LIBDIR="lib"
+fi
+GLITE_LOCATION="/opt/glite"
+
 #/opt/glite/etc/lcas/lcas.db
 if ! [ -e /opt/glite/etc/lcas/lcas.db ]; then
     mkdir -p /opt/glite/etc/lcas;
     if cp $MYTESTAREA/GFTP_CFGfiles/lcas.db /opt/glite/etc/lcas/; then
         echo " *** /opt/glite/etc/lcas/lcas.db created";
     fi
+    sed --in-place "s:=lcas_voms.mod:=${GLITE_LOCATION}/${LIBDIR}/modules/lcas_voms.mod:" /opt/glite/etc/lcas/lcas.db
 fi
 
 #/opt/glite/etc/lcmaps/lcmaps.db
@@ -202,6 +216,7 @@ if ! [ -e /opt/glite/etc/lcmaps/lcmaps.db ]; then
     if cp $MYTESTAREA/GFTP_CFGfiles/lcmaps.db /opt/glite/etc/lcmaps/; then
         echo "*** /opt/glite/etc/lcmaps/lcmaps.db created";
     fi
+    sed --in-place "s:path = .*:path = ${GLITE_LOCATION}/${LIBDIR}/modules:" /opt/glite/etc/lcmaps/lcmaps.db
 fi
 
 echo "*** Creating mapfiles"
@@ -233,9 +248,10 @@ if ! [ -e /etc/grid-security/hostkey.pem ] && [ -e /etc/grid-security/hostcert.p
 fi
 
 mv $MYTESTAREA/GFTP_CFGfiles/GridFTPenv.{c,}sh .
-echo " ==> Export needed environment variables sourcing the following script:"
-echo "     GridFTPenv.c|sh"
-echo ""
+cp -p ./GridFTPenv.sh /etc/sysconfig/globus-gridftp
+# echo " ==> Export needed environment variables sourcing the following script:"
+# echo "     GridFTPenv.c|sh"
+# echo ""
 
 echo " ==> Be sure the needed ports are open through the firewall:"
 echo "     iptables -I INPUT -p TCP --dport 20000:25000 -m state --state NEW -j ACCEPT "
@@ -296,7 +312,10 @@ echo "*** Uninstall completed"
 #####################################
 case $command in
     install )
-        install ;;
+        install
+	configure ;;
+    configure )
+        configure ;;
     uninstall )
         uninstall ;;
     * )
