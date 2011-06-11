@@ -15,7 +15,8 @@ fi
 #defaults
 SLVER=5
 
-RepoDir=`dirname $0`
+CurrentDir=`pwd`
+InstallDir=`dirname $(readlink -f $0)`
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -48,6 +49,11 @@ GridFTPinstall_1_1_X.sh install -path </your/dir> [-sl <ver>]
 -path </your/dir>            : location of where the installation must be done 
 -sl <ver>                    : Scientific Linux version (default: 5)
 
+* Configuration Syntas (e.g. rpm's are there already via Quattor)
+
+GridFTPinstall_1_1_X.sh configure -path </your/dir> [-sl <ver>] 
+
+
 * Uninstall Syntax:
 
 GridFTPinstall_1_1_X.sh uninstall -path </your/dir>
@@ -59,6 +65,17 @@ EOF_HELP
             echo "$0: argument $1 not supported"; exit 1;;
     esac
 done
+
+if ! [ $myarea ]; then
+ echo ""
+ echo " -path option is missing. For usage see :"
+ echo " $0 -help"
+ exit 1
+fi
+
+mkdir -p $myarea
+export MYTESTAREA=`readlink -f $myarea`;
+cd $MYTESTAREA
 
 ##################
 ### Packages 
@@ -105,17 +122,6 @@ UNINSTALL_PACKLIST="vdt_globus_data_server glite-security-lcas glite-security-lc
 ##################
 install(){
 
-if ! [ $myarea ]; then
- echo ""
- echo " -path option is missing. For usage see :"
- echo " $0 -help"
- exit 1
-fi
-
-mkdir -p $myarea
-export MYTESTAREA=`readlink -f $myarea`;
-cd $MYTESTAREA
-
 YUMOPTIONS="install -y"
 
 ### check if yum is installed
@@ -156,12 +162,12 @@ fi
 
 configure(){
 
-mkdir -p $MYTESTAREA/GFTP_CFGfiles
-echo "*** Copying to $MYTESTAREA/GFTP_CFGfiles defaults config files"
-if ! cp $RepoDir/files/* $MYTESTAREA/GFTP_CFGfiles/; then
-    echo Exiting from $0
-    exit 1
-fi
+#mkdir -p $MYTESTAREA/GFTP_CFGfiles
+#echo "*** Copying to $MYTESTAREA/GFTP_CFGfiles defaults config files"
+#if ! cp $RepoDir/files/* $MYTESTAREA/GFTP_CFGfiles/; then
+#    echo Exiting from $0
+#    exit 1
+#fi
 
 echo "*** Creating cmsXXX local users: "
 /usr/sbin/groupadd cms
@@ -172,13 +178,13 @@ for i in {0..9}; do
         for k in {0..9}; do
             id=$i$j$k
             echo -n "cms$id "
-            echo "cms$id:x:1$id:cms::/home/cms$id:/bin/bash" >> $MYTESTAREA/GFTP_CFGfiles/cmsnewusers
+            echo "cms$id:x:1$id:cms::/home/cms$id:/bin/bash" >> $MYTESTAREA/cmsnewusers
             # /usr/sbin/useradd -g cms -m cms$id
             touch /etc/grid-security/gridmapdir/cms$id
         done
     done
 done
-/usr/sbin/newusers $MYTESTAREA/GFTP_CFGfiles/cmsnewusers
+/usr/sbin/newusers $MYTESTAREA/cmsnewusers
 echo ""
 
 
@@ -198,7 +204,7 @@ GLITE_LOCATION="/opt/glite"
 #/opt/glite/etc/lcas/lcas.db
 if ! [ -e /opt/glite/etc/lcas/lcas.db ]; then
     mkdir -p /opt/glite/etc/lcas;
-    if cp $MYTESTAREA/GFTP_CFGfiles/lcas.db /opt/glite/etc/lcas/; then
+    if cp $InstallDir/GFTP_CFGfiles/lcas.db /opt/glite/etc/lcas/; then
         echo " *** /opt/glite/etc/lcas/lcas.db created";
     fi
     sed --in-place "s:=lcas_voms.mod:=${GLITE_LOCATION}/${LIBDIR}/modules/lcas_voms.mod:" /opt/glite/etc/lcas/lcas.db
@@ -207,7 +213,7 @@ fi
 #/opt/glite/etc/lcmaps/lcmaps.db
 if ! [ -e /opt/glite/etc/lcmaps/lcmaps.db ]; then
     mkdir -p /opt/glite/etc/lcmaps;
-    if cp $MYTESTAREA/GFTP_CFGfiles/lcmaps.db /opt/glite/etc/lcmaps/; then
+    if cp $InstallDir/GFTP_CFGfiles/lcmaps.db /opt/glite/etc/lcmaps/; then
         echo "*** /opt/glite/etc/lcmaps/lcmaps.db created";
     fi
     sed --in-place "s:path = .*:path = ${GLITE_LOCATION}/${LIBDIR}/modules:" /opt/glite/etc/lcmaps/lcmaps.db
@@ -216,14 +222,14 @@ fi
 echo "*** Creating mapfiles"
 #/etc/grid-security/grid-mapfile
 if ! [ -e /etc/grid-security/grid-mapfile ]; then
-    if cp $MYTESTAREA/GFTP_CFGfiles/grid-mapfile /etc/grid-security/; then
+    if cp $InstallDir/GFTP_CFGfiles/grid-mapfile /etc/grid-security/; then
         echo "*** /etc/grid-security/grid-mapfile created";
     fi
 fi
 
 #/etc/grid-security/groupmapfile
 if ! [ -e /etc/grid-security/groupmapfile ]; then
-    if cp $MYTESTAREA/GFTP_CFGfiles/groupmapfile /etc/grid-security/; then
+    if cp $InstallDir/GFTP_CFGfiles/groupmapfile /etc/grid-security/; then
         echo "*** /etc/grid-security/groupmapfile created";
     fi
 fi
@@ -241,8 +247,8 @@ if ! [ -e /etc/grid-security/hostkey.pem ] && [ -e /etc/grid-security/hostcert.p
     echo ""
 fi
 
-mv $MYTESTAREA/GFTP_CFGfiles/GridFTPenv.{c,}sh .
-cp -p ./GridFTPenv.sh /etc/sysconfig/globus-gridftp
+cp $InstallDir/GFTP_CFGfiles/GridFTPenv.{c,}sh $CurrentDir
+cp -p $InstallDir/GFTP_CFGfiles/GridFTPenv.sh /etc/sysconfig/globus-gridftp
 # echo " ==> Export needed environment variables sourcing the following script:"
 # echo "     GridFTPenv.c|sh"
 # echo ""
@@ -253,7 +259,7 @@ echo "     iptables -I INPUT -p TCP --dport 2811 -m state --state NEW -j ACCEPT 
 echo "     iptables -I INPUT -p udp --dport 20000:25000 -j ACCEPT "
 echo ""
 
-mv $MYTESTAREA/GFTP_CFGfiles/globus-gridftp .
+cp $InstallDir/GFTP_CFGfiles/globus-gridftp $CurrentDir
 echo " ==> Start GridFTP server daemon through the following script:"
 echo "     globus-gridftp start"
 echo ""
@@ -281,7 +287,7 @@ fi
 
 # extract group-cms users:
 echo "*** Removing cmsXXX user"; echo -n "found users: "
-if [ -e $MYTESTAREA/GFTP_CFGfiles/cmsnewusers ]; then
+if [ -e $MYTESTAREA/cmsnewusers ]; then
     USER_LIST=`cat $MYTESTAREA/GFTP_CFGfiles/cmsnewusers | awk -F\: '{print $1}'`
 else
     USER_LIST=`cat /etc/passwd | awk -F\: '{print $1 }'  | xargs groups | awk -F\: '{print $1 }' | grep ^cms`
