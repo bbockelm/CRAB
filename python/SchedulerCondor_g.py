@@ -5,8 +5,8 @@ Non-specific code comes from SchedulerCondorCommon
 
 from SchedulerCondorCommon import SchedulerCondorCommon
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.106 2008/09/05 18:48:01 ewv Exp $"
-__version__ = "$Revision: 1.106 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.107 2009/03/09 15:56:26 ewv Exp $"
+__version__ = "$Revision: 1.107 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -30,7 +30,7 @@ class SchedulerCondor_g(SchedulerCondorCommon):
         ceDest = self.seListToCElist(task.jobs[i-1]['dlsDestination'])
 
         if len(ceDest) == 1:
-            jobParams += "globusscheduler = "+ceDest[0]+"; "
+            jobParams += "grid_resource = gt2 "+ceDest[0]+"; "
         else:
             jobParams += "schedulerList = "+','.join(ceDest)+"; "
 
