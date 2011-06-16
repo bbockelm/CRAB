@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.51 2011/05/09 10:42:08 spiga Exp $"
-__version__ = "$Revision: 1.51 $"
+__revision__ = "$Id: Splitter.py,v 1.52 2011/05/09 11:51:28 spiga Exp $"
+__version__ = "$Revision: 1.52 $"
 
 import common
 from crab_exceptions import *
@@ -464,6 +464,10 @@ class JobSplitter:
             except:
                 continue
             wmbsFile = File(f['LogicalFileName'])
+            if not  blockSites[block]:
+                msg = 'WARNING: No sites are hosting any part of data for block: %s\n' %block                
+                msg += 'Related jobs will not be submitted and this block of data can not be analyzed'
+                common.logger.debug(msg)
             [ wmbsFile['locations'].add(x) for x in blockSites[block] ]
             wmbsFile['block'] = block
             runNum = f['RunsList'][0]['RunNumber']
@@ -684,7 +688,10 @@ class JobSplitter:
                 continue
             wmbsFile = File(jobFile['LogicalFileName'])
             if not  blockSites[block]:
-                wmbsFile['locations'].add('Nowhere')
+                msg = 'WARNING: No sites are hosting any part of data for block: %s\n' %block 
+                msg += 'Related jobs will not be submitted and this block of data can not be analyzed'
+                common.logger.debug(msg)
+               # wmbsFile['locations'].add('Nowhere')
             [ wmbsFile['locations'].add(x) for x in blockSites[block] ]
             wmbsFile['block'] = block
             for lumi in lumisPerFile[jobFile['LogicalFileName']]:
