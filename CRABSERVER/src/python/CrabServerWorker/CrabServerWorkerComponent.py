@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.104 $"
-__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.104 2010/05/26 08:25:24 farinafa Exp $"
+__version__ = "$Revision: 1.105 $"
+__revision__ = "$Id: CrabServerWorkerComponent.py,v 1.105 2010/08/10 21:55:56 spiga Exp $"
 
 import os, pickle, time
 
@@ -112,6 +112,7 @@ class CrabServerWorkerComponent:
         logging.info("-----------------------------------------")
         logging.info("CrabServerWorkerComponent ver2 Started...")
         logging.info("Component dropbox working directory: %s\n"%self.wdir)
+        logging.info("CSW availWorkersIds = %s\n"%self.availWorkersIds )
         
         # Init WMCore.Services.Service
         self.wmcorecache = {}
@@ -220,7 +221,7 @@ class CrabServerWorkerComponent:
         elif event == "CrabServerWorkerComponent:EndDebug":
             logging.getLogger().setLevel(logging.INFO)
         elif event == "CrabServerWorker:HeartBeat":
-            logging.info("HeartBeat: I'm alive ")
+            logging.info("HeartBeat: I'm alive availWorkersIds = %s\n"%self.availWorkersIds)
             self.ms.publish("CrabServerWorker:HeartBeat","",self.HeartBeatDelay)
             self.ms.commit()
         else:
@@ -238,7 +239,9 @@ class CrabServerWorkerComponent:
         interactions with the Grid/Local schedulers.
         """
 
+        logging.debug("CSW len(self.availWorkersIds) = %d"%len(self.availWorkersIds))
         if len(self.availWorkersIds) <= 0:
+            logging.debug('CSW no workers ??')
             self.ms.publish("CrabServerWorkerComponent:Submission", payload, "00:01:00")
             self.ms.commit()
             return
@@ -249,6 +252,7 @@ class CrabServerWorkerComponent:
         if len(items) == 5: siteToBan = items[4]
 
         thrName = self.availWorkersIds.pop(0)
+        logging.info('CSW thrName = %s now matherializeStatus'%thrName)
         self.materializeStatus()
 
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName)
@@ -282,6 +286,7 @@ class CrabServerWorkerComponent:
 
         # Worker Factory
         try:
+            logging.info('CSW try to allocate thread:  %s'%thrName)
             self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         except Exception:
             logging.info('Unable to allocate submission thread: %s'%thrName)
