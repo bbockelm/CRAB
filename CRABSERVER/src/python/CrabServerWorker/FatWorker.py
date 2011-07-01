@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.221 2011/04/13 23:40:29 fanzago Exp $"
-__version__ = "$Revision: 1.221 $"
+__revision__ = "$Id: FatWorker.py,v 1.222 2011/05/19 07:21:49 spiga Exp $"
+__version__ = "$Revision: 1.222 $"
 
 import string
 import sys, os
@@ -114,7 +114,7 @@ class FatWorker(Thread):
         try:
             self.start()
         except Exception, e:
-            logMsg = 'FatWorker exception : %s\n'%self.myName
+            logMsg = 'FW %s exception : \n'%self.myName
             logMsg +=  traceback.format_exc()
             self.log.info(logMsg)
         self.apmon.free()
@@ -122,35 +122,35 @@ class FatWorker(Thread):
         return
 
     def run(self):
-        self.log.info("FatWorker %s initialized: task %s"%(self.myName, self.taskName) )
+        self.log.info("FW %s initialized: task %s"%(self.myName, self.taskName) )
         taskObj = None
         self.local_queue.put((self.myName, "CrabServerWorkerComponent:CommandArrival", self.taskName))
         if not self.parseCommandXML() == 0:
-            logMsg = "WorkerError %s. XML for the requested task %s does not exist."%(self.myName, self.taskName)
+            logMsg = "FW %s Error. XML for the requested task %s does not exist."%(self.myName, self.taskName)
             self.preLog(mess = "Pre-submission failure", err = logMsg, exc = exc)
             self.sendResult(11, "Unable to parse XML for task %s. Causes: parseCommandXML"%(self.taskName), logMsg, e)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
 
-        self.log.info("FatWorker %s loading task"%self.myName)
+        self.log.info("FW %s loading task"%self.myName)
         try:
             taskObj = self.blDBsession.loadTaskByName(self.taskName)
         except Exception, e:
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Requested task %s does not exist."%(self.myName, self.taskName)
+            logMsg = "FW %s Error. Requested task %s does not exist."%(self.myName, self.taskName)
             self.preLog(mess = "Pre-submission failure", err = logMsg, exc = exc)
             self.sendResult(11, "Unable to retrieve task %s. Causes: loadTaskByName"%(self.taskName), logMsg, e)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkFailed", self.taskName))
             return
 
-        self.log.info("FatWorker %s allocating submission system session"%self.myName)
+        self.log.info("FW %s allocating submission system session"%self.myName)
         if not self.allocateBossLiteSchedulerSession(taskObj) == 0:
             self.log.info("Scheduler allocation failed")
             self.markJobsAsFailed(taskObj, self.cmdRng)
             return
 
-        self.log.info('FatWorker %s preparing submission'%self.myName)
+        self.log.info('FW %s preparing submission'%self.myName)
         errStatus, errMsg = (66, "Worker exception. Free-resource message")
         newRange, skippedJobs = None, None
         try:
@@ -161,12 +161,12 @@ class FatWorker(Thread):
             self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s. preSubmissionCheck."%(self.myName, self.taskName)
+            logMsg = "FW %s Error. Task %s. preSubmissionCheck."%(self.myName, self.taskName)
             self.preLog(mess = "Failure in pre-submission check", err = logMsg, exc = exc)
             self.sendResult(errStatus, errMsg, logMsg, e)
             return
 
-        self.log.info('FatWorker %s performing list-match operation'%self.myName)
+        self.log.info('FW %s performing list-match operation'%self.myName)
         sub_jobs, reqs_jobs, matched, unmatched = None, None, None, None
         try:
             sub_jobs, reqs_jobs, matched, unmatched, errorLogs = self.submissionListCreation(taskObj, newRange)
@@ -180,12 +180,12 @@ class FatWorker(Thread):
             self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s. listMatch."%(self.myName, self.taskName)
+            logMsg = "FW %s Error. Task %s. listMatch."%(self.myName, self.taskName)
             self.preLog(mess = "Failure in pre-submission init", err = logMsg, exc = exc)
             self.sendResult(errStatus, errMsg, logMsg, e)
             return
 
-        self.log.info("FatWorker %s performing submission"%self.myName)
+        self.log.info("FW %s performing submission"%self.myName)
         try:
             submittedJobs, nonSubmittedJobs, errorTrace = self.submitTaskBlocks(taskObj, sub_jobs, reqs_jobs, matched)
 
@@ -193,12 +193,12 @@ class FatWorker(Thread):
             self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.info( exc )
-            logMsg = "WorkerError %s. Task %s."%(self.myName, self.taskName)
+            logMsg = "FW %s Error. Task %s."%(self.myName, self.taskName)
             self.preLog(mess = "Failure during jobs submission", err = logMsg, exc = exc)
             self.sendResult(errStatus, errMsg, logMsg, e)
             return
 
-        self.log.info("FatWorker %s evaluating submission outcomes"%self.myName)
+        self.log.info("FW %s evaluating submission outcomes"%self.myName)
         try:
             ## added blite safe connection to the DB
             self.evaluateSubmissionOutcome(taskObj, newRange, submittedJobs, unmatched, nonSubmittedJobs, skippedJobs)
@@ -206,11 +206,11 @@ class FatWorker(Thread):
             self.markJobsAsFailed(taskObj, self.cmdRng)
             exc = str( traceback.format_exc() )
             self.log.debug( exc )
-            logMsg = "WorkerError %s. Task %s. postSubmission."%(self.myName, self.taskName)
+            logMsg = "FW %s Error. Task %s. postSubmission."%(self.myName, self.taskName)
             self.preLog(mess = "Post-submission check failure", err = logMsg, exc = exc)
             self.sendResult(errStatus, errMsg, logMsg, e)
             return
-        self.log.info("FatWorker %s finished %s"%(self.myName, self.taskName) )
+        self.log.info("FW %s finished %s"%(self.myName, self.taskName) )
         return
 
     def sendResult(self, status, reason, logMsg, error = ''):
@@ -279,7 +279,7 @@ class FatWorker(Thread):
         scheduler = None
         out, ret =  executeCommand('glite-version')
         if ret != 0 :
-            self.log.info('Error checking gLite version')
+            self.log.info('Error checking gLite version:\n'+out)
         else:
             if out.strip().startswith('3.1'):
                 scheduler = 'SchedulerGLiteAPI'
@@ -304,7 +304,7 @@ class FatWorker(Thread):
                            'user_proxy':taskObj['user_proxy'],
                            'timeout':180}
 
-        self.log.info('Allocating %s scheduler' % schedulerConfig['name'] )
+        self.log.info('FW %s Allocating %s scheduler' % (self.myName,schedulerConfig['name']) )
         if schedulerConfig['name'] in ['SchedulerGLiteAPI','SchedulerGLite']:
             schedulerConfig['config'] = self.configs['serviceFile']
             schedulerConfig['skipWMSAuth'] = 1
@@ -355,7 +355,7 @@ class FatWorker(Thread):
         try:
             bk_sbi = SBinterface( self.seEl, copy.deepcopy(self.seEl) )
         except Exception, ex:
-            logMsg = "Worker %s. Problem creating SE Api interface %s.\n"%self.myName
+            logMsg = "FW %s. Problem creating SE Api interface %s.\n"%self.myName
             logMsg += str(ex)
             raise Exception(logMsg)
 
@@ -369,7 +369,7 @@ class FatWorker(Thread):
             try : 
                 basePath = task['outputDirectory'].split(task['startDirectory'])[1]
             except Exception, ex:
-                logMsg = "Worker %s. Error while correcting base path for task %s."%(self.myName, self.taskName)
+                logMsg = "FW %s. Error while correcting base path for task %s."%(self.myName, self.taskName)
                 logMsg += "outputDirectory used as base path. Submission continues.\n"
                 logMsg += str(ex)
                 self.log.info( logMsg )
@@ -392,7 +392,7 @@ class FatWorker(Thread):
                     try:
                         check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
                     except Exception, ex:
-                        logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
+                        logMsg = "FW %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                         j['name'], self.taskName)
                         logMsg += str(ex)
                         self.log.info( logMsg )
@@ -401,7 +401,7 @@ class FatWorker(Thread):
                         try:
                             bk_sbi.move( source=orig, dest=orig+'.'+str(j['submissionNumber']), proxy=task['user_proxy'])
                         except Exception, ex:
-                            logMsg = "Worker %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
+                            logMsg = "FW %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                             j['name'], self.taskName)
                             logMsg += str(ex)
                             self.log.info( logMsg )
@@ -409,14 +409,14 @@ class FatWorker(Thread):
                         # track succesfully replicated files
                         backupFiles.append( os.path.basename(orig) )
                     else:
-                        self.log.debug("No need to back up osb")
+                        self.log.debug("FW %s No need to back up osb"%self.myName)
 
                 # reproduce closed runningJob instances
                 try:
                     self.blDBsession.updateDB(j)
                     self.blDBsession.getNewRunningInstance(j)
                 except Exception, e:
-                    logMsg = ("Worker %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
+                    logMsg = ("FW %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
                             self.taskName, j['name']) )
                     logMsg += str(e)
                     self.log.info( logMsg )
@@ -431,7 +431,7 @@ class FatWorker(Thread):
                 try:
                     self.blDBsession.updateDB(j)
                 except Exception, e:
-                    logMsg = "Worker %s. Error saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
+                    logMsg = "FW %s. Error saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                     logMsg += str(e)
                     self.log.info( logMsg )
                     newRange.remove(j['jobId'])
@@ -443,7 +443,7 @@ class FatWorker(Thread):
             try:
                 self.blDBsession.updateDB(task)
             except Exception, e:
-                logMsg = "Worker %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
+                logMsg = "FW %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
                 logMsg += str(e)
                 self.log.info( logMsg )
                 newRange.remove(j['jobId'])
@@ -463,11 +463,11 @@ class FatWorker(Thread):
                     skippedSubmissions.append(j['jobId'])
 
         # summary printout for the jobs requested for submission
-        self.log.info("Submission requested for %s"%str(newRange))
+        self.log.info("FW %s Submission requested for %s"%(self.myName,str(newRange)))
         if len(skippedSubmissions) > 0:
-            self.log.info("Skipped submission requests: %s"%str(skippedSubmissions))
+            self.log.info("FW %s Skipped submission requests: %s"%(self.myName,str(skippedSubmissions)))
         if len(backupFiles) > 0:
-            self.log.info("Backup copy created for %s: %s"%(self.myName, str(backupFiles) ))
+            self.log.info("FW %s Backup copy created for: %s"%(self.myName, str(backupFiles) ))
 
         return newRange, skippedSubmissions
 
@@ -476,24 +476,24 @@ class FatWorker(Thread):
         for sub in sub_jobs: fullSubJob.extend(sub)
         unsubmitted = fullSubJob
         if len(matched)==0:
-            self.log.info('Worker %s unable to submit jobs %s. No sites matched'%(self.myName,str(unsubmitted)))
+            self.log.info('FW %s unable to submit jobs %s. No sites matched'%(self.myName,str(unsubmitted)))
             return submitted, unsubmitted, errorTrace
 
         self.SendMLpre(task)
-        self.log.info('Worker %s Delegating Proxy for task %s.'%(self.myName,self.taskName))
+        self.log.info('FW %s Delegating Proxy for task %s.'%(self.myName,self.taskName))
         try:
             self.blSchedSession.getSchedulerInterface().delegateProxy()
         except SchedulerError, e:
-            logMsg = "Worker %s. Problem Delegating Proxy for task %s. "%(self.myName, self.taskName)
+            logMsg = "FW %s. Problem Delegating Proxy for task %s. "%(self.myName, self.taskName)
             logMsg += str(e.description())
             self.log.info( logMsg )
         except TimeOut, e:
-            logMsg  = "Worker %s. Problem Delegating Proxy for task %s. \n"%(self.myName, self.taskName) 
+            logMsg  = "FW %s. Problem Delegating Proxy for task %s. \n"%(self.myName, self.taskName) 
             logMsg += str(e)+'\n'
             logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
             self.log.info( logMsg )
         except Exception, ee:
-            logMsg = "Worker %s. Unexpected exception Delegating Proxy for task %s. "%(self.myName, self.taskName)
+            logMsg = "FW %s. Unexpected exception Delegating Proxy for task %s. "%(self.myName, self.taskName)
             logMsg +=  traceback.format_exc()
             self.log.info( logMsg )
         for ii in matched:
@@ -501,7 +501,7 @@ class FatWorker(Thread):
             bulk_window = 200
             if len(sub_jobs[ii]) > bulk_window:
                 sub_bulk = [ sub_jobs[ii][i:i+bulk_window] for i in range(0, len(sub_jobs[ii]), bulk_window)]
-                self.log.info("Collection too big: split in %s sub_collection"%len(sub_bulk) )
+                self.log.info("FW %s Collection too big: split in %s sub_collection"%(self.myName, len(sub_bulk)) )
 
             # submit now
             errorTrace = ''
@@ -527,19 +527,19 @@ class FatWorker(Thread):
 
                     try:
                         self.blSchedSession.submit(task['id'], sub_list, reqs_jobs[ii])
-                        self.log.info("Worker submitted sub collection # %s "%count)
+                        self.log.info("FW %s submitted sub collection # %s "%(self.myName,count))
                         count += 1
                     except SchedulerError, e:
-                        logMsg = "Worker %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
+                        logMsg = "FW %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
                         logMsg += str(e.description())
                         self.log.info( logMsg )
                         errorTrace = str( BossLiteLogger( task, e ) )
                         try:
                             self.preLog(logMsg, str(e.description()), 0, errorTrace)
                         except Exception, ee:
-                            self.log.error("Problem logging information: [%s]"%str(ee))
+                            self.log.error("FW %s Problem logging information: [%s]"%(self.myName,str(ee)))
                     except TimeOut, e:
-                        logMsg = "Worker %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
+                        logMsg = "FW %s. Problem submitting task %s collection %s. "%(self.myName, self.taskName, count)
                         logMsg += str(e)+'\n'
                         logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
                         self.log.info( logMsg )
@@ -547,18 +547,18 @@ class FatWorker(Thread):
                         try:
                             self.preLog(logMsg, str(e.description()), 0, errorTrace)
                         except Exception, ee:
-                            self.log.error("Problem logging information: [%s]"%str(ee))
+                            self.log.error("FW %s Problem logging information: [%s]"%(slef.myName,str(ee)))
                     except Exception, ee:
-                        logMsg = "Worker %s. Unexpected exception submitting task %s collection %s. "%(self.myName, self.taskName, count)
+                        logMsg = "FW %s. Unexpected exception submitting task %s collection %s. "%(self.myName, self.taskName, count)
                         logMsg +=  traceback.format_exc()
                         self.log.info( logMsg )
 
                     ## could be loaded just the sub_list jobs...
                     task = self.blDBsession.load( task['id'], sub_jobs[ii] )
                     # check if submitted
-                    self.log.info("Worker %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
+                    self.log.info("FW %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
                     if len(errorTrace) == 0:
-                        self.log.info("Worker %s. Setting sub success for %s " %(self.myName, str(len(sub_list))) )
+                        self.log.info("FW %s. Setting sub success for %s " %(self.myName, str(len(sub_list))) )
                         parentIds = []
                         for j in task.jobs:
                             self.blDBsession.getRunningInstance(j)
@@ -569,7 +569,7 @@ class FatWorker(Thread):
                                 j.runningJob['statusScheduler'] = 'Submitted'
                                 j.runningJob['state'] = 'SubSuccess'
                                 parentIds.append( j.runningJob['schedulerParentId'] )
-                        self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
+                        self.log.info("FW %s Parent IDs for task %s: %s"%(self.myName, self.taskName, str(set(parentIds)) ) )
                         self.SendMLpost( task, sub_jobs[ii] )
                         self.blDBsession.updateDB( task )
                     errorTrace = ''
@@ -594,16 +594,16 @@ class FatWorker(Thread):
                 try:
                     task = self.blSchedSession.submit(task['id'], sub_jobs[ii], reqs_jobs[ii])
                 except SchedulerError, e:
-                    logMsg = "Worker %s. Problem submitting task %s. "%(self.myName, self.taskName)
+                    logMsg = "FW %s. Problem submitting task %s. "%(self.myName, self.taskName)
                     logMsg += str(e.description())
                     self.log.info( logMsg )
                     errorTrace = str( BossLiteLogger( task, e ) )
                     try:
                         self.preLog(logMsg, str(e.description()), 0, errorTrace)
                     except Exception, ee:
-                        self.log.error("Problem logging information: [%s]"%str(ee))
+                        self.log.error("FW %s Problem logging information: [%s]"%(self.myName,str(ee)))
                 except TimeOut, e:
-                    logMsg = "Worker %s. Problem submitting task %s. "%(self.myName, self.taskName)
+                    logMsg = "FW %s. Problem submitting task %s. "%(self.myName, self.taskName)
                     logMsg += str(e)+'\n'
                     logMsg += "PARTIAL SUBPROCESS MESSAGE : \n%s"%e.commandOutput() 
                     self.log.info( logMsg )
@@ -611,16 +611,16 @@ class FatWorker(Thread):
                     try:
                         self.preLog(logMsg, str(e.description()), 0, errorTrace)
                     except Exception, ee:
-                        self.log.error("Problem logging information: [%s]"%str(ee))
+                        self.log.error("FW %s Problem logging information: [%s]"%(self.myName,str(ee)))
                 except Exception, ee:
-                    logMsg = "Worker %s. Unexpected exception submitting task %s. "%(self.myName, self.taskName)
+                    logMsg = "FW %s. Unexpected exception submitting task %s. "%(self.myName, self.taskName)
                     logMsg +=  traceback.format_exc()
                     self.log.info( logMsg )
 
                 # check if submitted
-                self.log.info("Worker %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
+                self.log.info("FW %s. Errors: [%s]" %(self.myName, str(errorTrace)) )
                 if len(errorTrace) == 0:
-                    self.log.info("Worker %s. Setting sub success for %s " %(self.myName, str(len(task.jobs))) )
+                    self.log.info("FW %s. Setting sub success for %s " %(self.myName, str(len(task.jobs))) )
                     parentIds = []
                     for j in task.jobs:
                         self.blDBsession.getRunningInstance(j)
@@ -631,7 +631,7 @@ class FatWorker(Thread):
                             j.runningJob['statusScheduler'] = 'Submitted'
                             j.runningJob['state'] = 'SubSuccess'
                             parentIds.append( j.runningJob['schedulerParentId'] )
-                    self.log.info("Parent IDs for task %s: %s"%(self.taskName, str(set(parentIds)) ) )
+                    self.log.info("FW %s Parent IDs for task %s: %s"%(self.myName, self.taskName, str(set(parentIds)) ) )
                     self.SendMLpost( task, sub_jobs[ii] )
                     self.blDBsession.updateDB( task )
 
@@ -642,42 +642,42 @@ class FatWorker(Thread):
             unmatchedJobs, nonSubmittedJobs, skippedJobs):
 
         resubmissionList = list( set(submittableRange).difference(set(submittedJobs)) )
-        logMsg = "Worker. Task %s summary: \n "%self.taskName
+        logMsg = "FW %s. Task %s summary: \n "%(self.myName, self.taskName)
         logMsg +="\t\t  (%d jobs), submitted %d unmatched %d notSubmitted %d skipped %d"%(
             len(submittableRange), len(submittedJobs), len(unmatchedJobs), len(nonSubmittedJobs), len(skippedJobs) )
         self.log.info( logMsg )
-        self.log.debug("Task %s\n"%self.myName + "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
+        self.log.debug("FW %s\n"%self.myName + "jobs : %s \nsubmitted %s \nunmatched %s\nnotSubmitted %s\nskipped %s"%(str(submittableRange), \
             str(submittedJobs), str(unmatchedJobs), str(nonSubmittedJobs), str(skippedJobs) )   )
 
         ## if all the jobs have been submitted send a success message
         if len(resubmissionList) == 0 and len(unmatchedJobs + nonSubmittedJobs + skippedJobs) == 0:
-            messagelog = "Successful complete submission for task %s"%self.taskName
+            messagelog = "FW %s Successful complete submission for task %s"%(self.myName,self.taskName)
             self.sendResult(0, "Full Success for %s"%self.taskName, "Worker. %s"%messagelog )
             self.detailLog( submittableRange, submittedJobs, unmatchedJobs, skippedJobs )
             self.preLog(mess = messagelog)
             self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformed", self.taskName+"::"+messagelog))
 
-            self.log.info("Submitted jobs: " + str(submittedJobs))
+            self.log.info("FW %s Submitted jobs: "%self.myName + str(submittedJobs))
             for j in taskObj.jobs:
                 if j['jobId'] in submittedJobs:
                     try:
                         self.cwdb.updateWEStatus( j['name'], 'inProgress' )
                     except Exception, ex:
-                        logMsg = "Problem changing status for job "+str(j['name'])+"\n"
+                        logMsg = "FW %s Problem changing status for job "%slef.myName + str(j['name'])+"\n"
                         logMsg +=  traceback.format_exc()
                         self.log.info(logMsg)
                         continue
-            self.log.info("FatWorker %s registered jobs entities "%self.myName)
+            self.log.info("FW %s registered jobs entities "%self.myName)
             return
         else:
             ## some jobs need to be resubmitted later
             if len(submittedJobs) == 0:
                 self.sendResult(-1, "No jobs submitted for task %s"%self.taskName, \
-                    "Worker %s. No job submitted: %d more attempts will be performed"%(self.myName, self.resubCount))
+                    "FW %s. No job submitted: %d more attempts will be performed"%(self.myName, self.resubCount))
             else:
                 messagelog = "Partial submission: %d more attempts will be performed"%self.resubCount
                 self.local_queue.put((self.myName, "CrabServerWorkerComponent:CrabWorkPerformedPartial", self.taskName+"::"+messagelog))
-                self.sendResult(-2, "Partial Success for %s"%self.taskName, "Worker %s. %s"%(self.myName, messagelog))
+                self.sendResult(-2, "Partial Success for %s"%self.taskName, "FW %s. %s"%(self.myName, messagelog))
 
             # propagate the re-submission attempt
             self.resubCount -= 1
@@ -693,7 +693,7 @@ class FatWorker(Thread):
             self.markJobsAsFailed(taskObj, toMarkAsFailed)
             
             # Give up message
-            reason = "Worker %s has no more attempts: give up with task %s"%(self.myName, self.taskName)
+            reason = "FW %s has no more attempts: give up with task %s"%(self.myName, self.taskName)
             self.log.info( reason )
             status = "10"
             payload = "%s::%s::%s::%s"%(self.taskName, status, reason, "-1")
@@ -712,7 +712,7 @@ class FatWorker(Thread):
                 try:
                     self.blDBsession.getRunningInstance(j)
                 except Exception, exc: ## TODO handle proper exception
-                    self.log.info("Problem extracting running job for %s: '%s'"%(str(j),str(exc)))
+                    self.log.info("FW %s Problem extracting running job for %s: '%s'"%(self.myName,str(j),str(exc)))
                     continue
                 
                 try:
@@ -720,14 +720,14 @@ class FatWorker(Thread):
                     j.runningJob['closed'] = "Y"
                     self.blDBsession.updateDB( j )
                 except Exception, e:
-                    logMsg = "Problem updating BossLite status. Cannot mark task %s job %s as failed\n"%(self.taskName, str( j['jobId']))
+                    logMsg = "FW %s Problem updating BossLite status. Cannot mark task %s job %s as failed\n"%(self.myName, self.taskName, str( j['jobId']))
                     logMsg +=  traceback.format_exc()
                     self.log.info (logMsg)
 
                 try:
                     self.cwdb.updateWEStatus(j['name'], 'reallyFinished')
                 except Exception, e:
-                    logMsg = "Problem updating WE status.Cannot mark task %s job %s as failed\n"%(self.taskName, str( j['jobId']))
+                    logMsg = "FW %s Problem updating WE status.Cannot mark task %s job %s as failed\n"%(self.myName, self.taskName, str( j['jobId']))
                     logMsg +=  traceback.format_exc()
                     self.log.info (logMsg)
         return
@@ -810,17 +810,17 @@ class FatWorker(Thread):
                 try: 
                     sites = self.blSchedSession.getSchedulerInterface().matchResources(taskObj, requirements[sel])
                 except SchedulerError, e:
-                    logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
+                    logMsg = "FW %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
                     logMsg += str(e.description())+'\n'
                     logMsg += "Found sites: %s"%str(sites)
                     logMsg_dic[id_job] = ""+logMsg
                 except TimeOut, e:
-                    logMsg = "Worker %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
+                    logMsg = "FW %s. Problem performing List Match for task %s. "%(self.myName, self.taskName)
                     logMsg += str(e)+'\n'
                     logMsg += "Matchmaking timed out. Partial output: \n%s"%e.commandOutput() 
                     logMsg_dic[id_job] = ""+logMsg
                 except Exception, ee:
-                    logMsg = "Worker %s. Unexpected exception performing List Match for task %s. "%(self.myName, self.taskName)
+                    logMsg = "FW %s. Unexpected exception performing List Match for task %s. "%(self.myName, self.taskName)
                     logMsg +=  traceback.format_exc()
                     logMsg_dic[id_job] = ""+logMsg
 
@@ -1234,7 +1234,7 @@ class FatWorker(Thread):
         eve.dump( unifilename )
         message = "TTXmlLogging"
         payload  = taskname + "::" +str(jobid) + "::" + unifilename
-        self.log.info("Sending %s."%message)
+        self.log.info("FW %s Sending %s."%(self.myName,message))
         self.local_queue.put((self.myName, message, payload))
-        self.log.info("Registering information:\n%s"%str(diction))
+        self.log.info("FW %s Registering information:\n%s"%(self.myName,str(diction)))
 
