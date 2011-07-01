@@ -177,9 +177,9 @@ class CrabServerWorkerComponent:
                 while True:
                     try:
                         senderId, evt, pload = self.fwResultsQ.get_nowait()
-                        logging.info("Publishing " + str(evt))
+                        logging.info("CSW Publishing " + str(evt))
                         self.ms.publish(evt, pload)
-                        logging.debug("Publish Event: %s %s %s" % (senderId, evt, pload))
+                        logging.debug("CSW Publish Event: %s %s %s" % (senderId, evt, pload))
                     except Queue.Empty, e: break
 
                 # standard event handler
@@ -198,7 +198,7 @@ class CrabServerWorkerComponent:
 
         Define response to events
         """
-        logging.debug("Event: %s %s" % (event, payload))
+        logging.debug("CSW Event: %s %s" % (event, payload))
 
         # enqueue task submissions and perform them
         if event in ["CrabJobCreatorComponent:NewTaskRegistered", "TaskRegisterComponent:NewTaskRegistered", "ResubmitJob", "CRAB_Cmd_Mgr:NewCommand"]:
@@ -225,7 +225,7 @@ class CrabServerWorkerComponent:
             self.ms.publish("CrabServerWorker:HeartBeat","",self.HeartBeatDelay)
             self.ms.commit()
         else:
-            logging.info('Unknown message received %s'%event)
+            logging.info('CSW Unknown message received %s'%event)
 
         return
 
@@ -289,7 +289,7 @@ class CrabServerWorkerComponent:
             logging.info('CSW try to allocate thread:  %s'%thrName)
             self.workerSet[thrName] = FatWorker(logging, thrName, workerCfg)
         except Exception:
-            logging.info('Unable to allocate submission thread: %s'%thrName)
+            logging.info('CSW Unable to allocate submission thread: %s'%thrName)
             logging.info(traceback.format_exc())
         return
 
@@ -326,7 +326,7 @@ class CrabServerWorkerComponent:
         elif status in giveUpCodes:
             self.subStats['fail'] += 1
         else:
-            logging.info('Unknown status for worker message %s'%payload)
+            logging.info('CSW Unknown status for worker message %s'%payload)
 
         outcomeCounter = sum( self.subStats.values() )
         if (outcomeCounter % 20) == 0:
@@ -365,8 +365,8 @@ class CrabServerWorkerComponent:
                 job = task.jobs[0]
 
             except Exception, e:
-                logging.info("Unable to load task %s from BossLite."%taskName)
-                logging.info("Submission request won\'t be scheduled for taskId=%s, jobId=%s"%(str(taskId), str(jobId)) )
+                logging.info("CSW Unable to load task %s from BossLite."%taskName)
+                logging.info("CSW Submission request won\'t be scheduled for taskId=%s, jobId=%s"%(str(taskId), str(jobId)) )
                 logging.info(traceback.format_exc())
                 return
 
@@ -375,18 +375,18 @@ class CrabServerWorkerComponent:
                 self.cwdb.increaseSubmission( job['name'] )
                 retryCounter = self.cwdb.getWERemainingRetries( job['name'] )
             except Exception, e:
-                logging.info("Error while getting WF-Entities for job %s"%job['name'])
+                logging.info("CSW Error while getting WF-Entities for job %s"%job['name'])
 
             if retryCounter <= 0:
                 # no more re-submission attempts, give up.
                 try:
                     self.cwdb.updateWEStatus( job['name'], 'reallyFinished' )
                 except Exception, e:
-                    logging.info("Error while declaring WF-Entities failed for job %sfailed "%job['name'])
+                    logging.info("CSW Error while declaring WF-Entities failed for job %sfailed "%job['name'])
                     logging.info(str(e))
 
                 # Propagate info emulating a message in FW results queue
-                logging.info("Resubmission has no more attempts: give up with job %s"%job['name'])
+                logging.info("CSW Resubmission has no more attempts: give up with job %s"%job['name'])
                 status, reason = ("6", "Command for job %s has no more attempts. Give up."%job['name'])
                 payload = "%s::%s::%s::%s"%(taskName, status, reason, job['name'])
                 self.fwResultsQ.put(('', "CrabServerWorkerComponent:SubmitNotSucceeded", payload))
@@ -394,7 +394,7 @@ class CrabServerWorkerComponent:
 
         if len(taskName) > 0 :
             schedEntry = (event, taskName, cmdRng, str(retryCounter), siteToBan)
-            logging.debug( "Scheduling entry: %s" % str(schedEntry) )
+            logging.debug( "CSW Scheduling entry: %s" % str(schedEntry) )
             self.swSchedQ.put( schedEntry )
         else:
             if command != '' :
@@ -408,7 +408,7 @@ class CrabServerWorkerComponent:
         try:
             taskUniqName, rng = payload.split(':')
         except Exception:
-            logging.info('Failed to split the payload for the Kill request:%s'%payload)
+            logging.info('CSW Failed to split the payload for the Kill request:%s'%payload)
             return
 
         # remove stuff from persistence tables
@@ -422,7 +422,7 @@ class CrabServerWorkerComponent:
         try:
             self.blDBsession.loadTaskByName(taskUniqName)
         except Exception:
-            logging.info('Error while loading %s for fast kill'%taskUniqName )
+            logging.info('CSW Error while loading %s for fast kill'%taskUniqName )
 
         return
 
@@ -436,7 +436,7 @@ class CrabServerWorkerComponent:
             pickle.dump(self.subStats, f)
             f.close()
         except Exception, e:
-            logging.info("Error while materializing component status\n"+str(e))
+            logging.info("CSW Error while materializing component status\n"+str(e))
         return
 
     def dematerializeStatus(self):
@@ -448,7 +448,7 @@ class CrabServerWorkerComponent:
             if 'succ' not in self.subStats:
                 raise Exception()
         except Exception, e:
-            logging.info("Failed to open cw_status.set. Building a new status\n" + str(e) )
+            logging.info("CSW Failed to open cw_status.set. Building a new status\n" + str(e) )
             self.subStats = {'succ':0, 'retry':0, 'fail':0}
             self.materializeStatus()
         return
