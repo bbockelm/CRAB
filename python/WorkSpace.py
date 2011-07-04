@@ -47,6 +47,10 @@ class WorkSpace:
         # Matteo change in order to ban only "data" in "CMSSW" dir and 
         # not crash when short path is given    
         subpath = self._top_dir.split('CMSSW')
+        if len(subpath)!=1 and ("data" in subpath[-1].split("/")):
+            msg = 'Cannot run CRAB from "data" directory.\n'
+            msg += 'please change direcotry\n'
+            raise CrabException(msg)
 
         if not os.path.exists(self._top_dir):
             try:
