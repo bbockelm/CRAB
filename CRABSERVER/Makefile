@@ -19,6 +19,7 @@ SHARE_DIR=$(PREFIX)/share
 build:
 	cd $(PYTHON_SRC) && python setup.py build --build-lib=$(LIB_DIR)
 	/bin/cp $(SQL_SRC)/CrabServerDB/*.sql  $(SHARE_DIR)
+	/bin/cp $(PYTHON_SRC)/CommandManager/FrontendLoader_1_1.so  $(LIB_DIR)/CommandManager
 #	cd $(PYTHON_SRC)/CommandManager/server-side; make ; cd -	
 #	/bin/cp -R $(PYTHON_SRC)/CommandManager/. $(LIB_DIR)/CommandManager
 ifneq ($(BIN_DIR), $(BIN_SRC))
