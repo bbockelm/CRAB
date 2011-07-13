@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.372 2011/03/23 16:48:53 spiga Exp $"
-__version__ = "$Revision: 1.372 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.374 2011/07/04 16:57:45 spiga Exp $"
+__version__ = "$Revision: 1.374 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -87,7 +87,6 @@ class Cmssw(JobType):
         ### Temporary: added to remove input file control in the case of PU
         self.dataset_pu = cfg_params.get('CMSSW.dataset_pu', None)
 
-        #### FEDE ADDED CHECK FOR DATASETPATH ##############################################
         if not cfg_params.has_key('CMSSW.datasetpath'):
             msg = "Error: datasetpath not defined in the section [CMSSW] of crab.cfg file "
             raise CrabException(msg)
@@ -791,19 +790,25 @@ class Cmssw(JobType):
 
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            if  self.debug_wrapper==1 :
-                txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
-                txt += 'ls -Al \n'
-            else:
-                txt += 'tar zxf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
+            #### FEDE FOR BUG 78585 ##########
+            if  self.debug_wrapper==1 :
+                txt += 'echo "----------------" \n'
+                txt += 'ls -AlR $RUNTIME_AREA \n'
+                txt += 'echo "----------------" \n'
             txt += 'if [ $untar_status -ne 0 ]; then \n'
             txt += '   echo "ERROR ==> Untarring .tgz file failed"\n'
             txt += '   job_exit_code=$untar_status\n'
             txt += '   func_exit\n'
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
+            txt += '   chmod a+w -R $RUNTIME_AREA \n'
+            if  self.debug_wrapper==1 :
+                txt += '   echo "changed in a+w the permission of $RUNTIME_AREA "\n'
+                txt += '   ls -AlR $RUNTIME_AREA \n'
             txt += 'fi \n'
+            ###########################
             txt += '\n'
             txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
             txt += 'if [ -z "$PYTHONPATH" ]; then\n'
@@ -826,12 +831,16 @@ class Cmssw(JobType):
 
         txt = '\n#Written by cms_cmssw::wsBuildExe\n'
         txt += 'echo ">>> moving CMSSW software directories in `pwd`" \n'
-
-        txt += 'rm -r lib/ module/ \n'
+        
+        ############ FEDE FOR BUG 78585 #####################
+        txt += 'rm -rf lib/ module/ \n'
+        #######################################
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
         if self.dataExist == True:
-            txt += 'rm -r src/ \n'
+            ############ FEDE FOR BUG 78585 #####################
+            txt += 'rm -rf src/ \n'
+            ######################################
             txt += 'mv $RUNTIME_AREA/src/ . \n'
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
@@ -1159,7 +1168,6 @@ class Cmssw(JobType):
         if list : return self.output_file
         return txt
 
-    ### FEDE FOR SAVANNAH 79277 ###
     def checkCMSSWVersion(self, url = "https://cmstags.cern.ch/tc/", fileName = "ReleasesXML"):
         """
         compare current CMSSW release and arch with allowed releases
