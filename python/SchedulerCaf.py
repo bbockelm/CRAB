@@ -42,16 +42,24 @@ class SchedulerCaf(SchedulerLsf) :
         if (self.group): sched_param += ' -G '+str(self.group).upper() +' '
         return sched_param
 
-
-#    def wsSetupEnvironment(self):
-#        """
-#        Returns part of a job script which does scheduler-specific work.
-#        """
-#        txt = SchedulerLsf.wsSetupEnvironment(self)
-#        txt += '# CAF specific stuff\n'
-#        #txt += 'export STAGE_SVCCLASS=cmscaf \n'
-#        txt += '\n'
-#        return txt
+    ###### FEDE FOR 84387 bug ######
+    def wsSetupEnvironment(self):
+        #Returns part of a job script which does scheduler-specific work.
+        txt = SchedulerLsf.wsSetupEnvironment(self)
+        txt += '# CAF specific stuff\n'
+        txt += 'echo "----- ENV CAF BEFORE sourcing /afs/cern.ch/cms/caf/setup.sh  -----"\n'
+        txt += 'echo "CMS_PATH = $CMS_PATH"\n'
+        txt += 'echo "STAGE_SVCCLASS = $STAGE_SVCCLASS"\n'
+        txt += 'echo "STAGER_TRACE = $STAGER_TRACE"\n' 
+        txt += 'source /afs/cern.ch/cms/caf/setup.sh \n'
+        txt += '\n'
+        txt += 'echo "----- ENV CAF AFTER sourcing /afs/cern.ch/cms/caf/setup.sh  -----"\n'
+        txt += 'echo "CMS_PATH = $CMS_PATH"\n'
+        txt += 'echo "STAGE_SVCCLASS = $STAGE_SVCCLASS"\n'
+        txt += 'echo "STAGER_TRACE = $STAGER_TRACE"\n' 
+        txt += '\n'
+        return txt
+    #############################
 
     def wsCopyOutput(self):
         ### default is the name of the storage pool 
