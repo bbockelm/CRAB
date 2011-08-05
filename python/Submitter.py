@@ -95,9 +95,20 @@ class Submitter(Actor):
         common.logger.debug('nj_list '+str(nj_list))
         self.nj_list = nj_list
         if self.limitJobs and len(self.nj_list) > 500:
+            ###### FEDE FOR BUG 85243 ############## 
             msg = "The CRAB client will not submit more than 500 jobs.\n"
-            msg += "Use the server mode or submit your jobs in smaller groups"
+            msg += "      Use the server mode or submit your jobs in smaller groups"
+            add = '\n'
+            import shutil
+            try:
+                add += '      --->> Removing the working_dir ' +  common.work_space._top_dir + ' \n'
+                shutil.rmtree(common.work_space._top_dir)
+            except OSError:
+                add += '      Warning: problems removing the working_dir ' + common.work_space._top_dir + ' \n'
+                add += '      Please remove it by hand.'
+            msg += add
             raise CrabException(msg)
+            ########################################
         return
 
     def run(self):
