@@ -24,6 +24,7 @@ The most useful general options (use '-h' to get complete help):
   -getoutput|-get [range]                 -- get back the output of all jobs: if range is defined, only of selected jobs.
   -extend                                 -- Extend an existing task to run on new fileblocks if there.
   -publish                                -- after the getouput, publish the data user in a local DBS instance.
+  -publishNoInp                           -- after the getoutput, publish the data user in the local DBS instance removing input data file
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
   -kill [range]                           -- kill submitted jobs.
   -resubmit range or all                  -- resubmit killed/aborted/retrieved jobs.
@@ -36,7 +37,7 @@ The most useful general options (use '-h' to get complete help):
   -report                                 -- print a short report about the task
   -list [range]                           -- show technical job details.
   -postMortem [range]                     -- provide a file with information useful for post-mortem analysis of the jobs.
-  -printId [range]                        -- print the job SID or Task Unique ID while using the server.
+  -printId [range or full]                -- print the job SID or Task Unique ID while using the server (full to get the SIDs)
   -createJdl [range]                      -- provide files with a complete Job Description (JDL).
   -validateCfg [fname]                    -- parse the ParameterSet using the framework's Python API.
   -cleanCache                             -- clean SiteDB and CRAB caches.
@@ -98,7 +99,7 @@ Please, read all the way through in any case!
 
 Source B<crab.(c)sh> from the CRAB installation area, which have been setup either by you or by someone else for you.
 
-Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/crab.cfg>
+Modify the CRAB configuration file B<crab.cfg> according to your need: see below for a complete list. A template and commented B<crab.cfg> can be found on B<$CRABDIR/python/full_crab.cfg> (detailed cfg) and B<$CRABDIR/python/minimal_crab.cfg> (only basic parameters) 
 
 ~>crab -create
   create all jobs (no submission!)
@@ -245,7 +246,7 @@ scheduler = condor_g
 =head1 HOW TO RUN ON NORDUGRID ARC
 
 The ARC scheduler can be used to submit jobs to sites running the NorduGrid
-ARC grid middleware. To use it you'll need to have the ARC client
+ARC grid middleware. To use it you need to have the ARC client
 installed.
 
 =head2 B<CRAB configuration for ARC mode:>
@@ -365,7 +366,7 @@ If using the server modality, this command allows to delegate a valid credential
 
 =head2 B<-match|-testJdl [range]>
 
-Check if the job can find compatible resources. It is equivalent of doing I<edg-job-list-match> on edg.
+Check if the job can find compatible resources. It is equivalent of doing I<glite-wms-job-list-match> on edg.
 
 =head2 B<-printId [range]>
 
@@ -378,6 +379,7 @@ Collect the full Job Description in a file located under share directory. The fi
 =head2 B<-postMortem [range]>
 
 Try to collect more information of the job from the scheduler point of view.
+And this is the only way to obtain info about failure reason of aborted jobs.
 
 =head2 B<-list [range]>
 
@@ -403,7 +405,7 @@ It can optionally take a job id as input. It does not allow job ranges/lists.
 
 Uploaded files are: crab.log, crab.cfg, job logging info, summary file and a metadata file.
 If you specify the jobid, also the job standard output and fjr will be uploaded. Warning: in this case you need to run the getoutput before!!
-In the case of aborted jobs you can upload the postMortem file, creating it with crab -postMortem jobid and then uploading files specifying the jobid number.
+In the case of aborted jobs you have to upload the postMortem file too, creating it with crab -postMortem jobid and then uploading files specifying the jobid number. 
 
 =head2 B<-validateCfg [fname]>
 
@@ -445,12 +447,13 @@ Mandatory parameters are flagged with a *.
 
 The type of the job to be executed: I<cmssw> jobtypes are supported
 
-The scheduler to be used: I<glitecoll> is the more efficient grid scheduler and should be used. Other choice are I<glite>, same as I<glitecoll> but without bulk submission (and so slower) or I<condor_g> (see specific paragraph) or I<edg> which is the former Grid scheduler, which will be dismissed in some future.  In addition, there's an I<arc> scheduler to be used with the NorduGrid ARC middleware.
-From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities.
+=head3 B<scheduler *>
+The scheduler to be used: <glite> or I<condor_g> (see specific paragraph) Grid schedulers to be used with glite or osg middleware. In addition, there's an I<arc> scheduler to be used with the NorduGrid ARC middleware.
+From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities. I<condor> is the scheduler to submit jobs to US LPC CAF.
 
 =head3 B<use_server>
 
-To use the server for job handling (recommended) 0=no (default), 1=true. The server to be used will be found automatically from a list of available ones: it can also be specified explicitly by using I<server_name> (see below)
+To use the server for job handling (recommended) 0=no (default), 1=true. The server to be used will be found automatically from a list of available ones: it can also be specified explicitly by using I<server_name> (see below). The server usage is compulsory for task with a number of created jobs > 500.
 
 =head3 B<server_name>
 
@@ -604,10 +607,14 @@ Any additional input file you want to ship to WN: comma separated list. IMPORTAN
 =head3 B<script_exe>
 
 A user script that will be run on WN (instead of default cmsRun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.py will be placed in the working directory, with name pset.py . The user must ensure that a properly name job report will be written, this can be done e.g. by calling cmsRun within the script as "cmsRun -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p pset.py". The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.
+Arguments: CRAB does automatically pass the job index as the first argument of script_exe.
+The MaxEvents number is set by CRAB in the environment variable "$MaxEvents". So the script can reads this value directly from there.
 
 =head3 B<script_arguments>
 
 Any arguments you want to pass to the B<USER.script_exe>:  comma separated list.
+CRAB does automatically pass the job index as the first argument of script_exe.
+The MaxEvents number is set by CRAB in the environment variable "$MaxEvents". So the script can read this value directly from there.
 
 =head3 B<ui_working_dir>
 
@@ -623,7 +630,7 @@ The server will notify the specified e-mail when the task will reaches the speci
 
 =head3 B<client>
 
-Specify the client that can be used to interact with the server in B<CRAB.server_name>. The default is the value in the server configuration.
+Specify the client storage protocol that can be used to interact with the server in B<CRAB.server_name>. The default is the value in the server configuration.
 
 =head3 B<return_data *>
 
@@ -639,7 +646,7 @@ To be used together with I<return_data>. Directory on user interface where to st
 
 =head3 B<copy_data *>
 
-The output (only that produced by the executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recommended in case of large output.
+The output (only the file produced by the analysis executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recommended in case of large output.
 
 =head3 B<storage_element>
 
@@ -657,12 +664,6 @@ This is the directory or tree of directories where your output will be stored. T
 
 To be used with <copy_data>=1 and <storage_element> not official CMS sites.
 This is the full path of the Storage Element writeable by all, the mountpoint of SE (i.e /srm/managerv2?SFN=/pnfs/se.xxx.infn.it/yyy/zzz/)
-
-
-=head3 B<storage_pool>
-
-If you are using CAF scheduler, you can specify the storage pool where to write your output.
-The default is cmscafuser. If you do not want to use the default, you can overwrite it specifing None
 
 =head3 B<storage_port>
 
@@ -688,10 +689,6 @@ You produced output will be published in your local DBS with dataset name <prima
 
 Specify the URL of your local DBS istance where CRAB has to publish the output files
 
-
-=head3 B<srm_version>
-
-To choose the srm version specify I<srm_version> =  (srmv1 or srmv2).
 
 =head3 B<xml_report>
 
