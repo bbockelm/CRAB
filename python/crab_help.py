@@ -445,40 +445,40 @@ Mandatory parameters are flagged with a *.
 
 =head3 B<jobtype *>
 
-The type of the job to be executed: I<cmssw> jobtypes are supported
+The type of the job to be executed: I<cmssw> jobtypes are supported. No default value.
 
 =head3 B<scheduler *>
 The scheduler to be used: <glite> or I<condor_g> (see specific paragraph) Grid schedulers to be used with glite or osg middleware. In addition, there's an I<arc> scheduler to be used with the NorduGrid ARC middleware.
-From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities. I<condor> is the scheduler to submit jobs to US LPC CAF.
+From version 210, also local scheduler are supported, for the time being only at CERN. I<LSF> is the standard CERN local scheduler or I<CAF> which is LSF dedicated to CERN Analysis Facilities. I<condor> is the scheduler to submit jobs to US LPC CAF. No default value.
 
 =head3 B<use_server>
 
-To use the server for job handling (recommended) 0=no (default), 1=true. The server to be used will be found automatically from a list of available ones: it can also be specified explicitly by using I<server_name> (see below). The server usage is compulsory for task with a number of created jobs > 500.
+To use the server for job handling (recommended) 0=no (default), 1=true. The server to be used will be found automatically from a list of available ones: it can also be specified explicitly by using I<server_name> (see below). The server usage is compulsory for task with a number of created jobs > 500. Default value = 0.
 
 =head3 B<server_name>
 
 To use the CRAB-server support it is needed to fill this key with server name as <Server_DOMAIN> (e.g. cnaf,fnal). If this is set, I<use_server> is set to true automatically.
 If I<server_name=None> crab works in standalone way, same as using I<use_server=0> and no I<server_name>.
-The server available to users can be found from CRAB web page.
+The server available to users can be found from CRAB web page. No default value.
 
 =head2 B<[CMSSW]>
 
 =head3 B<datasetpath *>
 
-The path of the processed or analysis dataset as defined in DBS. It comes with the format I</PrimaryDataset/DataTier/Process[/OptionalADS]>. If no input is needed I<None> must be specified. When running on an analysis dataset, the job splitting must be specified by luminosity block rather than event. Analysis datasets are only treated accurately on a lumi-by-lumi level with CMSSW 3_1_x and later.
+The path of the processed or analysis dataset as defined in DBS. It comes with the format I</PrimaryDataset/DataTier/Process[/OptionalADS]>. If no input is needed I<None> must be specified. When running on an analysis dataset, the job splitting must be specified by luminosity block rather than event. Analysis datasets are only treated accurately on a lumi-by-lumi level with CMSSW 3_1_x and later. No default value.
 
 =head3 B<runselection *>
 
-Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 . Run number range will include both run XYZ1 and XYZ2. Combining runselection with a lumi_mask runs on the intersection of the two lists.
+Within a dataset you can restrict to run on a specific run number or run number range. For example runselection=XYZ or runselection=XYZ1-XYZ2 . Run number range will include both run XYZ1 and XYZ2. Combining runselection with a lumi_mask runs on the intersection of the two lists. No default value
 
 =head3 B<use_parent>
 
 Within a dataset you can ask to run over the related parent files too. E.g., this will give you access to the RAW data while running over a RECO sample. Setting use_parent=1 CRAB determines the parent files from DBS and will add secondaryFileNames = cms.untracked.vstring( <LIST of parent FIles> ) to the pool source section of your parameter set.
-This setting is supposed to works both with Splitting by Lumis and Splitting by Events.
+This setting is supposed to works both with Splitting by Lumis and Splitting by Events. Default value = 0. 
 
 =head3 B<pset *>
 
-The python ParameterSet to be used.
+The python ParameterSet to be used. No default value.
 
 =head3 B<pycfg_params *>
 
@@ -486,7 +486,7 @@ These parameters are passed to the python config file, as explained in https://t
 
 =head3 B<lumi_mask>
 
-The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use the split by lumi settings rather than split by event as described below. Combining runselection with a lumi_mask runs on the intersection of the two lists.
+The filename of a JSON file that describes which runs and lumis to process. CRAB will skip luminosity blocks not listed in the file. When using this setting, you must also use the split by lumi settings rather than split by event as described below. Combining runselection with a lumi_mask runs on the intersection of the two lists. No default value.
 
 =head3 B<Splitting jobs by Lumi>
 
@@ -498,55 +498,55 @@ The filename of a JSON file that describes which runs and lumis to process. CRAB
 
 =head4 B<total_number_of_lumis *>
 
-The number of luminosity blocks to be processed. -1 for processing a whole dataset. Your task will process this many lumis regardless of how the jobs are actually split up. If you do not specify this, the total number of lumis processed will be number_of_jobs x lumis_per_job.
+The number of luminosity blocks to be processed. -1 for processing a whole dataset. Your task will process this many lumis regardless of how the jobs are actually split up. If you do not specify this, the total number of lumis processed will be number_of_jobs x lumis_per_job. No default value
 
 =head4 B<lumis_per_job *>
 
-The number of luminosity blocks to be accessed by each job. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for.
+The number of luminosity blocks to be accessed by each job. Since a job cannot access less than a whole file, it may be that the actual number of lumis per job is more than you asked for. NO default value
 
 =head4 B<number_of_jobs *>
 
-Define the number of jobs to be run for the task. This parameter is common between split by lumi and split by event modes. In split by lumi mode, the number of jobs will only approximately match this value.
+Define the number of jobs to be run for the task. This parameter is common between split by lumi and split by event modes. In split by lumi mode, the number of jobs will only approximately match this value. No default value
 
 =head3 B<Splitting jobs by Event>
 
 =over 4
 
-=item B<NOTE: Exactly two of these three parameters must be used: total_number_of_events, events_per_job, number_of_jobs.> Otherwise CRAB will complain. Only MC data can be split by event.
+=item B<NOTE: Exactly two of these three parameters must be used: total_number_of_events, events_per_job, number_of_jobs.> Otherwise CRAB will complain. Only MC data can be split by event. No default value
 
 =back
 
 =head4 B<total_number_of_events *>
 
-The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>.
+The number of events to be processed. To access all available events, use I<-1>. Of course, the latter option is not viable in case of no input. In this case, the total number of events will be used to split the task in jobs, together with I<events_per_job>. No default value.
 
 =head4 B<events_per_job*>
 
-The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input.
+The number of events to be accessed by each job. Since a job cannot cross the boundary of a fileblock it might be that the actual number of events per job is not exactly what you asked for. It can be used also with no input. No default value.
 
 =head4 B<number_of_jobs *>
 
-Define the number of jobs to be run for the task. The number of events for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input.
+Define the number of jobs to be run for the task. The number of events for each job is computed taking into account the total number of events required as well as the granularity of EventCollections. Can be used also with No input. No default value.
 
 =head4 B<split_by_event *>
 
-This setting is for experts only. If you don't know why you want to use it, you don't want to use it.  Set the value to 1 to enabe split by event on data. CRAB then behaves like old versions of CRAB which did not enforce split by lumi for data.
+This setting is for experts only. If you don't know why you want to use it, you don't want to use it.  Set the value to 1 to enabe split by event on data. CRAB then behaves like old versions of CRAB which did not enforce split by lumi for data. Default value = 0.
 
 =head3 B<split_by_run>
 
-To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not available.
+To activate the split run based (each job will access a different run) use I<split_by_run>=1. You can also define I<number_of_jobs>  and/or I<runselection>. NOTE: the Run Based combined with Event Based split is not available. Default value = 0.
 
 =head3 B<output_file *>
 
-The output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can user I<ignore_edm_output=1>.
+The output files produced by your application (comma separated list). From CRAB 2_2_2 onward, if TFileService is defined in user Pset, the corresponding output file is automatically added to the list of output files. User can avoid this by setting B<skip_TFileService_output> = 1 (default is 0 == file included). The Edm output produced via PoolOutputModule can be automatically added by setting B<get_edm_output> = 1 (default is 0 == no). B<warning> it is not allowed to have a PoolOutputSource and not save it somewhere, since it is a waste of resource on the WN. In case you really want to do that, and if you really know what you are doing (hint: you dont!) you can user I<ignore_edm_output=1>. No default value.
 
 =head3 B<skip_TFileService_output>
 
-Force CRAB to skip the inclusion of file produced by TFileService to list of output files. Default is I<0>, namely the file is included.
+Force CRAB to skip the inclusion of file produced by TFileService to list of output files. Default value = 0, namely the file is included.
 
 =head3 B<get_edm_output>
 
-Force CRAB to add the EDM output file, as defined in PSET in PoolOutputModule (if any) to be added to the list of output files. Default is 0 (== no inclusion)
+Force CRAB to add the EDM output file, as defined in PSET in PoolOutputModule (if any) to be added to the list of output files. Default value = 0 (== no inclusion)
 
 =head3 B<increment_seeds>
 
@@ -569,7 +569,7 @@ Relevant only for Monte Carlo production for which it defaults to 1. The first j
 increment the lumi block number. Setting this number to 0 (not recommend) means CMSSW will not be able to read multiple such files as they
 will all have the same run, lumi and event numbers. This check in CMSSW can be bypassed by setting
 I<process.source.duplicateCheckMode = cms.untracked.string('noDuplicateCheck')> in the input source, should you need to
-read files produced without setting first_run (in old versions of CRAB) or first_lumi.
+read files produced without setting first_run (in old versions of CRAB) or first_lumi. Default value = 1.
 
 =head3 B<generator>
 
@@ -578,13 +578,13 @@ Possible values are pythia (default), comphep, lhe, and madgraph. This will skip
 
 =head3 B<executable>
 
-The name of the executable to be run on remote WN. The default is cmsrun. The executable is either to be found on the release area of the WN, or has been built on user working area on the UI and is (automatically) shipped to WN. If you want to run a script (which might internally call I<cmsrun>, use B<USER.script_exe> instead.
+The name of the executable to be run on remote WN. The default is cmsrun. The executable is either to be found on the release area of the WN, or has been built on user working area on the UI and is (automatically) shipped to WN. If you want to run a script (which might internally call I<cmsrun>, use B<USER.script_exe> instead. Default value = cmsRun. 
 
 =head3 I<DBS and DLS parameters:>
 
 =head3 B<dbs_url>
 
-The URL of the DBS query page. For expert only.
+The URL of the DBS query page. For expert only. Default value the global DBS http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet
 
 =head3 B<show_prod>
 
@@ -596,37 +596,37 @@ By setting the flag I<subscribed> = 1 only the replicas that are subscribed to i
 
 =head3 B<no_block_boundary>
 
-To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1.
+To remove fileblock boundaries in job splitting specify I<no_block_boundary> = 1. Default value = 0.
 
 =head2 B<[USER]>
 
 =head3 B<additional_input_files>
 
-Any additional input file you want to ship to WN: comma separated list. IMPORTANT NOTE: they will be placed in the WN working dir, and not in ${CMS_SEARCH_PATH}. Specific files required by CMSSW application must be placed in the local data directory ($CMSSW_BASE/src/data), which will be automatically shipped by CRAB itself, without specifying them as additional_input_files. You do not need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed.
+Any additional input file you want to ship to WN: comma separated list. IMPORTANT NOTE: they will be placed in the WN working dir, and not in ${CMS_SEARCH_PATH}. Specific files required by CMSSW application must be placed in the local data directory ($CMSSW_BASE/src/data), which will be automatically shipped by CRAB itself, without specifying them as additional_input_files. You do not need to specify the I<ParameterSet> you are using, which will be included automatically. Wildcards are allowed. No default value. 
 
 =head3 B<script_exe>
 
 A user script that will be run on WN (instead of default cmsRun). It is up to the user to setup properly the script itself to run on WN enviroment. CRAB guarantees that the CMSSW environment is setup (e.g. scram is in the path) and that the modified pset.py will be placed in the working directory, with name pset.py . The user must ensure that a properly name job report will be written, this can be done e.g. by calling cmsRun within the script as "cmsRun -j $RUNTIME_AREA/crab_fjr_$NJob.xml -p pset.py". The script itself will be added automatically to the input sandbox so user MUST NOT add it within the B<USER.additional_input_files>.
 Arguments: CRAB does automatically pass the job index as the first argument of script_exe.
-The MaxEvents number is set by CRAB in the environment variable "$MaxEvents". So the script can reads this value directly from there.
+The MaxEvents number is set by CRAB in the environment variable "$MaxEvents". So the script can reads this value directly from there. No default value.
 
 =head3 B<script_arguments>
 
 Any arguments you want to pass to the B<USER.script_exe>:  comma separated list.
 CRAB does automatically pass the job index as the first argument of script_exe.
-The MaxEvents number is set by CRAB in the environment variable "$MaxEvents". So the script can read this value directly from there.
+The MaxEvents number is set by CRAB in the environment variable "$MaxEvents". So the script can read this value directly from there. No default value. 
 
 =head3 B<ui_working_dir>
 
-Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if e.g. the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well.
+Name of the working directory for the current task. By default, a name I<crab_0_(date)_(time)> will be used. If this card is set, any CRAB command which require I<-continue> need to specify also the name of the working directory. A special syntax is also possible, to reuse the name of the dataset provided before: I<ui_working_dir : %(dataset)s> . In this case, if e.g. the dataset is SingleMuon, the ui_working_dir will be set to SingleMuon as well. Default value = crab_0_(date)_(time).
 
 =head3 B<thresholdLevel>
 
-This has to be a value between 0 and 100, that indicates the percentage of task completeness (jobs in a ended state are complete, even if failed). The server will notify the user by e-mail (look at the field: B<eMail>) when the task will reach the specified threshold. Works just when using the server.
+This has to be a value between 0 and 100, that indicates the percentage of task completeness (jobs in a ended state are complete, even if failed). The server will notify the user by e-mail (look at the field: B<eMail>) when the task will reach the specified threshold. Works just when using the server. Default value = 100.
 
 =head3 B<eMail>
 
-The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sent when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just when using the server.
+The server will notify the specified e-mail when the task will reaches the specified B<thresholdLevel>. A notification is also sent when the task will reach the 100\% of completeness. This field can also be a list of e-mail: "B<eMail = user1@cern.ch, user2@cern.ch>". Works just when using the server. No default value.
 
 =head3 B<client>
 
@@ -634,7 +634,7 @@ Specify the client storage protocol that can be used to interact with the server
 
 =head3 B<return_data *>
 
-The output produced by the executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accommodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>.
+The output produced by the executable on WN is returned (via output sandbox) to the UI, by issuing the I<-getoutput> command. B<Warning>: this option should be used only for I<small> output, say less than 10MB, since the sandbox cannot accommodate big files. Depending on Resource Broker used, a size limit on output sandbox can be applied: bigger files will be truncated. To be used in alternative to I<copy_data>. Default value = 0. 
 
 =head3 B<outputdir>
 
@@ -646,14 +646,14 @@ To be used together with I<return_data>. Directory on user interface where to st
 
 =head3 B<copy_data *>
 
-The output (only the file produced by the analysis executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recommended in case of large output.
+The output (only the file produced by the analysis executable, not the std-out and err) is copied to a Storage Element of your choice (see below). To be used as an alternative to I<return_data> and recommended in case of large output. Default value = 0.
 
 =head3 B<storage_element>
 
 To be used with <copy_data>=1
 If you want to copy the output of your analysis in a official CMS Tier2 or Tier3, you have to write the CMS Site Name of the site, as written in the SiteDB https://cmsweb.cern.ch/sitedb/reports/showReport?reportid=se_cmsname_map.ini (i.e T2_IT_legnaro). You have also to specify the <remote_dir>(see below)
 
-If you want to copy the output in a not_official_CMS remote site you have to specify the complete storage element name (i.e se.xxx.infn.it).You have also to specify the <storage_path> and the <storage_port> if you do not use the default one(see below).
+If you want to copy the output in a not_official_CMS remote site you have to specify the complete storage element name (i.e se.xxx.infn.it).You have also to specify the <storage_path> and the <storage_port> if you do not use the default one(see below). No default value.
 
 =head3 B<user_remote_dir>
 
@@ -664,14 +664,15 @@ This is the directory or tree of directories where your output will be stored. T
 
 To be used with <copy_data>=1 and <storage_element> not official CMS sites.
 This is the full path of the Storage Element writeable by all, the mountpoint of SE (i.e /srm/managerv2?SFN=/pnfs/se.xxx.infn.it/yyy/zzz/)
+No default value.
 
 =head3 B<storage_port>
 
-To choose the storage port specify I<storage_port> = N (default is 8443) .
+To choose the storage port specify I<storage_port> = N. Default value = 8443.
 
 =head3 B<local_stage_out *>
 
-This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1
+This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1. Default value = 0.
 
 =head3 B<publish_data*>
 
@@ -680,27 +681,28 @@ To publish your produced output in a local istance of DBS set publish_data = 1
 All the details about how to use this functionality are written in https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication
 N.B 1) if you are using an official CMS site to stored data, the remote dir will be not considered. The directory where data will be stored is decided by CRAB, following the CMS policy in order to be able to re-read published data.
 2) if you are using a not official CMS site to store data, you have to check the <lfn>, that will be part of the logical file name of you published files, in order to be able to re-read the data.
+Default value = 0.
 
 =head3 B<publish_data_name>
 
-You produced output will be published in your local DBS with dataset name <primarydataset>/<publish_data_name>/USER
+You produced output will be published in your local DBS with dataset name <primarydataset>/<publish_data_name>/USER. No default value.
 
 =head3 B<dbs_url_for_publication>
 
-Specify the URL of your local DBS istance where CRAB has to publish the output files
+Specify the URL of your local DBS istance where CRAB has to publish the output files. No default value.
 
 
 =head3 B<xml_report>
 
-To be used to switch off the screen report during the status query, enabling the db serialization in a file. Specifying I<xml_report> = FileName CRAB will serialize the DB into CRAB_WORKING_DIR/share/FileName.
+To be used to switch off the screen report during the status query, enabling the db serialization in a file. Specifying I<xml_report> = FileName CRAB will serialize the DB into CRAB_WORKING_DIR/share/FileName. No default value.
 
 =head3 B<usenamespace>
 
-To use the automate namespace definition (perfomed by CRAB) it is possible to set I<usenamespace>=1. The same policy used for the stage out in case of data publication will be applied.
+To use the automate namespace definition (perfomed by CRAB) it is possible to set I<usenamespace>=1. The same policy used for the stage out in case of data publication will be applied. Default value = 0.
 
 =head3 B<debug_wrapper>
 
-To enable the higer verbose level on wrapper specify I<debug_wrapper> = 1. The Pset contents before and after the CRAB maipulation will be written together with other useful infos.
+To enable the higer verbose level on wrapper specify I<debug_wrapper> = 1. The Pset contents before and after the CRAB maipulation will be written together with other useful infos. Default value = 0.
 
 =head3 B<deep_debug>
 
@@ -712,27 +714,26 @@ Set it to 1 to skip the check of free space left on your working directory befor
 
 =head3 B<check_user_remote_dir>
 
-To avoid stage out failures CRAB checks the remote location content at the creation time. By setting I<check_user_remote_dir>=0  crab will skip the check.
+To avoid stage out failures CRAB checks the remote location content at the creation time. By setting I<check_user_remote_dir>=0  crab will skip the check. Default value = 0.
 
 =head3 B<tasktype>
 
-Expert only parameter. Not to be used.
+Expert only parameter. Not to be used. Default value = analysis.
 
 =head2 B<[GRID]>
 
 =head3 B<RB>
 
-Which RB you want to use instead of the default one, as defined in the configuration of your UI. The ones available for CMS are I<CERN> and I<CNAF>. They are actually identical, being a collection of all WMSes available for CMS: the configuration files needed to change the broker will be automatically downloaded from CRAB web page and used.
-You can use any other RB which is available, if you provide the proper configuration files. E.g., for gLite WMS XYZ, you should provide I<glite.conf.CMS_XYZ>. These files are searched for in the current working directory, and, if not found, on crab web page. So, if you put your private configuration files in the working directory, they will be used, even if they are not available on crab web page.
-Please get in contact with crab team if you wish to provide your RB or WMS as a service to the CMS community.
+Which WMS you want to use instead of the default one, as defined in the configuration file automatically downloaded by CRAB from CMSDOC web page. You can use any other WMS which is available, if you provide the proper configuration files. E.g., for gLite WMS XYZ, you should provide I< 0_GET_glite_wms_XXX.conf> where XXX is the RB value. These files are searched for in the cache dir (~/.cms_crab), and, if not found, on cmsdoc web page. So, if you put your private configuration files in the cache dir, they will be used, even if they are not available on crab web page. 
+Please get in contact with crab team if you wish to provide your WMS as a service to the CMS community.
 
 =head3 B<role>
 
-The role to be set in the VOMS. See VOMS documentation for more info.
+The role to be set in the VOMS. See VOMS documentation for more info. No default value.
 
 =head3 B<group>
 
-The group to be set in the VOMS, See VOMS documentation for more info.
+The group to be set in the VOMS, See VOMS documentation for more info. No default value.
 
 =head3 B<dont_check_proxy>
 
@@ -740,32 +741,33 @@ If you do not want CRAB to check your proxy. The creation of the proxy (with pro
 
 =head3 B<dont_check_myproxy>
 
-If you want to to switch off only the proxy renewal set I<dont_check_myproxy>=1. The proxy delegation to a myproxyserver is your responsibility.
+If you want to to switch off only the proxy renewal set I<dont_check_myproxy>=1. The proxy delegation to a myproxyserver is your responsibility. Default value = 0.
 
 =head3 B<requirements>
 
-Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set.
+Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set. No default value.
 
 =head3 B<additional_jdl_parameters:>
 
 Any other parameters you want to add to jdl file:semicolon separated list, each
-head3 B<must> be complete, including the closing ";".
+head3 B<must> be complete, including the closing ";". No default value.
 
 =head3 B<wms_service>
 
-With this field it is also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server".
+With this field it is also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server". No default value.
 
 =head3 B<max_cpu_time>
 
-Maximum CPU time needed to finish one job. It will be used to select a suitable queue on the CE. Time in minutes.
+Maximum CPU time needed to finish one job. It will be used to select a suitable queue on the CE. Time in minutes. Default value = 130.
 
 =head3 B<max_wall_clock_time>
 
-Same as previous, but with real time, and not CPU one.
+Same as previous, but with real time, and not CPU one. No default value.
 
 =head3 B<ce_black_list>
 
 All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
+By default T0 and T1s site are in blacklist. 
 
 =head3 B<ce_white_list>
 
@@ -774,6 +776,7 @@ Only the CE (Computing Element) whose name contains the following strings (comma
 =head3 B<se_black_list>
 
 All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
+By default T0 and T1s site are in blacklist. 
 
 =head3 B<se_white_list>
 
@@ -781,7 +784,7 @@ Only the SE (Storage Element) whose name contains the following strings (comma s
 
 =head3 B<remove_default_blacklist>
 
-CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1.
+CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1. Default value = 0.
 
 =head3 B<virtual_organization>
 
@@ -793,7 +796,7 @@ Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actua
 
 =head3 B<skipwmsauth>
 
-Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problmes  will disappear. It is needed working on gLite UI outside of CERN.
+Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problems  will disappear. It is needed working on gLite UI outside of CERN.
 
 =head2 B<[LSF]> or B<[CAF]> or B<[PBS]> or B<[SGE]>
 
