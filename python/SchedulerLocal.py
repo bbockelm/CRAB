@@ -111,6 +111,23 @@ class SchedulerLocal(Scheduler) :
 
             stageout = PhEDExDatasvcInfo(self.cfg_params)
             endpoint, lfn, SE, SE_PATH, user = stageout.getEndpoint()
+            print "endpoint = ", endpoint
+
+            ########################################################
+            ##################### FEDE FOR CAF #####################
+            cmscp_args = '' 
+            if  common.scheduler.name().upper() == 'CAF':
+                    if endpoint.find('root:') != -1:
+                        SE_PATH = '/' + endpoint.split('//')[2]
+                        caf_protocol = 'xrootd'
+                        cmscp_args += '--protocol %s '%caf_protocol
+                    elif endpoint.find('rfio:') != -1:
+                        SE_PATH = endpoint.split('path=')[1]
+                        caf_protocol = 'rfio'
+                        cmscp_args += '--protocol %s '%caf_protocol
+            ########################################################            
+            ########################################################            
+
             if self.check_RemoteDir == 1 :
                 self.checkRemoteDir(endpoint,jbt.outList('list') )
 
@@ -126,18 +143,19 @@ class SchedulerLocal(Scheduler) :
             txt += 'echo "LFNBaseName = $LFNBaseName"\n'
             txt += 'export USER='+user+'\n'
             txt += 'echo "USER = $USER"\n'
-            txt += 'export endpoint='+endpoint+'\n'
+            txt += 'export endpoint='+"'"+endpoint+"'"+'\n'
             txt += 'echo "endpoint = $endpoint"\n'
-            ### Needed i.e. for caf
+            
             if (pool) and (pool != 'None'):
                 txt += 'export STAGE_SVCCLASS='+str(pool)+'\n'
 
             txt += 'echo ">>> Copy output files from WN = `hostname` to $SE_PATH :"\n'
             txt += 'export TIME_STAGEOUT_INI=`date +%s` \n'
             txt += 'copy_exit_status=0\n'
-            cmscp_args = ' --destination $endpoint --inputFileList $file_list'
-            ### FEDE FOR MULTI #### 
-            #cmscp_args +=' --middleware $middleware --lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
+            #### FEDE added += ######### 
+            cmscp_args += ' --destination $endpoint --inputFileList $file_list'
+            #######################################################
+            #######################################################
             cmscp_args +=' --middleware $middleware --se_name $SE --for_lfn $LFNBaseName %s %s '%(self.loc_stage_out,self.debugWrap)
             txt += 'echo "python cmscp.py %s "\n'%cmscp_args
             txt += 'python cmscp.py %s \n'%cmscp_args
@@ -153,7 +171,7 @@ class SchedulerLocal(Scheduler) :
             txt += '    cat $RUNTIME_AREA/resultCopyFile\n'
             txt += '    pwd\n'
             txt += 'else\n'
-            ### FEDE to avoid some 70500 error ....
+            ### to avoid some 70500 error ....
             txt += '    echo "ERROR ==> $RUNTIME_AREA/resultCopyFile file not found. Problem during the stageout"\n'
             txt += '    echo "RUNTIME_AREA content: "\n'
             txt += '    ls $RUNTIME_AREA \n'

@@ -79,14 +79,30 @@ class PhEDExDatasvcInfo:
                 add += '      Please remove it by hand'
             msg += add
             raise CrabException(msg)
-            #########################################
 
         self.forced_path = '/store/user/'
-        if self.sched in ['CAF','LSF','PBS']:
+        if self.sched in ['LSF','PBS']:
             self.srm_version = 'direct'
-            self.SE = {'CAF':'caf.cern.ch', 'LSF':'', 'PBS':''}
-            if self.sched == 'CAF': self.forced_path = '/store/caf/user/'
+            self.SE = {'LSF':'', 'PBS':''}
             
+        if self.sched == 'CAF': 
+            #### FEDE TEST FOR XROOTD
+            ######### first solution ################
+            #eos = cfg_params.get("USER.caf_eos_area", 0)
+            #if eos == 0:
+            #    self.forced_path = '/store/caf/user/'
+            #else:    
+            #    self.forced_path = '/store/eos/user'
+            #########################################
+            ######### second solution ###############
+            self.forced_path = cfg_params.get("USER.caf_lfn", '/store/caf/user')
+            #########################################
+            print "--->>> FORCING THE FIRST PART OF LFN WITH ", self.forced_path
+            self.SE = {'CAF':'caf.cern.ch'}
+            self.srm_version = 'stageout'
+            print "--->>> query with 'stageout' "
+            #########################################
+
         if not self.usePhedex: 
             self.forced_path = self.user_remote_dir
         return
@@ -104,6 +120,14 @@ class PhEDExDatasvcInfo:
         #extract SE name an SE_PATH (needed for publication)
         SE, SE_PATH, User = self.splitEndpoint(endpoint)
 
+        #### FEDE FOR XROOTD #####
+        #print "in getEndpoint di PhEDExDatasvcInfo.py: "
+        #print "    SE = ", SE
+        #print "    SE_PATH = ", SE_PATH
+        #print "    User = ", User
+        #print "    endpoint = ", endpoint
+        ##############################
+
         return endpoint, self.lfn , SE, SE_PATH, User         
        
     def splitEndpoint(self, endpoint):
@@ -114,10 +138,12 @@ class PhEDExDatasvcInfo:
         SE_PATH = ''
         USER = getUserName()
         if self.usePhedex: 
-            if self.protocol == 'direct':
-                query=endpoint
-                SE_PATH = endpoint
+            ### FEDE PER TEST WITH XROOTD
+            if (self.protocol == 'direct' or self.protocol == 'stageout'):
                 SE = self.SE[self.sched]
+                SE_PATH = endpoint 
+                #############################   
+                #print "    SE_PATH = ", SE_PATH
             else: 
                 url = 'http://'+endpoint.split('://')[1]
                 scheme, host, path, params, query, fragment = urlparse(url)
@@ -237,6 +263,7 @@ class PhEDExDatasvcInfo:
             params = {'node' : self.node , 'lfn': self.lfn , 'protocol': self.protocol}
             datasvc_lfn2pfn="%s/lfn2pfn"%self.datasvc_url
             fullurl="%s/lfn2pfn?node=%s&lfn=%s&protocol=%s"%(self.datasvc_url,self.node,self.lfn,self.protocol) 
+            print "--->>> fullurl = ", fullurl
             domlfn2pfn = self.domPhedex(params,datasvc_lfn2pfn)
             if not domlfn2pfn :
                 msg="Unable to get info from %s"%fullurl

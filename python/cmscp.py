@@ -153,17 +153,28 @@ class cmscp:
         srmOpt={'srmv1':' -report ./srmcp.report -retry_timeout 480000 -retry_num 3 -streams_num=1 ',
                 'srmv2':' -report=./srmcp.report -retry_timeout=480000 -retry_num=3 -storagetype=permanent '}
         rfioOpt=''
+        #### FEDE FOR XROOTD #########
+        xrootdOpt=''
+        #############################
 
         supported_protocol = None
         if middleware.lower() in ['osg','lcg','condor','sge']:
             supported_protocol = [('srm-lcg',lcgOpt[self.params['srm_version']])]#,\
                                #  (self.params['srm_version'],srmOpt[self.params['srm_version']])]
-        elif middleware.lower() in ['lsf','caf']:
+        #elif middleware.lower() in ['lsf','caf']:
+        elif middleware.lower() in ['lsf']:
             supported_protocol = [('rfio',rfioOpt)]
         elif middleware.lower() in ['pbs']:
             supported_protocol = [('rfio',rfioOpt),('local','')]
         elif middleware.lower() in ['arc']:
             supported_protocol = [('srmv2','-debug'),('srmv1','-debug')]
+        #### FEDE FOR XROOTD ##########
+        elif middleware.lower() in ['caf']:
+            if self.params['protocol']:
+                supported_protocol = [(self.params['protocol'], '')]
+            else:
+                supported_protocol = [('rfio',rfioOpt)]
+            #######################################    
         else:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
@@ -785,7 +796,14 @@ class cmscp:
         It a list of LFNs for each SE where data are stored.
         allow "crab -copyLocal" or better "crab -copyOutput". TO_DO.
         """
-        outFile = open('cmscpReport.sh',"a")
+        
+        outFile = 'cmscpReport.sh'
+        if os.getenv("RUNTIME_AREA"):
+            #print "RUNTIME_AREA = ", os.getenv("RUNTIME_AREA")
+            outFile = "%s/cmscpReport.sh"%os.getenv("RUNTIME_AREA")
+            #print "--->>> outFile = ", outFile
+        fp = open(outFile, "w")
+
         cmscp_exit_status = 0
         txt = ''
         for file, dict in results.iteritems():
@@ -821,8 +839,15 @@ class cmscp:
         txt += '\n'
         txt += 'export StageOutExitStatus='+str(cmscp_exit_status)+'\n'
         txt += 'echo "StageOutExitStatus = '+str(cmscp_exit_status)+'" | tee -a $RUNTIME_AREA/$repo\n'
-        outFile.write(str(txt))
-        outFile.close()
+        fp.write(str(txt))
+        fp.close()
+        if self.debug: 
+            print '--- reading cmscpReport.sh: \n'
+            lp = open(outFile, "r")
+            content = lp.read() 
+            lp.close()
+            print "    content = ", content
+            print '--- end reading cmscpReport.sh'
         return
 
 

@@ -28,7 +28,6 @@ class SchedulerCaf(SchedulerLsf) :
         self.queue = cfg_params.get(self.name().upper()+'.queue','cmscaf1nw')
         self.res = cfg_params.get(self.name().upper()+'.resource','"type==SLC5_64 || type==SLC4_64"')
         self.group = cfg_params.get(self.name().upper()+'.group', None)
-        self.pool = cfg_params.get('USER.storage_pool','cmscafuser')
 
     def sched_parameter(self,i,task):
         """
@@ -42,7 +41,6 @@ class SchedulerCaf(SchedulerLsf) :
         if (self.group): sched_param += ' -G '+str(self.group).upper() +' '
         return sched_param
 
-    ###### FEDE FOR 84387 bug ######
     def wsSetupEnvironment(self):
         #Returns part of a job script which does scheduler-specific work.
         txt = SchedulerLsf.wsSetupEnvironment(self)
@@ -58,13 +56,6 @@ class SchedulerCaf(SchedulerLsf) :
         txt += 'echo "STAGE_SVCCLASS = $STAGE_SVCCLASS"\n'
         txt += 'echo "STAGER_TRACE = $STAGER_TRACE"\n' 
         txt += '\n'
-        return txt
-    #############################
-
-    def wsCopyOutput(self):
-        ### default is the name of the storage pool 
-        ### where users can copy job outputs  
-        txt=self.wsCopyOutput_comm(self.pool)
         return txt
 
     def wsExitFunc(self):

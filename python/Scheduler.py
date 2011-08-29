@@ -48,6 +48,7 @@ class Scheduler :
                             }
 
         self.protocolOpt = { 'rfio' : '', \
+                             'xrootd' : '', \
                              'srmv2' : '' ,  \
                              'srm-lcg' : '-b -D srmv2'
                             }
@@ -116,11 +117,6 @@ class Scheduler :
             msg = 'Error: data publication is not allowed with lsf scheduler, but only with grid scheduler or caf\n'
             common.logger.info(msg)
             raise CrabException(msg)
-
-        #if ( int(self.local_stage) == 1 and int(self.publish_data) == 1 ):
-        #    msg = 'Error: currently the publication is not supported with the local stage out. Work in progress....\n'
-        #    common.logger.info(msg)
-        #    raise CrabException(msg)
 
         self.debug_wrapper = int(cfg_params.get('USER.debug_wrapper',0))
         self.debugWrap=''
@@ -226,7 +222,19 @@ class Scheduler :
     def listRemoteDir(self, endpoint):
         """
         """
-        protocol = self.protocolDict[common.scheduler.name().upper()]
+        #protocol = self.protocolDict[common.scheduler.name().upper()]
+        #### FEDE for rfio and xrootd at caf #######################################################
+        if (common.scheduler.name().upper() == 'CAF' and str.split(str(endpoint), ':')[0] == 'root'):
+            protocol = 'xrootd'
+        else :
+            protocol = self.protocolDict[common.scheduler.name().upper()]
+           
+        print "##########################"
+        print "protocol = ", protocol
+        print "endpoint = ", endpoint
+        #print string.strip(endpoint)
+        print "##########################"
+
         try:
             Storage = SElement( FullPath(string.strip(endpoint)), protocol )
         except Exception, ex:
@@ -300,7 +308,6 @@ class Scheduler :
         """ Return the number of differente sites matching the actual requirements """
         start = time.time()
         tags=self.tags()
-        ####  fede #####
         whiteL=[]
         blackL=[]
         voTags=['cms']
