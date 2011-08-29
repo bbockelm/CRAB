@@ -670,6 +670,11 @@ No default value.
 
 To choose the storage port specify I<storage_port> = N. Default value = 8443.
 
+=head3 B<caf_lfn>
+Running at CAF, you can decide in which mountpoint to copy your output, by selecting the first part of LFN.
+The default value is /store/caf/user.
+To test eos area you can use caf_lfn = /store/eos/user
+
 =head3 B<local_stage_out *>
 
 This option enables the local stage out of produced output to the "close storage element" where the job is running, in case of failure of the remote copy to the Storage element decided by the user in che crab.cfg. It has to be used with the copy_data option. In the case of backup copy, the publication of data is forbidden. Set I<local_stage_out> = 1. Default value = 0.
