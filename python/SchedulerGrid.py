@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.137 2011/03/28 09:56:28 spiga Exp $"
-__version__ = "$Revision: 1.137 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.138 2011/04/01 11:00:46 fanzago Exp $"
+__version__ = "$Revision: 1.138 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -81,16 +81,16 @@ class SchedulerGrid(Scheduler):
         # Default minimum CPU time to >= 130 minutes
         self.EDG_cpu_time = cfg_params.get('GRID.max_cpu_time', '130')
 
-        # Add EDG_WL_LOCATION to the python path
-        if not self.CRAB_useServer and not self.CRAB_serverName:
-            if not os.environ.has_key('EDG_WL_LOCATION'):
-                msg = "Error: the EDG_WL_LOCATION variable is not set."
-                raise CrabException(msg)
-            path = os.environ['EDG_WL_LOCATION']
-            libPath=os.path.join(path, "lib")
-            sys.path.append(libPath)
-            libPath=os.path.join(path, "lib", "python")
-            sys.path.append(libPath)
+        ## Add EDG_WL_LOCATION to the python path
+        #if not self.CRAB_useServer and not self.CRAB_serverName:
+        #    if not os.environ.has_key('EDG_WL_LOCATION'):
+        #        msg = "Error: the EDG_WL_LOCATION variable is not set."
+        #        raise CrabException(msg)
+        #    path = os.environ['EDG_WL_LOCATION']
+        #    libPath=os.path.join(path, "lib")
+        #    sys.path.append(libPath)
+        #    libPath=os.path.join(path, "lib", "python")
+        #    sys.path.append(libPath)
 
         self.checkProxy()
         return
