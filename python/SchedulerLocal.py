@@ -122,7 +122,10 @@ class SchedulerLocal(Scheduler) :
                         caf_protocol = 'xrootd'
                         cmscp_args += '--protocol %s '%caf_protocol
                     elif endpoint.find('rfio:') != -1:
-                        SE_PATH = endpoint.split('path=')[1]
+                        if endpoint.find('path=') != -1:
+                            SE_PATH = endpoint.split('path=')[1]
+                        else:
+                            SE_PATH = endpoint
                         caf_protocol = 'rfio'
                         cmscp_args += '--protocol %s '%caf_protocol
             ########################################################            
