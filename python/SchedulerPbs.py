@@ -17,6 +17,7 @@ import os,string
 #
 # queue= pbs_queue_to_use [default, use the default queue in your local PBS config]
 # resources = resource_1=value,resource_2=value, etc [like qsub -l syntax]
+# wnBase = /tmp (top level directory where CRAB should unpack on worker nodes. $HOME is a bad default for many)
 #
 # NB: - the scheduler uses a wrapper script to create a local dir (see BossLite scheduler module)
 # Both wrapper stdout/stderr and job script output files are placed in your crab_*/res directory by default
@@ -58,9 +59,12 @@ class SchedulerPbs(SchedulerLocal) :
         params={'jobScriptDir':common.work_space.jobDir(),
                 'jobResDir':common.work_space.resDir()
                } 
-
+		
+		# update parameters
         for s in ('resources', 'queue'):
-            params.update({s:cfg_params.get(self.name().upper()+'.'+s,'')})
+            params[s] = cfg_params.get( self.name().upper()+'.'+s,'' )
+
+        params['workDir'] = cfg_params.get(self.name().upper()+'.wnbase','')
 
         return params
 

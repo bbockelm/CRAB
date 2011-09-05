@@ -113,10 +113,10 @@ export PYTHONPATH=\${PYTHONPATH}:\${PyOpenSSLPYTHON}
 
 ## pbs_python
 export CRABPBSPYTHON=\${EXTERNALDIR}/pbs_python
-export CRAB_PBSPYTHON_VERSION="3.2.0"
+export CRAB_PBSPYTHON_VERSION="4.3.0"
 export CRAB_PBSPYTHON_ROOT=\${CRABPBSPYTHON}/\${CRAB_PBSPYTHON_VERSION}
 
-export PYTHONPATH=\${CRAB_PBSPYTHON_ROOT}/lib/python2.4/site-packages/pbs:\$PYTHONPATH
+export PYTHONPATH=\${CRAB_PBSPYTHON_ROOT}/lib/python2.6/site-packages/pbs:\$PYTHONPATH
 
 export PYTHONPATH=\${EXTERNALDIR}/py2-sqlalchemy/0.5.2-cmp7/lib/python2.6/site-packages/:\$PYTHONPATH
 
@@ -185,10 +185,10 @@ setenv PYTHONPATH \${PYTHONPATH}:\${PyOpenSSLPYTHON}
 
 ## pbs_python
 setenv CRABPBSPYTHON \${EXTERNALDIR}/pbs_python
-setenv CRAB_PBSPYTHON_VERSION "3.2.0"
+setenv CRAB_PBSPYTHON_VERSION "4.3.0"
 setenv CRAB_PBSPYTHON_ROOT \${CRABPBSPYTHON}/\${CRAB_PBSPYTHON_VERSION}
 
-setenv PYTHONPATH \${CRAB_PBSPYTHON_ROOT}/lib/python2.4/site-packages/pbs:\$PYTHONPATH
+setenv PYTHONPATH \${CRAB_PBSPYTHON_ROOT}/lib/python2.6/site-packages/pbs:\$PYTHONPATH
 
 setenv PYTHONPATH \${EXTERNALDIR}/py2-sqlalchemy/0.5.2-cmp7/lib/python2.6/site-packages/:\$PYTHONPATH
 
