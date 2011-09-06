@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.81 2010/05/19 17:30:39 spiga Exp $"
-__version__ = "$Revision: 1.81 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.82 2010/06/09 10:28:56 farinafa Exp $"
+__version__ = "$Revision: 1.82 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -164,6 +164,14 @@ class SchedulerGlite(SchedulerGrid):
 
         req=''
         req +=task['jobType']
+        ####### FEDE FOR BUG 73010 ############
+        try: 
+            #print "task['jobType'] = ", task['jobType']
+            req +=task['jobType']
+        except TypeError:
+            msg = "Error: wrong or missing task info. Your created task can not be submitted. Please check your configuration file and create the task again.  \n "
+            raise CrabException(msg) 
+        ####################################### 
 
         sched_param=''
         sched_param+='Requirements = ' + req +self.specific_req() + self.se_list(dest) +\

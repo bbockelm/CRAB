@@ -65,19 +65,20 @@ class PhEDExDatasvcInfo:
 
         if not self.usePhedex and ( self.user_remote_dir == '' or self.user_se_path == '' ):
             ####### FEDE FOR BUG 73010 ############
-            msg = 'Error: you are asking to stage out without using CMS Storage Name convention. In this case you \n' 
+            msg =  'Error: task ' + common.work_space._top_dir + ' not correctly created. Please remove it. \n'
+            msg += '      You are asking to stage out without using CMS Storage Name convention. In this case you \n' 
             msg += '      must specify both user_remote_dir and storage_path in the crab.cfg section [USER].\n'
             msg += '      For further information please visit : \n\t%s'%self.stage_out_faq
             task = common._db.getTask()
-            add = '\n\n'
-            import shutil
-            try:
-                add += '      Task not correctly created: removing the working_dir ' +  common.work_space._top_dir + ' \n'
-                shutil.rmtree(common.work_space._top_dir)
-            except OSError:
-                add += '      Warning: problems removing the working_dir ' + common.work_space._top_dir + ' \n'
-                add += '      Please remove it by hand'
-            msg += add
+            #add = '\n\n'
+            #import shutil
+            #try:
+            #    add += '      Task not correctly created: removing the working_dir ' +  common.work_space._top_dir + ' \n'
+            #    shutil.rmtree(common.work_space._top_dir)
+            #except OSError:
+            #    add += '      Warning: problems removing the working_dir ' + common.work_space._top_dir + ' \n'
+            #    add += '      Please remove it by hand'
+            #msg += add
             raise CrabException(msg)
 
         self.forced_path = '/store/user/'
