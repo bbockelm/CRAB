@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.375 2011/07/13 15:10:25 fanzago Exp $"
-__version__ = "$Revision: 1.375 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.376 2011/08/05 15:36:10 fanzago Exp $"
+__version__ = "$Revision: 1.376 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -450,18 +450,10 @@ class Cmssw(JobType):
         if njobs == 0:
             raise CrabException("Asked to split zero jobs: aborting")
         if not self.server and not self.local and njobs > 500:
-            ######### FEDE FOR BUG 73010 ########## 
-            msg = "The CRAB client will not submit more than 500 jobs.\n"
-            msg += "      Use the server mode or submit your jobs in smaller groups"
-            add = '\n'
-            import shutil
-            try:
-                add += '      --->> Removing the working_dir ' +  common.work_space._top_dir + ' \n'
-                shutil.rmtree(common.work_space._top_dir)
-            except OSError:
-                add += '      Warning: problems removing the working_dir ' + common.work_space._top_dir + ' \n'
-                add += '      Please remove it by hand.'
-            msg += add
+            ######### FEDE FOR BUG 85243 ########## 
+            msg =  "Error: this task contains more than 500 jobs. \n"
+            msg += "     The CRAB SA does not submit more than 500 jobs.\n"
+            msg += "     Use the server mode. \n"
             raise CrabException(msg)
             #######################################
         # create the empty structure
