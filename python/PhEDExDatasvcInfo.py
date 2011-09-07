@@ -98,10 +98,10 @@ class PhEDExDatasvcInfo:
             ######### second solution ###############
             self.forced_path = cfg_params.get("USER.caf_lfn", '/store/caf/user')
             #########################################
-            print "--->>> FORCING THE FIRST PART OF LFN WITH ", self.forced_path
+            #print "--->>> FORCING THE FIRST PART OF LFN WITH ", self.forced_path
             self.SE = {'CAF':'caf.cern.ch'}
             self.srm_version = 'stageout'
-            print "--->>> query with 'stageout' "
+            #print "--->>> query with 'stageout' "
             #########################################
 
         if not self.usePhedex: 
@@ -264,7 +264,7 @@ class PhEDExDatasvcInfo:
             params = {'node' : self.node , 'lfn': self.lfn , 'protocol': self.protocol}
             datasvc_lfn2pfn="%s/lfn2pfn"%self.datasvc_url
             fullurl="%s/lfn2pfn?node=%s&lfn=%s&protocol=%s"%(self.datasvc_url,self.node,self.lfn,self.protocol) 
-            print "--->>> fullurl = ", fullurl
+            #print "--->>> fullurl = ", fullurl
             domlfn2pfn = self.domPhedex(params,datasvc_lfn2pfn)
             if not domlfn2pfn :
                 msg="Unable to get info from %s"%fullurl

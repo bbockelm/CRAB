@@ -229,11 +229,9 @@ class Scheduler :
         else :
             protocol = self.protocolDict[common.scheduler.name().upper()]
            
-        print "##########################"
-        print "protocol = ", protocol
-        print "endpoint = ", endpoint
-        #print string.strip(endpoint)
-        print "##########################"
+        msg = 'protocol = ' + protocol + '\n'
+        msg += 'endpoint = ' + endpoint + '\n'
+        common.logger.debug(msg)
 
         try:
             Storage = SElement( FullPath(string.strip(endpoint)), protocol )
