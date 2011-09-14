@@ -2,8 +2,8 @@
 CRAB interface to BossLite gLite Scheduler
 """
 
-__revision__ = "$Id: SchedulerGlite.py,v 1.82 2010/06/09 10:28:56 farinafa Exp $"
-__version__ = "$Revision: 1.82 $"
+__revision__ = "$Id: SchedulerGlite.py,v 1.83 2011/09/06 14:55:02 fanzago Exp $"
+__version__ = "$Revision: 1.83 $"
 
 from SchedulerGrid import SchedulerGrid
 from crab_exceptions import *
@@ -163,7 +163,7 @@ class SchedulerGlite(SchedulerGrid):
         dest=  task.jobs[i-1]['dlsDestination']
 
         req=''
-        req +=task['jobType']
+        #req +=task['jobType']
         ####### FEDE FOR BUG 73010 ############
         try: 
             #print "task['jobType'] = ", task['jobType']
