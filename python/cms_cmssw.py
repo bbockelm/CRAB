@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.376 2011/08/05 15:36:10 fanzago Exp $"
-__version__ = "$Revision: 1.376 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.377 2011/09/06 14:52:27 fanzago Exp $"
+__version__ = "$Revision: 1.377 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -928,8 +928,8 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsRenameOutput\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        if self.debug_wrapper==1:
-            txt += 'ls -Al\n'
+        #if self.debug_wrapper==1:
+        txt += 'ls -Al\n'
         txt += '\n'
 
         for fileWithSuffix in (self.output_file):
@@ -960,8 +960,8 @@ class Cmssw(JobType):
         txt += '\n'
         txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
-        if self.debug_wrapper==1:
-            txt += 'ls -Al\n'
+        #if self.debug_wrapper==1:
+        txt += 'ls -Al\n'
         txt += '\n'
         txt += 'cd $RUNTIME_AREA\n'
         txt += 'echo ">>> current directory (RUNTIME_AREA):  $RUNTIME_AREA"\n'
