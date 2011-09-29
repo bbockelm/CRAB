@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.377 2011/09/06 14:52:27 fanzago Exp $"
-__version__ = "$Revision: 1.377 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.378 2011/09/19 14:21:13 fanzago Exp $"
+__version__ = "$Revision: 1.378 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -808,6 +808,7 @@ class Cmssw(JobType):
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
             txt += '   chmod a+w -R $RUNTIME_AREA \n'
+            txt += '   chmod 600 $X509_USER_PROXY \n'
             if  self.debug_wrapper==1 :
                 txt += '   echo "changed in a+w the permission of $RUNTIME_AREA "\n'
                 txt += '   ls -AlR $RUNTIME_AREA \n'
