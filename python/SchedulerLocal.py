@@ -146,7 +146,8 @@ class SchedulerLocal(Scheduler) :
             txt += 'echo "LFNBaseName = $LFNBaseName"\n'
             txt += 'export USER='+user+'\n'
             txt += 'echo "USER = $USER"\n'
-            txt += 'export endpoint='+"'"+endpoint+"'"+'\n'
+            #txt += 'export endpoint='+"'"+endpoint+"'"+'\n'
+            txt += 'export endpoint='+endpoint+'\n'
             txt += 'echo "endpoint = $endpoint"\n'
             
             if (pool) and (pool != 'None'):
