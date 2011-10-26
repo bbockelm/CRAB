@@ -2,6 +2,7 @@
 #
 # 07-Dec-2005
 # Stefano Lacaprara  <lacaprara@pd.infn.it>  INFN Padova
+# Ian Tomalin - bug fix - can now use -cfg option
 #
 # Wrapper script for crab.py
 #
@@ -21,7 +22,9 @@ if [ -z "$CMSSW_VERSION" ]; then
   echo '(see also: https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Setup_local_Environment) '
   echo ''
 else
-  python $CRABPYTHON/multicrab.py $*
-  /usr/bin/env sh ./multicrab.exe
-  rm ./multicrab.exe
+# Define working directory for temporary files.
+  python $CRABPYTHON/multicrab.py $* | tee tmp_multicrab
+  MULTICRAB_WORKDIR=`grep "working directory" tmp_multicrab | sed -e 's/  working directory   //'`
+  /usr/bin/env sh $MULTICRAB_WORKDIR/multicrab.exe
+  rm -r tmp_multicrab
 fi

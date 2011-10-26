@@ -66,8 +66,15 @@ class MultiCrab:
 
     def createWorkSpace(self):
         # create WorkingDir for Multicrab
-        if 'MULTICRAB.working_dir' in self.opts.keys():    
-            self.continue_dir = os.path.abspath(self.opts['MULTICRAB.working_dir'])
+        import os
+        if not self.continue_dir:
+            prefix = self.prog_name + '_'
+            self.continue_dir = findLastWorkDir(prefix)
+            pass
+        # if 'MULTICRAB.working_dir' in self.opts.keys():    
+        #     self.continue_dir = os.path.abspath(self.opts['MULTICRAB.working_dir'])
+        if self.ui_working_dir:
+            self.continue_dir = os.path.abspath(self.ui_working_dir)
         else:
             current_time = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
             self.continue_dir = os.getcwd() + '/' + self.prog_name + '_' + current_time
@@ -83,7 +90,8 @@ class MultiCrab:
             msg = 'Directory '+str(self.continue_dir) +' already exist.\n'
             raise CrabException(msg)
 
-        shutil.copyfile('multicrab.cfg',self.continue_dir+'/multicrab.cfg')
+        os.putenv("MULTICRAB_WORKDIR",self.continue_dir)
+        shutil.copyfile(self.cfg_fname,self.continue_dir+'/multicrab.cfg')
         
         return
         
@@ -174,11 +182,13 @@ class MultiCrab:
             self.outputdir = cfg_params["COMMON"].get("user.outputdir", crab_cfg_params.get("USER.outputdir",None))
             self.logdir = cfg_params["COMMON"].get("user.logdir", crab_cfg_params.get("USER.logdir",None))
             self.ui_working_dir = cfg_params["COMMON"].get("user.ui_working_dir", crab_cfg_params.get("USER.ui_working_dir",None))
+            self.publish_data_name = cfg_params["COMMON"].get("user.publish_data_name", crab_cfg_params.get("USER.publish_data_name",None))
         else:
             self.user_remote_dir = crab_cfg_params.get("USER.user_remote_dir",None)
             self.outputdir = crab_cfg_params.get("USER.outputdir",None)
             self.logdir = crab_cfg_params.get("USER.logdir",None)
             self.ui_working_dir = crab_cfg_params.get("USER.ui_working_dir",None)
+            self.publish_data_name = crab_cfg_params.get("USER.publish_data_name",None)
 
         return
 
@@ -200,7 +210,7 @@ class MultiCrab:
 
     def run(self):
         #run crabs
-        runFileName = 'multicrab.exe'
+        runFileName = self.continue_dir+'/multicrab.exe'
         runFile = open(runFileName,"w")
         for sec in self.cfg_params_dataset:
             options={}
@@ -238,13 +248,18 @@ class MultiCrab:
             # also for outputdir
             if not self.cfg_params_dataset.has_key("USER.outputdir") and self.outputdir:
                 options["-USER.outputdir"]=self.outputdir+"/"+sec
+            # also for publish_data_name
+            if not self.cfg_params_dataset.has_key("USER.publish_data_name") and self.publish_data_name:
+                options["-USER.publish_data_name"]=self.publish_data_name+"_"+sec
 
             # Input options (command)
             for opt in self.opts:
-                options[opt]=self.opts[opt]
-                if self.flag_continue and options.has_key("-cfg"):
-                    del options['-cfg']
-                pass
+                if opt != '-c':
+                    options[opt]=self.opts[opt]
+                # options[opt]=self.opts[opt]
+                    if self.flag_continue and options.has_key("-cfg"):
+                        del options['-cfg']
+                    pass
 
             # write crab command to be executed later...
             cmd='crab '
@@ -276,6 +291,7 @@ class MultiCrab:
             # pass
             # if (common.logger): common.logger.delete()
         pass
+        return self.continue_dir
         
 
 ###########################################################################
@@ -297,7 +313,9 @@ if __name__ == '__main__':
     # Create, initialize, and run a Crab object
     try:
         multicrab = MultiCrab(options)
-        multicrab.run()
+        continue_dir = multicrab.run()
+        import os
+        sys.exit(continue_dir)
     except CrabException, e:
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
 
