@@ -70,8 +70,6 @@ ls -Al
 echo ">>> current user: `id`"
 echo ">>> voms proxy information:"
 voms-proxy-info -all
-grid-proxy-info 
-env|grep 509
 
 repo=jobreport.txt
 
