@@ -293,13 +293,6 @@ class SchedulerGrid(Scheduler):
             if self.debug_wrapper==1:
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'
-                txt += 'echo "lcg-ls --version"\n'
-                txt += 'lcg-ls --version\n'
-                txt += 'grid-proxy-info\n'
-                txt += 'voms-proxy-info -all\n'
-                txt += 'env|grep X509\n'
-                txt += 'echo "check CacheEnv.sh"\n'
-                txt += 'cat $RUNTIME_AREA/CacheEnv.sh\n'
                 txt += 'echo "########### details of SE interaction"\n'
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '    cat .SEinteraction.log\n'
