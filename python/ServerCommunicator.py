@@ -278,7 +278,7 @@ class ServerCommunicator:
 
         ## Only Temporary. it should be at Server level
         removeBList = self.cfg_params.get("GRID.remove_default_blacklist", 0 )
-        blackAnaOps = None 
+        blackAnaOps = "None.Nowhere" 
         if int(removeBList) == 0:
             blacklist = Downloader("http://cmsdoc.cern.ch/cms/LCG/crab/config/")
             result = blacklist.config("site_black_list.conf")

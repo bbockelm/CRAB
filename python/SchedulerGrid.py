@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.138 2011/04/01 11:00:46 fanzago Exp $"
-__version__ = "$Revision: 1.138 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.139 2011/08/31 17:03:43 fanzago Exp $"
+__version__ = "$Revision: 1.139 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -293,6 +293,13 @@ class SchedulerGrid(Scheduler):
             if self.debug_wrapper==1:
                 txt += 'echo "which lcg-ls"\n'
                 txt += 'which lcg-ls\n'
+                txt += 'echo "lcg-ls --version"\n'
+                txt += 'lcg-ls --version\n'
+                txt += 'grid-proxy-info\n'
+                txt += 'voms-proxy-info -all\n'
+                txt += 'env|grep X509\n'
+                txt += 'echo "check CacheEnv.sh"\n'
+                txt += 'cat $RUNTIME_AREA/CacheEnv.sh\n'
                 txt += 'echo "########### details of SE interaction"\n'
                 txt += 'if [ -f .SEinteraction.log ] ;then\n'
                 txt += '    cat .SEinteraction.log\n'
