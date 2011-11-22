@@ -168,10 +168,11 @@ class MultiCrab:
         # then Dataset's specific
         for sec in cfg_params:
             if sec in ['MULTICRAB', 'COMMON']: continue
-            self.cfg_params_dataset[sec]=cfg_params[sec]
             # add common to all dataset
+            self.cfg_params_dataset[sec]=cfg_params[sec]
             for key in common_opts:
-                self.cfg_params_dataset[sec][key]=common_opts[key]
+                if not self.cfg_params_dataset[sec].has_key(key):
+                    self.cfg_params_dataset[sec][key]=common_opts[key]
             pass
 
         # read crab.cfg file and search for storage_path
