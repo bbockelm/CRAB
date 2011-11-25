@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.30 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.30 2010/07/13 08:08:53 mcinquil Exp $"
+__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.31 2010/08/10 21:55:56 spiga Exp $"
 
 import os
 import socket
@@ -261,6 +261,7 @@ class NotificationComponent:
 	
     #--------------------------------------------------------------------------------------
     def MessageTaskParser(self, pathfile):
+        from xml.parsers.expat import ExpatError 
         if not os.path.exists(pathfile):
             logging.error("Cannot process TaskSuccess event: " 
                           + "xml task report %s does not exist." % pathfile)
