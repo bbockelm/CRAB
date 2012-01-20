@@ -253,7 +253,7 @@ class parseFjr:
         fileParentAttr = []
         for inputFile in  jobReport.inputFiles:
             fileAccess = 'Local'
-            if inputFile.get("PFN").find('xrootd'): fileAccess = 'Remote'
+            if inputFile.get("PFN").find('xrootd') >= 0 : fileAccess = 'Remote'
             if inputFile['LFN'].find(basename) >=0:
                 fileAttr = (inputFile.get("FileType"), fileAccess, inputFile.get("Runs"))
                 readFile[inputFile.get("LFN").split(basename)[1]] = fileAttr
