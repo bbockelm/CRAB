@@ -51,6 +51,8 @@ class PhEDExDatasvcInfo:
         self.datasetpath = cfg_params.get("CMSSW.datasetpath")
         self.publish_data_name = cfg_params.get('USER.publish_data_name','')
 
+        self.pset = cfg_params.get('CMSSW.pset',None)
+
         self.user_port = cfg_params.get("USER.storage_port",'8443')
         self.user_se_path = cfg_params.get("USER.storage_path",'')
         if self.user_se_path:
@@ -192,7 +194,12 @@ class PhEDExDatasvcInfo:
         else:
             if self.sched in ['CAF','LSF']: l_User=True 
             lfn = LFNBase(self.forced_path,self.user_remote_dir)
+
+        if lfn.find('${PSETHASH}')>1:
+            psethash = runCommand('edmConfigHash < %s| tail -1'%self.pset)
+            lfn = string.replace(lfn,'${PSETHASH}',string.strip(psethash))
         if ( lfn[-1] != '/' ) : lfn = lfn + '/'
+
         return lfn
  
     def computePrimaryDataset(self):
