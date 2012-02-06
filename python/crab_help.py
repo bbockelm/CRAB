@@ -22,7 +22,6 @@ The most useful general options (use '-h' to get complete help):
   -submit n                               -- Submit the first n available jobs. Default is all.
   -status                                 -- check status of all jobs.
   -getoutput|-get [range]                 -- get back the output of all jobs: if range is defined, only of selected jobs.
-  -extend                                 -- Extend an existing task to run on new fileblocks if there.
   -publish                                -- after the getouput, publish the data user in a local DBS instance.
   -publishNoInp                           -- after the getoutput, publish the data user in the local DBS instance removing input data file
   -checkPublication [dbs_url datasetpath] -- checks if a dataset is published in a DBS.
@@ -341,10 +340,6 @@ Resubmit jobs which have been previously submitted and have been either I<killed
 =head2 B<-forceResubmit range or all>
 
 iSame as -resubmit but without any check about the actual status of the job: please use with caution, you can have problem if both the original job and the resubmitted ones actually run and tries to write the output ona a SE. This command is meant to be used if the killing is not possible or not working but you know that the job failed or will. See I<range> below for syntax.
-
-=head2 B<-extend>
-
-Create new jobs for an existing task, checking if new blocks are published for the given dataset.
 
 =head2 B<-kill [range]>
 
