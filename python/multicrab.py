@@ -83,11 +83,11 @@ class MultiCrab:
             try:
                 os.mkdir(self.continue_dir)
             except OSError:
-                msg = 'Cannot create '+str(self.continue_dir) +' directory.\n'
+                msg = 'ERROR: Cannot create '+str(self.continue_dir) +' directory.\n'
                 raise CrabException(msg)
             pass
         else:
-            msg = 'Directory '+str(self.continue_dir) +' already exist.\n'
+            msg = 'ERROR: Directory '+str(self.continue_dir) +' already exist.\n'
             raise CrabException(msg)
 
         os.putenv("MULTICRAB_WORKDIR",self.continue_dir)
@@ -131,7 +131,7 @@ class MultiCrab:
                 cfg_params = self.loadMultiConfig(self.cfg_fname)
                 pass
             else:
-                msg = 'cfg-file '+self.cfg_fname+' not found.'
+                msg = 'ERROR: cfg-file '+self.cfg_fname+' not found.'
                 raise CrabException(msg)
                 pass
             pass
