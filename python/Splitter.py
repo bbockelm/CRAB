@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.52 2011/05/09 11:51:28 spiga Exp $"
-__version__ = "$Revision: 1.52 $"
+__revision__ = "$Id: Splitter.py,v 1.53 2011/06/16 06:22:12 spiga Exp $"
+__version__ = "$Revision: 1.53 $"
 
 import common
 from crab_exceptions import *
@@ -428,7 +428,7 @@ class JobSplitter:
             common.logger.info(msg)
 
         if bloskNoSite == allBlock:
-            msg += 'Requested jobs cannot be Created! \n'
+            msg = 'Requested jobs cannot be Created! \n'
             if self.cfg_params.has_key('GRID.se_white_list'):
                 msg += '\tWARNING: SE White List: '+self.cfg_params['GRID.se_white_list']+'\n'
                 msg += '\t(Hint: By whitelisting you force the job to run at this particular site(s).\n'
