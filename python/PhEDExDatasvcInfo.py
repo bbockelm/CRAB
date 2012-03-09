@@ -119,6 +119,10 @@ class PhEDExDatasvcInfo:
         #extract the PFN for the given node,LFN,protocol
         endpoint = self.getStageoutPFN()
         if ( endpoint[-1] != '/' ) : endpoint = endpoint + '/'
+
+        if int(self.publish_data) == 1 or  int(self.usenamespace) == 1:
+            self.lfn = self.lfn  + '/${PSETHASH}/'
+            endpoint = endpoint  + '/${PSETHASH}/'
    
         #extract SE name an SE_PATH (needed for publication)
         SE, SE_PATH, User = self.splitEndpoint(endpoint)
@@ -186,18 +190,15 @@ class PhEDExDatasvcInfo:
             primaryDataset = self.computePrimaryDataset()
             ### added the case lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, publish=True)
             ### for the publication in order to be able to check the lfn length  
-            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, publish=True)  + '/${PSETHASH}/'    
+            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name, publish=True)
         elif int(self.usenamespace) == 1:
             if self.sched in ['CAF']: l_User=True 
             primaryDataset = self.computePrimaryDataset()
-            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name)  + '/${PSETHASH}/'    
+            lfn = LFNBase(self.forced_path, primaryDataset, self.publish_data_name)
         else:
             if self.sched in ['CAF','LSF']: l_User=True 
             lfn = LFNBase(self.forced_path,self.user_remote_dir)
 
-        if lfn.find('${PSETHASH}')>1:
-            psethash = runCommand('edmConfigHash < %s| tail -1'%self.pset)
-            lfn = string.replace(lfn,'${PSETHASH}',string.strip(psethash))
         if ( lfn[-1] != '/' ) : lfn = lfn + '/'
 
         return lfn
