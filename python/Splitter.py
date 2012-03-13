@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.53 2011/06/16 06:22:12 spiga Exp $"
-__version__ = "$Revision: 1.53 $"
+__revision__ = "$Id: Splitter.py,v 1.54 2012/03/06 19:22:59 spiga Exp $"
+__version__ = "$Revision: 1.54 $"
 
 import common
 from crab_exceptions import *
@@ -195,6 +195,9 @@ class JobSplitter:
         if (self.selectNumberOfJobs):
             common.logger.info("May not create the exact number_of_jobs requested.")
 
+        if (self.theNumberOfJobs < 0):
+            common.logger.info("ERROR: Negative number_of_jobs requested. Will result in no jobs.")
+            
         # old... to remove Daniele
         totalNumberOfJobs = 999999999
 
