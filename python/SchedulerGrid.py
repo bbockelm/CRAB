@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.139 2011/08/31 17:03:43 fanzago Exp $"
-__version__ = "$Revision: 1.139 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.141 2011/11/04 22:01:17 belforte Exp $"
+__version__ = "$Revision: 1.141 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -166,6 +166,8 @@ class SchedulerGrid(Scheduler):
         txt += 'OutUniqueID=_$NRand\n'
         txt += 'OutUniqueID=_$NResub$OutUniqueID\n'
         txt += 'OutUniqueID=$NJob$OutUniqueID; export OutUniqueID\n'
+        txt += 'CRAB_UNIQUE_JOB_ID=%s_${OutUniqueID}; export CRAB_UNIQUE_JOB_ID\n' % taskId
+        txt += 'echo env var CRAB_UNIQUE_JOB_ID set to: ${CRAB_UNIQUE_JOB_ID}\n'
         # if we want to prepend
         #txt += 'OutUniqueID=_$NResub\n'
         #txt += 'OutUniqueID=_$NJob$OutUniqueID\n'
