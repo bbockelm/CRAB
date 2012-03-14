@@ -63,7 +63,7 @@ aflist=allfiles.list
 #perl -w /afs/cern.ch/user/s/sarkar/public/ListGoodOutputFiles_new.pl $project/res > $gflist
 
 [ $quiet -gt 0 ] || echo ">>> Find list of good files from fjr files..."
-python /afs/cern.ch/user/s/sarkar/public/to_stage/find_goodfiles.py -c $crab_dir -q > $gflist
+python find_goodfiles.py -c $crab_dir -q > $gflist 
 # Now find the remote directory name
 rdir=$(dirname $(head -1 $gflist))
 srmp=$(echo $rdir | awk -F= '{print $1}')
