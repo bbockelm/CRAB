@@ -633,7 +633,7 @@ The output produced by the executable on WN is returned (via output sandbox) to 
 
 =head3 B<outputdir>
 
-To be used together with I<return_data>. Directory on user interface where to store the output. Full path is mandatory, "~/" is not allowed: the default location of returned output is ui_working_dir/res .
+To be used together with I<return_data>. Directory on user interface where to store the output. Full path is mandatory, "~/" is not allowed: the default location of returned output is ui_working_dir/res . BEWARE: does not work with scheduler=CAF
 
 =head3 B<logdir>
 
