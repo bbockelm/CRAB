@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.379 2011/09/29 09:35:21 belforte Exp $"
-__version__ = "$Revision: 1.379 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.380 2012/03/16 09:41:09 belforte Exp $"
+__version__ = "$Revision: 1.380 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -101,7 +101,7 @@ class Cmssw(JobType):
                 self.datasetPath = tmp
                 self.selectNoInput = 0
                 ll = len(self.datasetPath.split("/"))
-                if (ll != 4) or datasetPath[0] != '/' or datasetPath[-1] == '/':
+                if (ll != 4) or self.datasetPath[0] != '/' or self.datasetPath[-1] == '/':
                     msg = 'Your datasetpath has a invalid format ' + self.datasetPath + '\n'
                     msg += 'Expected a path in format /PRIMARY/PROCESSED/TIER'
                     raise CrabException(msg)
