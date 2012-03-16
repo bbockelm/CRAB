@@ -14,6 +14,10 @@ class WorkSpace:
         self._user_log_dir = ''
         if 'USER.outputdir' in cfg_params.keys():    
             self._user_out_dir = os.path.abspath(cfg_params['USER.outputdir'])
+            if cfg_params['CRAB.scheduler'].upper() == 'CAF' :
+                msg = "Cannot use 'outputdir' parameter with CAF scheduler\n"
+                msg += 'please remove it from your crab.cfg\n'
+                raise CrabException(msg)
         if 'USER.logdir' in cfg_params.keys():    
             self._user_log_dir = os.path.abspath(cfg_params['USER.logdir'])
         #Matteo: Necessary to manage user ui_working_dir
