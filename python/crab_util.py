@@ -449,8 +449,8 @@ def bulkControl(self,list):
             first =n*int(max_size)
             last = (n+1)*int(max_size)
             sub_bulk.append(list[first:last])
-        if len(list[last:-1]) < 50:
-            for pp in list[last:-1]:
+        if len(list[last:]) < 50:
+            for pp in list[last:]:
                 sub_bulk[n_sub_bulk-1].append(pp)
         else:
             sub_bulk.append(list[last:])
