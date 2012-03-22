@@ -130,9 +130,11 @@ class SchedulerArc(SchedulerGrid):
 
     def sched_parameter(self,i,task):
         """
-        Returns parameter scheduler-specific, to use with BOSS .
+        Returns scheduler-specific parameters, to use with BOSS.  
         """
-        return self.runtimeXrsl(i, task) + self.clusterXrsl(i, task)
+        p = {"xrsl": self.runtimeXrsl(i, task), "clusters": self.clusters(i, task)}
+        common.logger.debug("sched_parameters: '%s'" % str(p))
+        return p
 
 
     def runtimeXrsl(self,i,task):
@@ -145,9 +147,9 @@ class SchedulerArc(SchedulerGrid):
         return xrsl
 
 
-    def clusterXrsl(self,i,task):
+    def clusters(self,i,task):
         """
-        Return an xRSL-code snippet to select a CE ("cluster", in ARC parlance)
+        Return a list of suitable CEs ("clusters", in ARC parlance)
         """
         se_dls = task.jobs[i-1]['dlsDestination']
         blah, se_white, se_black = self.se_list(i, se_dls)
@@ -164,26 +166,14 @@ class SchedulerArc(SchedulerGrid):
 
         ce_list = self.listMatch(se_list, False)
 
-        xrsl = ""
-        if len(ce_list) > 0:
+        if len(ce_list) == 0:
+            common.logger.warning("No suitable CE found !?")
+            # FIXME: If ce_list == []  we'll submit "anywhere", which is
+            # completely contrary behaviour to what we want!  ce_list == []
+            # means there were _no_ CE in ce_infoSys that survived the
+            # white- and black-list filter, so we shouldn't submit at all!
 
-            # A ce-list with more than one element must be an OR:ed
-            # list: (|(cluster=ce1)(cluster=ce2)...)
-            if len(ce_list) > 1:
-                xrsl += '(|'
-            for ce in ce_list:
-                xrsl += '(cluster=%s)' % ce
-            if len(ce_list) > 1:
-                xrsl += ')'
-        else:
-            common.logger.debug("clusterXrsl: No suitable CE found !?")
-            # FIXME: If ce_list == []  ==>  xrsl = ""  ==>  we'll submit
-            # "anywhere", which is completely contrary behaviour to what we want!
-            # ce_list == [] means there were _no_ CE in ce_infoSys that
-            # survived the white- and black-list filter, so we shouldn't submit
-            # at all!
-
-        return xrsl
+        return ce_list
 
 
     def wsInitialEnvironment(self):
@@ -267,3 +257,16 @@ class SchedulerArc(SchedulerGrid):
         """ return logging info about job nj """
         print 'loggingInfo', list_id
         return self.boss().LoggingInfo(list_id,outfile)
+
+
+    def submit(self,list,task):
+        """ submit to scheduler a list of jobs """
+        if (not len(list)): common.logger.info("No sites where to submit jobs")
+        req=self.sched_parameter(list[0],task)
+
+        ### reduce collection size...if needed
+        new_list = bulkControl(self,list)
+
+        for sub_list in new_list:
+            self.boss().submit(task['id'],sub_list,req)
+        return
