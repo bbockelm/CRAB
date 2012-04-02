@@ -218,6 +218,7 @@ class Submitter(Actor):
                 try:
                     common.scheduler.submit(self.sub_jobs[ii],task)
                 except CrabException:
+                    common.logger.debug('common.scheduler.submit exception. Job(s) posibly not submitted')
                     raise CrabException("Job not submitted")
 
                 if common.debugLevel == 0 :
