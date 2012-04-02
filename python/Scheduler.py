@@ -1,4 +1,3 @@
-
 import os
 import time
 import string
@@ -178,10 +177,11 @@ class Scheduler :
         ## temporary hack for OctX:
         if endpoint.find('${PSETHASH}')>1:
             try:
-                psethash = runCommand('edmConfigHash < %s| tail -1'%self.pset)
+                jdir=common.work_space.jobDir()
+                psethash= runCommand('cd %s; edmConfigHash CMSSW.py|tail -1'%jdir)
                 endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)
             except:
-                msg =  'Problems trying remote dir check... \n'
+                msg =  'Problems with PSETHASH during remote dir check... \n'
                 msg += '\tPlease check stage out configuration parameters.\n'
                 raise CrabException(msg)
         try:
@@ -334,6 +334,7 @@ class Scheduler :
 
         for sub_list in new_list:
             self.boss().submit(task['id'],sub_list,req)
+
         return
 
     def delegateProxy(self):
