@@ -107,6 +107,9 @@ class ServerCommunicator:
              common.logger.info(logMsg+'\n')
         else:
              self.checkServerResponse(ret)
+            # reset server choice
+            opsToBeSaved={'serverName' : '' }
+            common._db.updateTask_(opsToBeSaved)
 
         return ret
 
@@ -150,9 +153,6 @@ class ServerCommunicator:
 
         # print loggings
         if logMsg != '':
-            # reset server choice
-            opsToBeSaved={'serverName' : '' }
-            common._db.updateTask_(opsToBeSaved)
             common.logger.info(logMsg)
         return ret
 
@@ -166,6 +166,7 @@ class ServerCommunicator:
              - the bossLite object representing the task (jobs are assumed to be RunningJobs)
              - the range of the submission as specified by the user at the command line
         """
+        
         return self._genericCommand('submit', blTaskName, rng)
 
     def killJobs(self, blTaskName, rng):
