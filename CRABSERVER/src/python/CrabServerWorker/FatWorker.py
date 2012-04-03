@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.222 2011/05/19 07:21:49 spiga Exp $"
-__version__ = "$Revision: 1.222 $"
+__revision__ = "$Id: FatWorker.py,v 1.223 2011/07/01 15:16:14 belforte Exp $"
+__version__ = "$Revision: 1.223 $"
 
 import string
 import sys, os
@@ -249,6 +249,11 @@ class FatWorker(Thread):
             self.type = str( cmdXML.getAttribute('Type') )
             self.owner = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
+            # FEDE for savannah 75255
+            self.client_version = str( cmdXML.getAttribute('ClientVersion') )
+            self.log.info('FW %s self.client_version'%self.client_version)
+            ############
+
 
             # se related
             if 'EDG.se_white_list' in self.cfg_params:
@@ -863,16 +868,9 @@ class FatWorker(Thread):
         """
         Prepare DashBoard information
         """
-       # gridName = self.owner
         
-        #self.log.info(gridName)
-      #  gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
-        ##########################
-        ### FEDE for savannah 76950, default value = "analysis"
-        ##########################
         taskType = self.cfg_params.get('USER.tasktype','analysis')
-        #taskType = self.cfg_params['USER.tasktype']
         datasetPath = self.cfg_params['CMSSW.datasetpath']
         if datasetPath.lower() == 'none': datasetPath = None
         executable = self.cfg_params.get('CMSSW.executable','cmsRun')
@@ -880,7 +878,9 @@ class FatWorker(Thread):
 
         params = {'tool': 'crab',\
                   'SubmissionType':'server',\
-                  'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
+                  #'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
+                  # FEDE for savannah 75255
+                  'JSToolVersion':self.client_version, \
                   'tool_ui': os.environ['HOSTNAME'], \
                   'scheduler': self.schedName, \
                   'GridName': str(self.owner), \
