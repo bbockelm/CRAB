@@ -729,11 +729,11 @@ Please get in contact with crab team if you wish to provide your WMS as a servic
 
 =head3 B<role>
 
-The role to be set in the VOMS. See VOMS documentation for more info. No default value.
+The role to be set in the VOMS. Beware that simultaneus use of I<role> and I<group> is not supported. See VOMS documentation for more info. No default value.
 
 =head3 B<group>
 
-The group to be set in the VOMS, See VOMS documentation for more info. No default value.
+The group to be set in the VOMS. Beware that simultaneus use of I<role> and I<group> is not supported. See VOMS documentation for more info. No default value.
 
 =head3 B<dont_check_proxy>
 
