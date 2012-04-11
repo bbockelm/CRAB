@@ -59,11 +59,15 @@ class SchedulerArc(SchedulerGrid):
             xrsl += '(wallTime=%s)' % s
 
         if cfg_params.has_key("GRID.additional_xrsl_parameters"):
-            common.logger.warning("additional_xrsl_parameters is deprecated; use 'additional_jdl_parameters' instead!")
             xrsl += cfg_params["GRID.additional_xrsl_parameters"]
 
+        # If there's additional_jdl_parameters that looks like it could be
+        # xRSL code, add it too.
         if cfg_params.has_key("GRID.additional_jdl_parameters"):
-            xrsl += cfg_params["GRID.additional_jdl_parameters"]
+            if re.match("^\(.*\)$", cfg_params["GRID.additional_jdl_parameters"]):
+                xrsl += cfg_params["GRID.additional_jdl_parameters"]
+            else:
+                common.logger.debug("Omitting GRID.additional_jdl_parameters, as it doesn't look like xRSL code")
 
         return {'user_xrsl': xrsl}
 
