@@ -119,10 +119,12 @@ class PhEDExDatasvcInfo:
         #extract the PFN for the given node,LFN,protocol
         endpoint = self.getStageoutPFN()
         if ( endpoint[-1] != '/' ) : endpoint = endpoint + '/'
+        ### FEDE bug fix 93573 
+        if ( self.lfn[-1] != '/' ) : self.lfn = self.lfn + '/'
 
         if int(self.publish_data) == 1 or  int(self.usenamespace) == 1:
-            self.lfn = self.lfn  + '/${PSETHASH}/'
-            endpoint = endpoint  + '/${PSETHASH}/'
+            self.lfn = self.lfn  + '${PSETHASH}/'
+            endpoint = endpoint  + '${PSETHASH}/'
    
         #extract SE name an SE_PATH (needed for publication)
         SE, SE_PATH, User = self.splitEndpoint(endpoint)

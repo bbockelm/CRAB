@@ -178,8 +178,10 @@ class Scheduler :
         if endpoint.find('${PSETHASH}')>1:
             try:
                 jdir=common.work_space.jobDir()
-                psethash= runCommand('cd %s; edmConfigHash CMSSW.py|tail -1'%jdir)
-                endpoint= string.replace(endpoint,'${PSETHASH}/',psethash)
+                ### FEDE bug fix 93573
+                psethash= string.strip(runCommand('cd %s; edmConfigHash CMSSW.py|tail -1'%jdir))
+                endpoint= string.replace(endpoint,'${PSETHASH}',psethash)
+                #####################
             except:
                 msg =  'Problems with PSETHASH during remote dir check... \n'
                 msg += '\tPlease check stage out configuration parameters.\n'
