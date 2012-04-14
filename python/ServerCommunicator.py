@@ -107,9 +107,9 @@ class ServerCommunicator:
              common.logger.info(logMsg+'\n')
         else:
              self.checkServerResponse(ret)
-            # reset server choice
-            opsToBeSaved={'serverName' : '' }
-            common._db.updateTask_(opsToBeSaved)
+             # reset server choice
+             opsToBeSaved={'serverName' : '' }
+             common._db.updateTask_(opsToBeSaved)
 
         return ret
 
