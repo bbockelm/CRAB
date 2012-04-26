@@ -173,7 +173,7 @@ do
  fi
 
  let iter=iter+1
- sleep 10
+ sleep 30
 done # infinite loop watching processes
 
 # reach here if something went out of limit
