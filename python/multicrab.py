@@ -163,18 +163,6 @@ class MultiCrab:
             pass
 
         crab_cfg='crab.cfg'
-        if common_opts.has_key('cfg') : crab_cfg=common_opts['cfg']
-
-        # then Dataset's specific
-        for sec in cfg_params:
-            if sec in ['MULTICRAB', 'COMMON']: continue
-            # add common to all dataset
-            self.cfg_params_dataset[sec]=cfg_params[sec]
-            for key in common_opts:
-                if not self.cfg_params_dataset[sec].has_key(key):
-                    self.cfg_params_dataset[sec][key]=common_opts[key]
-            pass
-
         # read crab.cfg file and search for storage_path
         crab_cfg_params = loadConfig(crab_cfg,{})
         # also USER.ui_working_dir USER.outputdir and USER.logdir need special treatment
@@ -185,11 +173,36 @@ class MultiCrab:
             self.ui_working_dir = cfg_params["COMMON"].get("user.ui_working_dir", crab_cfg_params.get("USER.ui_working_dir",None))
             self.publish_data_name = cfg_params["COMMON"].get("user.publish_data_name", crab_cfg_params.get("USER.publish_data_name",None))
         else:
-            self.user_remote_dir = crab_cfg_params.get("USER.user_remote_dir",None)
+            self.user_remote_dir = crab_cfg_params.get("USER.user_remote_dir","./")
             self.outputdir = crab_cfg_params.get("USER.outputdir",None)
             self.logdir = crab_cfg_params.get("USER.logdir",None)
             self.ui_working_dir = crab_cfg_params.get("USER.ui_working_dir",None)
             self.publish_data_name = crab_cfg_params.get("USER.publish_data_name",None)
+        print "self.publish_data_name ",self.publish_data_name
+
+        if common_opts.has_key('cfg') : crab_cfg=common_opts['cfg']
+
+        # then Dataset's specific
+        for sec in cfg_params:
+            if sec in ['MULTICRAB', 'COMMON']: continue
+            # add common to all dataset
+            self.cfg_params_dataset[sec]=cfg_params[sec]
+            # special tratment for some parameter
+            if not self.cfg_params_dataset[sec].has_key("user.publish_data_name") and self.publish_data_name:
+                self.cfg_params_dataset[sec]["user.publish_data_name"]=self.publish_data_name+"_"+sec
+            if not self.cfg_params_dataset[sec].has_key("user.user_remote_dir") and self.user_remote_dir:
+                self.cfg_params_dataset[sec]["user.user_remote_dir"]=self.user_remote_dir+"/"+sec
+            if not self.cfg_params_dataset[sec].has_key("user.ui_working_dir") and self.ui_working_dir:
+                self.cfg_params_dataset[sec]["user.ui_working_dir"]=self.ui_working_dir+"/"+sec
+            if not self.cfg_params_dataset[sec].has_key("user.logdir") and self.logdir:
+                self.cfg_params_dataset[sec]["user.logdir"]=self.logdir+"/"+sec
+            if not self.cfg_params_dataset[sec].has_key("user.outputdir") and self.outputdir:
+                self.cfg_params_dataset[sec]["user.outputdir"]=self.outputdir+"/"+sec
+            for key in common_opts:
+                if not self.cfg_params_dataset[sec].has_key(key):
+                    self.cfg_params_dataset[sec][key]=common_opts[key]
+            pass
+
 
         return
 
@@ -205,7 +218,7 @@ class MultiCrab:
             # print 'Section',sec
             config[sec]={}
             for opt in cp.options(sec):
-                #print 'config['+sec+'.'+opt+'] = '+string.strip(cp.get(sec,opt))
+                # print 'config['+sec+'.'+opt+'] = '+string.strip(cp.get(sec,opt))
                 config[sec][opt] = string.strip(cp.get(sec,opt))
         return config
 
@@ -227,31 +240,34 @@ class MultiCrab:
                 
                 options[tmp]=self.cfg_params_dataset[sec][opt]
 
-            # check if user_remote_dir is set in multicrab.cfg
-            # protect against no user_remote_dir
-            self.user_remote_dir =self.cfg_params_dataset[sec].get("user.user_remote_dir",self.user_remote_dir)
-            if not self.user_remote_dir:
-                self.user_remote_dir = "./"
-            # add section to storage_path if exist in crab.cfg
-            if not self.cfg_params_dataset.has_key("USER.user_remote_dir") and self.user_remote_dir:
-                options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
-            # print options["-USER.user_remote_dir"]
-            # also for ui_working_dir
-            if not self.cfg_params_dataset.has_key("USER.ui_working_dir") and self.ui_working_dir:
-                options["-USER.ui_working_dir"]=self.ui_working_dir+"/"+sec
             # if ui_working_dir is set, change -c dir accordnigly
+            if not self.cfg_params_dataset.has_key("USER.ui_working_dir") and self.ui_working_dir:
                 if self.flag_continue:
                     options['-c']=self.ui_working_dir+"/"+sec
 
+            # check if user_remote_dir is set in multicrab.cfg
+            # protect against no user_remote_dir
+            # self.user_remote_dir =self.cfg_params_dataset[sec].get("user.user_remote_dir",self.user_remote_dir)
+            # if not self.user_remote_dir:
+            #     self.user_remote_dir = "./"
+            # add section to storage_path if exist in crab.cfg
+            # if not self.cfg_params_dataset.has_key("USER.user_remote_dir") and self.user_remote_dir:
+            #     options["-USER.user_remote_dir"]=self.user_remote_dir+"/"+sec
+            # print options["-USER.user_remote_dir"]
+            # also for ui_working_dir
+            # if not self.cfg_params_dataset.has_key("USER.ui_working_dir") and self.ui_working_dir:
+            #     options["-USER.ui_working_dir"]=self.ui_working_dir+"/"+sec
             # also for logDir
-            if not self.cfg_params_dataset.has_key("USER.logdir") and self.logdir:
-                options["-USER.logdir"]=self.logdir+"/"+sec
-            # also for outputdir
-            if not self.cfg_params_dataset.has_key("USER.outputdir") and self.outputdir:
-                options["-USER.outputdir"]=self.outputdir+"/"+sec
+            # if not self.cfg_params_dataset.has_key("USER.logdir") and self.logdir:
+            #     options["-USER.logdir"]=self.logdir+"/"+sec
+            # # also for outputdir
+            # if not self.cfg_params_dataset.has_key("USER.outputdir") and self.outputdir:
+            #     options["-USER.outputdir"]=self.outputdir+"/"+sec
             # also for publish_data_name
-            if not self.cfg_params_dataset.has_key("USER.publish_data_name") and self.publish_data_name:
-                options["-USER.publish_data_name"]=self.publish_data_name+"_"+sec
+            # print sec," ",self.cfg_params_dataset[sec], self.cfg_params_dataset[sec].has_key("user.publish_data_name")
+            # if not self.cfg_params_dataset[sec].has_key("user.publish_data_name") and self.publish_data_name:
+            #     options["-USER.publish_data_name"]=self.publish_data_name+"_"+sec
+            #     print "adding user.publish_data_name", self.cfg_params_dataset.has_key("user.publish_data_name")
 
             # Input options (command)
             for opt in self.opts:
@@ -261,6 +277,7 @@ class MultiCrab:
                     if self.flag_continue and options.has_key("-cfg"):
                         del options['-cfg']
                     pass
+
 
             # write crab command to be executed later...
             cmd='crab '
