@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.380 2012/03/16 09:41:09 belforte Exp $"
-__version__ = "$Revision: 1.380 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.381 2012/03/16 13:51:33 belforte Exp $"
+__version__ = "$Revision: 1.381 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -635,7 +635,7 @@ class Cmssw(JobType):
                 tar.add(path+file,file)
 
             ##### Utils
-            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'fillCrabFjr.py','cmscp.py']
+            Utils_file_list=['parseCrabFjr.py','writeCfg.py', 'fillCrabFjr.py','cmscp.py','crabWatchdog.sh']
             for file in Utils_file_list:
                 tar.add(path+file,file)
 
@@ -794,7 +794,7 @@ class Cmssw(JobType):
 
         if os.path.isfile(self.tgzNameWithPath):
             txt += 'echo ">>> tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar zxvf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             #### FEDE FOR BUG 78585 ##########
             if  self.debug_wrapper==1 :
@@ -1007,16 +1007,28 @@ class Cmssw(JobType):
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '    echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
         txt += '    if [ -f $OSG_APP/cmssoft/cms/cmsset_default.sh ] ;then\n'
-        txt += '      # Use $OSG_APP/cmssoft/cms/cmsset_default.sh to setup cms software\n'
-        txt += '        source $OSG_APP/cmssoft/cms/cmsset_default.sh '+self.version+'\n'
+        txt += '        cmsSetupFile=$OSG_APP/cmssoft/cms/cmsset_default.sh\n'
+        txt += '    elif [ -f $CVMFS/cms.cern.ch/cmsset_default.sh ] ; then \n'
+        txt += '        cmsSetupFile=$CVMFS/cms.cern.ch/cmsset_default.sh\n'
+        txt += '    elif [ -f /cvmfs/cms.cern.ch/cmsset_default.sh ] ; then \n'
+        txt += '        cmsSetupFile=/cvmfs/cms.cern.ch/cmsset_default.sh\n'
         txt += '    else\n'
-        txt += '        echo "ERROR ==> $OSG_APP/cmssoft/cms/cmsset_default.sh file not found"\n'
+        txt += '        echo "ERROR ==> cmsset_default.sh file not found"\n'
         txt += '        job_exit_code=10020\n'
         txt += '        func_exit\n'
         txt += '    fi\n'
         txt += '\n'
-        txt += '    echo "==> setup cms environment ok"\n'
-        txt += '    echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
+        txt += '    echo "sourcing $cmsSetupFile ..."\n'
+        txt += '    source $cmsSetupFile\n'
+        txt += '    result=$?\n'
+        txt += '    if [ $result -ne 0 ]; then\n'
+        txt += '       echo "ERROR ==> problem sourcing $cmsSetupFile"\n'
+        txt += '       job_exit_code=10032\n'
+        txt += '       func_exit\n'
+        txt += '    else\n'
+        txt += '      echo "==> setup cms environment ok"\n'
+        txt += '      echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
+        txt += '    fi\n'
 
         return txt
 
@@ -1162,6 +1174,7 @@ class Cmssw(JobType):
             listOutFiles.append(numberFile(file, '$NJob'))
         listOutFiles.append(stdout)
         listOutFiles.append(stderr)
+        listOutFiles.append('Watchdog_$NJob.log')
 
         txt += 'echo "output files: '+string.join(listOutFiles,' ')+'"\n'
         txt += 'filesToCheck="'+string.join(listOutFiles,' ')+'"\n'
