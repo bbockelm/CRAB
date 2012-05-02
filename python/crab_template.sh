@@ -52,6 +52,30 @@ echo export LD_LIBRARY_PATH=$LD_LIBRARY_PATH >> CacheEnv.sh
 echo export PYTHONPATH=$PYTHONPATH >> CacheEnv.sh
 }
 
+outOfBound()
+{
+echo "********** CRAB WRAPPER CMSSW.sh TERMINATED BY A KILL"
+if  [ ! -f ${RUNTIME_AREA}/WATCHDOG-SAYS-EXCEEDED-RESOURCE ]
+then
+  echo "********** KILL WAS NOT ISSUED BY CRAB WATCHDOG SET GENERIC EXIT CODE"
+  job_exit_code=50669
+else
+  echo "********** KILL signal was issued by Crab Watchdog"
+  exceededResource=`cat  ${RUNTIME_AREA}/WATCHDOG-SAYS-EXCEEDED-RESOURCE`
+  echo "********** because usage of resource ${exceededResource} was excessive"
+  case ${exceededResource} in 
+    RSS   ) job_exit_code=50600 ;;
+    VSIZE ) job_exit_code=50601 ;;
+    DISK  ) job_exit_code=50602 ;;
+    CPU   ) job_exit_code=50603 ;;
+    WALL  ) job_exit_code=50604 ;;
+    * ) echo "watchdog kill reason not given, set generic exit code"; job_exit_code=50669 ;;
+  esac
+  echo "************** JOB EXIT CODE set to: ${job_exit_code}"
+fi
+func_exit
+}
+
 
 #CRAB func_exit
 
@@ -65,16 +89,25 @@ echo "Today is `date`"
 echo "Job submitted on host `hostname`"
 uname -a
 echo ">>> current directory (RUNTIME_AREA): `pwd`"
-echo ">>> current directory content:"
-ls -Al
+#echo ">>> current directory content:"
+#ls -Al
 echo ">>> current user: `id`"
 echo ">>> voms proxy information:"
 voms-proxy-info -all
 
 repo=jobreport.txt
 
-
 #CRAB untar_software
+
+#
+# fork watchdog
+#
+export NJob=$1
+./crabWatchdog.sh &
+export WatchdogPID=$!
+echo "crabWatchdog started as process $WatchdogPID"
+trap outOfBound SIGUSR2
+trap outOfBound SIGTERM
 
 #
 # SETUP ENVIRONMENT
@@ -92,6 +125,7 @@ dumpStatus $RUNTIME_AREA/$repo
 #
 # END OF SETUP ENVIRONMENT
 #
+
 #
 # PREPARE AND RUN EXECUTABLE
 #
@@ -145,6 +179,11 @@ let "TIME_EXE = stop_exe_time - start_exe_time"
 echo "TIME_EXE = $TIME_EXE sec"
 echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
 
+#
+# if Watchdog killed executable, make sure we
+# do not go on before Watchdog completes the cleanup
+#
+if [ -f ${RUNTIME_AREA}/WATCHDOG-SAYS-EXCEEDED-RESOURCE ]; then wait ${WatchdogPID}; fi
 
 #CRAB parse_report
 

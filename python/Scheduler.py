@@ -433,6 +433,13 @@ class Scheduler :
         txt += '    else \n'
         txt += '        echo ">>> padding time: Wrapper lasting more than $MIN_JOB_DURATION seconds. No sleep required."\n'
         txt += '    fi\n\n'
+        # stop watchdog and print its summary
+        txt += '    echo "STOPPING WATCHDOG\n"'
+        txt += '    CrabWatchdog PID is $WatchdogPID\n'
+        txt += '    kill $WatchdogPID\n'
+        txt += '    echo "LAST LINES OF WATCHDOG LOG"\n'
+        txt += '    tail -20 Watchdog_$NJob.log\n'
+        txt += '    echo "WATCHDOG LOG ENDED"\n'
         # call timing FJR filling
         txt += '    if [ $PYTHONPATH ]; then \n'
         txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
