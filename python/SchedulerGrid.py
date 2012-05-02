@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.141 2011/11/04 22:01:17 belforte Exp $"
-__version__ = "$Revision: 1.141 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.142 2012/03/13 21:14:48 belforte Exp $"
+__version__ = "$Revision: 1.142 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -193,7 +193,7 @@ class SchedulerGrid(Scheduler):
         txt += 'echo "MonitorID=$MonitorID" >> $RUNTIME_AREA/$repo\n'
 
         txt += 'echo ">>> GridFlavour discovery: " \n'
-        txt += 'if [ $OSG_APP ]; then \n'
+        txt += 'if [ $OSG_GRID ]; then \n'
         txt += '    middleware=OSG \n'
         txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
         txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
