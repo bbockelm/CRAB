@@ -12,6 +12,9 @@
 # if the wrapper is signaled before, it will be
 # wrapper's care to close down, cleanup, report etc.
 #
+
+#debug=1  # comment this line, i.e. unset $debug to avoid debug printouts
+
 #
 wdLogFile=Watchdog_${NJob}.log
 
@@ -93,25 +96,35 @@ do
  do
    metrics=`ps --no-headers -o pid,etime,cputime,rss,vsize,args  -ww -p ${pid}`
    if [ $? -ne 0 ] ; then continue ; fi # make sure process is still alive
-   pid=`echo ${metrics}|awk '{print $1}'
-`
+
+   [ $debug ] && echo metrics = ${metrics}
+
    wall=`echo ${metrics}|awk '{print $2}'` # in the form [[dd-]hh:]mm:ss
+   
+   [ $debug ] && echo wall from PS = ${wall}
+   
    # convert to seconds
-    [[ ${wall} =~ "-" ]] && wallDays=`echo ${wall}|cut -d- -f1`*86400
-    [[ ! ${wall} =~ "-" ]] && wallDays=0
-    wallHMS=`echo ${wall}|cut -d- -f2` # works even if there's no -
-    [[ ${wallHMS} =~ ".*:.*:.*" ]] && longFormat=1 # format hh:mm:ss
-    if [ ${longFormat} ] ; then
-      # since these will be used by "let" protect against leading 0 indicating octal
-      wallSeconds=10\#`echo ${wall}|cut -d: -f3`
-      wallMinutes=10\#`echo ${wall}|cut -d: -f2`*60
-      wallHours=10\#`echo ${wall}|cut -d: -f1`*3600
-    else
-      wallSeconds=10\#`echo ${wall}|cut -d: -f2`
-      wallMinutes=10\#`echo ${wall}|cut -d: -f1`*60
-      wallHours=0
-    fi
-    let wallTime=$wallSeconds+$wallMinutes+$wallHours+$wallDays
+   [[ ${wall} =~ "-" ]] && wallDays=`echo ${wall}|cut -d- -f1`*86400
+   [[ ! ${wall} =~ "-" ]] && wallDays=0
+   wallHMS=`echo ${wall}|cut -d- -f2` # works even if there's no -
+   longFormat=0     # format mm:ss
+   [[ ${wallHMS} =~ ".*:.*:.*" ]] && longFormat=1 # format hh:mm:ss
+   if [ ${longFormat} == 1 ] ; then
+     # since these will be used by "let" protect against leading 0 indicating octal
+     wallSeconds=10\#`echo ${wallHMS}|cut -d: -f3`
+     wallMinutes=10\#`echo ${wallHMS}|cut -d: -f2`*60
+     wallHours=10\#`echo ${wallHMS}|cut -d: -f1`*3600
+   else
+     wallSeconds=10\#`echo ${wallHMS}|cut -d: -f2`
+     wallMinutes=10\#`echo ${wallHMS}|cut -d: -f1`*60
+     wallHours=0
+   fi
+   let wallTime=$wallSeconds+$wallMinutes+$wallHours+$wallDays
+
+   [ $debug ] && echo wallHMS = ${wallHMS}
+   [ $debug ] && echo longFormat = ${longFormat}
+   [ $debug ] && echo wallDays-Hours-Minutes-Seconds = ${wallDays}-${wallHours}-${wallMinutes}-${wallSeconds}
+   [ $debug ] && echo wallTime = ${wallTime}
 
    cpu=`echo $metrics|awk '{print $3}'`  # in the form [dd-]hh:mm:ss
    #convert to seconds
@@ -173,7 +186,7 @@ do
  fi
 
  let iter=iter+1
- sleep 30
+ sleep 60
 done # infinite loop watching processes
 
 # reach here if something went out of limit
