@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.381 2012/03/16 13:51:33 belforte Exp $"
-__version__ = "$Revision: 1.381 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.382 2012/05/02 21:11:15 belforte Exp $"
+__version__ = "$Revision: 1.382 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -1006,6 +1006,7 @@ class Cmssw(JobType):
         txt += '    echo "set SCRAM ARCH to ' + self.executable_arch + '"\n'
         txt += '    export SCRAM_ARCH='+self.executable_arch+'\n'
         txt += '    echo "SCRAM_ARCH = $SCRAM_ARCH"\n'
+        txt += '    echo "OSG_APP is $OSG_APP"\n'
         txt += '    if [ -f $OSG_APP/cmssoft/cms/cmsset_default.sh ] ;then\n'
         txt += '        cmsSetupFile=$OSG_APP/cmssoft/cms/cmsset_default.sh\n'
         txt += '    elif [ -f $CVMFS/cms.cern.ch/cmsset_default.sh ] ; then \n'
@@ -1013,6 +1014,16 @@ class Cmssw(JobType):
         txt += '    elif [ -f /cvmfs/cms.cern.ch/cmsset_default.sh ] ; then \n'
         txt += '        cmsSetupFile=/cvmfs/cms.cern.ch/cmsset_default.sh\n'
         txt += '    else\n'
+        txt += '        echo "CVMSF = $CVMFS"\n'
+        txt += '        echo "/cvmfs/ is"\n'
+        txt += '        echo "ls /"\n'
+        txt += '        ls /\n'
+        txt += '        echo "ls /cvmfs"\n'
+        txt += '        ls /cvmfs\n'
+        txt += '        echo "ls /cvmfs/cms.cern.ch"\n'
+        txt += '        ls /cvmfs/cms.cern.ch\n'
+        txt += '        ls /cvmfs/cms.cern.ch/cmsset*\n'
+        txt += '        ls /cvmfs/cms.cern.ch/cmsset_default.sh\n'
         txt += '        echo "ERROR ==> cmsset_default.sh file not found"\n'
         txt += '        job_exit_code=10020\n'
         txt += '        func_exit\n'
