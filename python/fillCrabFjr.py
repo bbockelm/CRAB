@@ -52,7 +52,8 @@ class fjrParser:
             self.writeFJR()
         else:
             self.fillFJR()
-        self.setStatus() 
+        if self.directive=='--errorcode':
+            self.setStatus() 
 
         return
 
@@ -85,15 +86,14 @@ class fjrParser:
         """
         """ 
         valid = 0
-        fjr=open(self.reportFileName,'r')
-        lines = fjr.readlines()
-        if len(lines) > 0: valid = 1
+        fjr=readJobReport(self.reportFileName)
+        if len(fjr) > 0 : valid = 1
 
         return valid
 
     def fillFJR(self): 
         """
-        """ 
+        """
         valid = self.checkValidFJR()
         if valid == 1 and self.directive=='--errorcode':
             jobReport = readJobReport(self.reportFileName)[0]
@@ -132,9 +132,7 @@ class fjrParser:
             self.writeFJR()
 
 if __name__ == '__main__':
-    try: 
+
         FjrParser_ = fjrParser(sys.argv) 
         FjrParser_.run()  
-    except:
-        pass
 
