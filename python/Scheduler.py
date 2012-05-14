@@ -434,7 +434,7 @@ class Scheduler :
         txt += '        echo ">>> padding time: Wrapper lasting more than $MIN_JOB_DURATION seconds. No sleep required."\n'
         txt += '    fi\n\n'
         # stop watchdog and print its summary
-        txt += '    echo "STOPPING WATCHDOG. CrabWatchdog PID is $WatchdogPID\n'
+        txt += '    echo "STOPPING WATCHDOG. CrabWatchdog PID is ${WatchdogPID}"\n'
         txt += '    kill $WatchdogPID\n'
         txt += '    echo "********** LAST 100 LINES OF WATCHDOG LOG"\n'
         txt += '    tail -100 Watchdog_$NJob.log\n'
