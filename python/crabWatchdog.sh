@@ -218,7 +218,7 @@ procTree=`ps --no-header --forest -o pid -p ${processes}`
 revProcTree=`echo ${procTree}|tac -s" "`
 for pid in ${revProcTree}
 do
-  if [ $pid -eq ${CrabJobID} ] ; then break; fi
+  if [ $pid -eq ${CrabJobID} ] ; then break; fi # do not go above crab wrapper
   if [ $pid -eq $$ ] ; then continue; fi # do not kill myself
   procCmd=`ps --no-headers -o args -ww -p ${pid}`
   if [ $? -ne 0 ] ; then
@@ -227,8 +227,13 @@ do
   fi
   kill -TERM $pid
   echo " Sent TERM to: PID ${pid} executing: ${procCmd}" >> ${wdLogFile}
-  echo -n " Wait 5 sec to let it close up ..." >> ${wdLogFile}
-  sleep 5
+done
+echo " Wait 5 sec to let processes close up ..." >> ${wdLogFile}
+sleep 5
+for pid in ${revProcTree}
+do
+  if [ $pid -eq ${CrabJobID} ] ; then break; fi # do not go above crab wrapper
+  if [ $pid -eq $$ ] ; then continue; fi # do not kill myself
   ps ${pid} > /dev/null
   if [ $? -ne 0 ] ; then
     echo " OK. Process ${pid} is gone" >> ${wdLogFile}
