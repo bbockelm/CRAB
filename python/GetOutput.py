@@ -154,8 +154,14 @@ class GetOutput(Actor):
                     continue
             else:  
                 msg ="Output files for job "+ str(id) +" not available.\n"
-                common.logger.debug(msg)
-                continue   
+                common.logger.info(msg)
+                FieldToUpdate={}
+                FieldToUpdate['state']= 'Cleared'
+                FieldToUpdate["applicationReturnCode"] = str(50700)
+                FieldToUpdate["wrapperReturnCode"] = str(50700)
+                job_id.append(id)
+                listCode.append(FieldToUpdate)
+                #continue   
             input = 'crab_fjr_' + str(id) + '.xml'
             if os.path.exists(self.outDir + input):
                 FiledToUpdate = self.parseFinalReport(self.outDir + input)
