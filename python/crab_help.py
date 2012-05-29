@@ -36,7 +36,7 @@ The most useful general options (use '-h' to get complete help):
   -report                                 -- print a short report about the task
   -list [range]                           -- show technical job details.
   -postMortem [range]                     -- provide a file with information useful for post-mortem analysis of the jobs.
-  -printId [range or full]                -- print the job SID or Task Unique ID while using the server (full to get the SIDs)
+  -printId                                -- print the SID for all jobs in task 
   -createJdl [range]                      -- provide files with a complete Job Description (JDL).
   -validateCfg [fname]                    -- parse the ParameterSet using the framework's Python API.
   -cleanCache                             -- clean SiteDB and CRAB caches.
@@ -363,9 +363,9 @@ If using the server modality, this command allows to delegate a valid credential
 
 Check if the job can find compatible resources. It is equivalent of doing I<glite-wms-job-list-match> on edg.
 
-=head2 B<-printId [range]>
+=head2 B<-printId 
 
-Just print the job identifier, which can be the SID (Grid job identifier) of the job(s) or the taskId if you are using CRAB with the server or local scheduler Id. If [range] is "full", the the SID of all the jobs are printed, also in the case of submission with server.
+Just print the Scheduler Job Identifierb (Grid job identifier e.g.) of the jobs in the task.
 
 =head2 B<-createJdl [range]>
 
