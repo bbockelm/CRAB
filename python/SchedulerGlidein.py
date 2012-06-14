@@ -2,8 +2,8 @@
 Glidein specific portions of the interface to the BossLite scheduler
 """
 
-__revision__ = "$Id: SchedulerGlidein.py,v 1.17 2009/06/11 19:25:12 ewv Exp $"
-__version__ = "$Revision: 1.17 $"
+__revision__ = "$Id: SchedulerGlidein.py,v 1.18 2009/09/03 16:14:55 ewv Exp $"
+__version__ = "$Revision: 1.18 $"
 
 from SchedulerCondorCommon import SchedulerCondorCommon
 import common
@@ -15,6 +15,7 @@ class SchedulerGlidein(SchedulerCondorCommon):
 
     def __init__(self):
         SchedulerCondorCommon.__init__(self,"GLIDEIN")
+        self.OSBsize = 55*1000*1000 # 55MB
         self.environment_unique_identifier = '$Glidein_MonitorID'
         return
 
