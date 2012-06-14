@@ -33,6 +33,7 @@ class SchedulerPbs(SchedulerLocal) :
 
     def __init__(self):
         Scheduler.__init__(self,"PBS")
+        self.OSBsize = None
 
     def configure(self, cfg_params):
         SchedulerLocal.configure(self, cfg_params)

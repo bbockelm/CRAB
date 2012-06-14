@@ -5,8 +5,8 @@ Non-specific code comes from SchedulerCondorCommon
 
 from SchedulerCondorCommon import SchedulerCondorCommon
 
-__revision__ = "$Id: SchedulerCondor_g.py,v 1.107 2009/03/09 15:56:26 ewv Exp $"
-__version__ = "$Revision: 1.107 $"
+__revision__ = "$Id: SchedulerCondor_g.py,v 1.108 2011/05/13 15:06:54 ewv Exp $"
+__version__ = "$Revision: 1.108 $"
 
 # All of the content moved to SchedulerCondorCommon.
 
@@ -18,6 +18,7 @@ class SchedulerCondor_g(SchedulerCondorCommon):
 
     def __init__(self):
         SchedulerCondorCommon.__init__(self,"CONDOR_G")
+        self.OSBsize = None
         return
 
 

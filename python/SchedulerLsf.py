@@ -17,6 +17,7 @@ class SchedulerLsf(SchedulerLocal) :
 
     def __init__(self):
         Scheduler.__init__(self,"LSF")
+        self.OSBsize = None
 
         return
 

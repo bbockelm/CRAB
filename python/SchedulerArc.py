@@ -26,6 +26,7 @@ import sys
 class SchedulerArc(SchedulerGrid):
     def __init__(self, name='ARC'):
         SchedulerGrid.__init__(self,name)
+        self.OSBsize = None
         return
 
     def envUniqueID(self):

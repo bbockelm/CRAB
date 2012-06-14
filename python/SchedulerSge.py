@@ -20,6 +20,7 @@ class SchedulerSge(SchedulerLocal) :
         Scheduler.__init__(self,"SGE")
         self.datasetPath   = None
         self.selectNoInput = None
+        self.OSBsize = None
         return
 
     def configure(self, cfg_params):

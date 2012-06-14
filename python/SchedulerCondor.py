@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.31 2010/05/11 13:39:50 farinafa Exp $"
-__version__ = "$Revision: 1.31 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.32 2010/06/28 18:50:38 ewv Exp $"
+__version__ = "$Revision: 1.32 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -30,6 +30,7 @@ class SchedulerCondor(SchedulerLocal) :
         SchedulerLocal.__init__(self,"CONDOR")
         self.datasetPath   = None
         self.selectNoInput = None
+        self.OSBsize = None
 
         self.environment_unique_identifier = None
         return
