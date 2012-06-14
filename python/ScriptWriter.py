@@ -162,7 +162,8 @@ class ScriptWriter:
         txt += 'CPU_INFOS=-1 \n'
         # NO carriage return for this line #Fabio
         txt += '/usr/bin/time -f \"%U %S %P\" -o cpu_timing.txt '
-        txt += '$executable '+args+'\n'
+        txt += '$executable '+args
+        txt += ' > executable.out 2>&1 \n'
         return txt
 
     def renameOutput_(self):
