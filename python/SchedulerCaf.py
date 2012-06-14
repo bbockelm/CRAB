@@ -16,7 +16,7 @@ class SchedulerCaf(SchedulerLsf) :
     def __init__(self):
         SchedulerLsf.__init__(self)
         Scheduler.__init__(self,"CAF")
-        self.OSBsize = 55000000
+        self.OSBsize = 55*1000*1000  # 55 MB
 
         return
 
