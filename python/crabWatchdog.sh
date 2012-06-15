@@ -18,14 +18,14 @@
 #
 wdLogFile=Watchdog_${NJob}.log
 
-# default limits
-rssLimit=2000000    #   2GB (unit = KB)
-vszLimit=100000000  # 100GB (unit = KB) = no limit
-diskLimit=20000     #  20GB (unit = MB)
-cpuLimit=172800     #  48h  (unit = sec)
-wallLimit=172800    #  48h  (unit = sec)
+# default limits. see https://twiki.cern.ch/twiki/bin/view/CMSPublic/CompOpsPoliciesNodeProtection
+let rssLimit=23*100*1000    #   2.3GB (unit = KB)
+let vszLimit=100*1000*1000  # 100GB (unit = KB) = no limit
+let diskLimit=19*1000       #  19GB (unit = MB)
+let cpuLimit=47*3600+40*60  #  47:40h  (unit = sec)
+let wallLimit=47*3600+40*60 #  47:40h  (unit = sec)
 
-# for test purposes let limits to be lowered
+# for test purposes allos limits to be lowered
 
 if [ -f ${RUNTIME_AREA}/rssLimit ] ; then
   rssLimitUser=`cat ${RUNTIME_AREA}/rssLimit`
@@ -57,8 +57,8 @@ ps u -ww -p ${CrabJobID} >> ${wdLogFile}
 echo " "  >> ${wdLogFile}
 
 echo "LIMITS USED BY THIS WATCHDOG:" >> ${wdLogFile}
-echo "RSS : ${rssLimit} (MBytes)" >> ${wdLogFile}
-echo "VSZ : ${vszLimit} (MBytes)" >> ${wdLogFile}
+echo "RSS : ${rssLimit} (KBytes)" >> ${wdLogFile}
+echo "VSZ : ${vszLimit} (KBytes)" >> ${wdLogFile}
 echo "DISK: ${diskLimit} (MBytes)" >> ${wdLogFile}
 echo "CPU : ${cpuLimit} (seconds)" >> ${wdLogFile}
 echo "WALL: ${wallLimit} (seconds)" >> ${wdLogFile}
@@ -66,7 +66,6 @@ echo "WALL: ${wallLimit} (seconds)" >> ${wdLogFile}
 echo " "  >> ${wdLogFile}
 
 #
-# every 10 seconds:
 # find all processes in the group of the CrabWrapper
 # and for each process do ps and track the maximum
 # usage of resources. hen  max goes over limit i.e...
@@ -83,9 +82,10 @@ maxTime=0
 maxWall=0
 
 iter=0
+nLogLines=0
 while true
 do
- let residue=${iter}%10
+ let residue=${nLogLines}%10
  if [ ${residue} = 0 ]; then
   echo -e "# TIME\t\t\tPID\tRSS(KB)\tMaxRSS\tVSZ(KB)\tMaxVSZ\tdisk(MB)\tMaxDisk\tCPUtime(s)\tWALLtime(s)\tCOMMAND" >>  ${wdLogFile}
  fi
@@ -94,6 +94,7 @@ do
  processes=`pgrep -g ${processGroupID}`
  for pid in ${processes}
  do
+   maxChanged=0
    metrics=`ps --no-headers -o pid,etime,cputime,rss,vsize,args  -ww -p ${pid}`
    if [ $? -ne 0 ] ; then continue ; fi # make sure process is still alive
 
@@ -145,12 +146,16 @@ do
    disk=`du -sm|awk '{print $1}'`
 
    # track max for the metrics
-   if [ $rss -gt $maxRss ]; then maxRss=$rss; fi
-   if [ $vsize -gt $maxVsz ]; then maxVsz=$vsize; fi
-   if [ $disk -gt $maxDisk ]; then maxDisk=$disk; fi
-   if [ $cpuTime -gt $maxCpu ]; then maxCpu=$cpuTime; fi
-   if [ $wallTime -gt $maxWall ]; then maxWall=$wallTime; fi
-    echo -e " $now\t$pid\t$rss\t$maxRss\t$vsize\t$maxVsz\t$disk\t\t$maxDisk\t$cpuTime\t\t$wallTime\t$cmd" >>  ${wdLogFile}
+   if [ $rss -gt $maxRss ]; then maxChanged=1; maxRss=$rss; fi
+   if [ $vsize -gt $maxVsz ]; then maxChanged=1; maxVsz=$vsize; fi
+   if [ $disk -gt $maxDisk ]; then maxChanged=1; maxDisk=$disk; fi
+   if [ $cpuTime -gt $maxCpu ]; then maxChanged=1; maxCpu=$cpuTime; fi
+   if [ $wallTime -gt $maxWall ]; then maxChanged=1; maxWall=$wallTime; fi
+
+   if [ $maxChanged == 1 ] ; then  # only add a line to log when max increases
+     echo -e " $now\t$pid\t$rss\t$maxRss\t$vsize\t$maxVsz\t$disk\t\t$maxDisk\t$cpuTime\t\t$wallTime\t$cmd" >>  ${wdLogFile}
+     let nLogLines=nLogLines+1
+   fi
  done  # end loop on processes in the tree
 
 # if we hit a limit, memorize and exit the infinite loop
@@ -185,7 +190,6 @@ do
      break
  fi
 
- let iter=iter+1
  sleep 60
 done # infinite loop watching processes
 
@@ -228,8 +232,8 @@ do
   kill -TERM $pid
   echo " Sent TERM to: PID ${pid} executing: ${procCmd}" >> ${wdLogFile}
 done
-echo " Wait 5 sec to let processes close up ..." >> ${wdLogFile}
-sleep 5
+echo " Wait 30 sec to let processes close up ..." >> ${wdLogFile}
+sleep 30
 for pid in ${revProcTree}
 do
   if [ $pid -eq ${CrabJobID} ] ; then break; fi # do not go above crab wrapper
@@ -240,9 +244,15 @@ do
   else
     echo -n " Process ${pid} is still there. Send KILL" >> ${wdLogFile}
     kill -KILL $pid
-    sleep 1
+    sleep 10
     echo " Did it die ? do a ps ${pid}" >> ${wdLogFile}
     ps  ${pid}  >> ${wdLogFile}
+    if [ $? -ne 0 ] ; then
+	echo " Process ${pid} gone at last" >> ${wdLogFile}
+    else
+	echo -n " Process ${pid} is still there. One last KILL and move on" >> ${wdLogFile}
+	kill -KILL $pid
+    fi
   fi
 done
 
