@@ -25,7 +25,7 @@ let diskLimit=19*1000       #  19GB (unit = MB)
 let cpuLimit=47*3600+40*60  #  47:40h  (unit = sec)
 let wallLimit=47*3600+40*60 #  47:40h  (unit = sec)
 
-# for test purposes allos limits to be lowered
+# for test purposes allow limits to be lowered
 
 if [ -f ${RUNTIME_AREA}/rssLimit ] ; then
   rssLimitUser=`cat ${RUNTIME_AREA}/rssLimit`
@@ -56,13 +56,19 @@ ps u -ww -p ${CrabJobID} >> ${wdLogFile}
 
 echo " "  >> ${wdLogFile}
 
-echo "LIMITS USED BY THIS WATCHDOG:" >> ${wdLogFile}
-echo "RSS : ${rssLimit} (KBytes)" >> ${wdLogFile}
-echo "VSZ : ${vszLimit} (KBytes)" >> ${wdLogFile}
-echo "DISK: ${diskLimit} (MBytes)" >> ${wdLogFile}
-echo "CPU : ${cpuLimit} (seconds)" >> ${wdLogFile}
-echo "WALL: ${wallLimit} (seconds)" >> ${wdLogFile}
+echo "# LIMITS USED BY THIS WATCHDOG:" >> ${wdLogFile}
+echo "# RSS  (KBytes)  : ${rssLimit}"  >> ${wdLogFile}
+echo "# VSZ  (KBytes)  : ${vszLimit}"  >> ${wdLogFile}
+echo "# DISK (MBytes)  : ${diskLimit}" >> ${wdLogFile}
+echo "# CPU  (seconds) : ${cpuLimit}"  >> ${wdLogFile}
+echo "# WALL (seconds) : ${wallLimit}" >> ${wdLogFile}
 
+echo " "  >> ${wdLogFile}
+
+echo "# FOLLOWING PRINTOUT TRACKS MAXIMUM VALUES OF RESOURCES USE" >> ${wdLogFile}
+echo "# ONE LINE IS PRINTED EACH TIME A MAXIMUM CHANGES"  >> ${wdLogFile}
+echo "# IF CHANGE WAS IN RSS OR VSZ ALSO PROCID AND COMMAND ARE PRINTED"  >> ${wdLogFile}
+echo "# THERE IS NO PRINTOUT FOR CPU/WALL TIME INCREASE"  >> ${wdLogFile}
 echo " "  >> ${wdLogFile}
 
 #
@@ -85,13 +91,14 @@ iter=0
 nLogLines=0
 while true
 do
- let residue=${nLogLines}%10
+ let residue=${nLogLines}%30    # print a header line every 30 lines
  if [ ${residue} = 0 ]; then
-  echo -e "# TIME\t\t\tPID\tRSS(KB)\tMaxRSS\tVSZ(KB)\tMaxVSZ\tdisk(MB)\tMaxDisk\tCPUtime(s)\tWALLtime(s)\tCOMMAND" >>  ${wdLogFile}
+  echo -e "# TIME\t\t\tPID\tRSS(KB)\tVSZ(KB)\tDsk(MB)\ttCPU(s)\ttWALL(s)\tCOMMAND" >>  ${wdLogFile}
  fi
  now=`date +'%b %d %T %Z'`
  processGroupID=`ps -o pgrp -p ${CrabJobID}|tail -1|tr -d ' '`
  processes=`pgrep -g ${processGroupID}`
+
  for pid in ${processes}
  do
    maxChanged=0
@@ -129,36 +136,44 @@ do
 
    cpu=`echo $metrics|awk '{print $3}'`  # in the form [dd-]hh:mm:ss
    #convert to seconds
-    [[ $cpu =~ "-" ]] && cpuDays=`echo $cpu|cut -d- -f1`*86400
-    [[ ! $cpu =~ "-" ]] && cpuDays=0
-    cpuHMS=`echo $cpu|cut -d- -f2` # works even if there's no -
-    cpuSeconds=10\#`echo $cpu|cut -d: -f3`
-    cpuMinutes=10\#`echo $cpu|cut -d: -f2`*60
-    cpuHours=10\#`echo $cpu|cut -d: -f1`*3600
-    let cpuTime=$cpuSeconds+$cpuMinutes+$cpuHours+$cpuDays
-
+   [[ $cpu =~ "-" ]] && cpuDays=`echo $cpu|cut -d- -f1`*86400
+   [[ ! $cpu =~ "-" ]] && cpuDays=0
+   cpuHMS=`echo $cpu|cut -d- -f2` # works even if there's no -
+   cpuSeconds=10\#`echo $cpu|cut -d: -f3`
+   cpuMinutes=10\#`echo $cpu|cut -d: -f2`*60
+   cpuHours=10\#`echo $cpu|cut -d: -f1`*3600
+   let cpuTime=$cpuSeconds+$cpuMinutes+$cpuHours+$cpuDays
+   
    rss=`echo $metrics|awk '{print $4}'`
 
    vsize=`echo $metrics|awk '{print $5}'`
 
    cmd=`echo $metrics|awk '{print $6" "$7" "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15}'`
 
-   disk=`du -sm|awk '{print $1}'`
-
    # track max for the metrics
    if [ $rss -gt $maxRss ]; then maxChanged=1; maxRss=$rss; fi
    if [ $vsize -gt $maxVsz ]; then maxChanged=1; maxVsz=$vsize; fi
-   if [ $disk -gt $maxDisk ]; then maxChanged=1; maxDisk=$disk; fi
-   if [ $cpuTime -gt $maxCpu ]; then maxChanged=1; maxCpu=$cpuTime; fi
-   if [ $wallTime -gt $maxWall ]; then maxChanged=1; maxWall=$wallTime; fi
+   if [ $cpuTime -gt $maxCpu ]; then maxCpu=$cpuTime; fi
+   if [ $wallTime -gt $maxWall ]; then maxWall=$wallTime; fi
 
-   if [ $maxChanged == 1 ] ; then  # only add a line to log when max increases
-     echo -e " $now\t$pid\t$rss\t$maxRss\t$vsize\t$maxVsz\t$disk\t\t$maxDisk\t$cpuTime\t\t$wallTime\t$cmd" >>  ${wdLogFile}
-     let nLogLines=nLogLines+1
+# only add a line to log when max increases
+
+   if [ ${maxChanged} = 1 ]  ; then 
+     echo -e " $now\t$pid\t$maxRss\t$maxVsz\t$maxDisk\t$cpuTime\t$wallTime\t$cmd" >>  ${wdLogFile}
+     let nLogLines=${nLogLines}+1
    fi
  done  # end loop on processes in the tree
 
-# if we hit a limit, memorize and exit the infinite loop
+# now check disk
+
+ disk=`du -sm|awk '{print $1}'`
+ if [ $disk -gt $maxDisk ]; then
+     maxDisk=$disk
+     echo -e " $now\t---\t$maxRss\t$maxVsz\t$maxDisk\t----\t----\t----" >>  ${wdLogFile}
+     let nLogLines=${nLogLines}+1
+ fi
+
+# if we hit a limit, make a note and exit the infinite loop
  if [ $maxRss -gt $rssLimit ] ; then
      exceededResource=RSS
      resVal=$maxRss
@@ -171,7 +186,7 @@ do
      resLim=$vszLimit
      break
  fi
- if [ $disk -gt $diskLimit ] ; then
+ if [ $maxDisk -gt $diskLimit ] ; then
      exceededResource=DISK
      resVal=$maxDisk
      resLim=$diskLimit
@@ -190,6 +205,7 @@ do
      break
  fi
 
+ let iter=${iter}+1
  sleep 60
 done # infinite loop watching processes
 
