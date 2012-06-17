@@ -184,15 +184,15 @@ echo "ExeTime=$TIME_EXE" >> $RUNTIME_AREA/$repo
 #
 exeOutLines=`wc -l executable.out | awk '{print $1'}`
 echo ">>> $executable wrote $exeOutLines lines of stdout+stderr"
-echo ">>> START OF printout of $exeOutLines  stdout+stderr"
+echo ">>> START OF printout of $exeOutLines lines from stdout+stderr"
 if [ $exeOutLines -gt 2000 ]
 then
-  echo ">>> print out only first and last 1K lines:"
+  echo ">>> print out only first and last 1000 lines:"
   head -1000 executable.out; echo ""; echo ">>>[...BIG SNIP...]";echo "";tail -1000 executable.out
 else
   cat executable.out
 fi
-echo ">>> END OF printout of $exeOutLines  stdout+stderr"
+echo ">>> END OF printout of $exeOutLines lines from stdout+stderr"
 
 #
 # if Watchdog killed executable, make sure we
