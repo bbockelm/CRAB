@@ -436,9 +436,11 @@ class Scheduler :
         # stop watchdog and print its summary
         txt += '    echo "STOPPING WATCHDOG. CrabWatchdog PID is ${WatchdogPID}"\n'
         txt += '    kill $WatchdogPID\n'
-        txt += '    echo "********** LAST 100 LINES OF WATCHDOG LOG"\n'
-        txt += '    tail -100 Watchdog_$NJob.log\n'
+        txt += '    echo "********** LAST 50 LINES OF WATCHDOG LOG"\n'
+        txt += '    tail -50 Watchdog_$NJob.log\n'
         txt += '    echo "********** WATCHDOG LOG ENDED"\n'
+        txt += '    echo "ZIPPING WATCHDOG LOG"\n'
+        txt += '    gzip Watchdog_$NJob.log\n'
         # call timing FJR filling
         txt += '    if [ $PYTHONPATH ]; then \n'
         txt += '       if [ ! -s $RUNTIME_AREA/fillCrabFjr.py ]; then \n'
