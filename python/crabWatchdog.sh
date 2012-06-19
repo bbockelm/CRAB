@@ -166,7 +166,11 @@ do
 
 # now check disk
 
- disk=`du -sm|awk '{print $1}'`
+ disk=`du -sm ${RUNTIME_AREA}|awk '{print $1}'`
+ if [ $OSG_WN_TMP ]; then
+   disk=`du -sm ${OSG_WN_TMP}|awk '{print $1}'`
+ fi
+
  if [ $disk -gt $maxDisk ]; then
      maxDisk=$disk
      echo -e " $now\t---\t$maxRss\t$maxVsz\t$maxDisk\t----\t----\t----" >>  ${wdLogFile}
