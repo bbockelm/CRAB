@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.383 2012/05/10 21:16:59 belforte Exp $"
-__version__ = "$Revision: 1.383 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.384 2012/06/17 15:38:50 belforte Exp $"
+__version__ = "$Revision: 1.384 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -450,12 +450,10 @@ class Cmssw(JobType):
         if njobs == 0:
             raise CrabException("Asked to split zero jobs: aborting")
         if not self.server and not self.local and njobs > 500:
-            ######### FEDE FOR BUG 85243 ########## 
             msg =  "Error: this task contains more than 500 jobs. \n"
             msg += "     The CRAB SA does not submit more than 500 jobs.\n"
             msg += "     Use the server mode. \n"
             raise CrabException(msg)
-            #######################################
         # create the empty structure
         for i in range(njobs):
             jobParams.append("")
@@ -658,15 +656,21 @@ class Cmssw(JobType):
 
         tarballinfo = os.stat(self.tgzNameWithPath)
         if ( tarballinfo.st_size > self.MaxTarBallSize*1024*1024 ) :
+            #### FEDE FOR SAVANNAH BUG 94491 ########
+            cmdOut = runCommand('tar -ztvf %s|sort -n -k3'%self.tgzNameWithPath)
             if not self.server:
                 msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + \
                          str(self.MaxTarBallSize) +'MB input sandbox limit \n'
                 msg += '      and not supported by the direct GRID submission system.\n'
                 msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
                 msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
+                msg += '      Content of your default.tgz archive is \n'
+                msg += cmdOut
             else:
                 msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' +  \
                         str(self.MaxTarBallSize) +'MB input sandbox limit in the server.'
+                msg += 'Content of your default.tgz archive is \n'
+                msg += cmdOut
             raise CrabException(msg)
 
         ## create tar-ball with ML stuff
@@ -796,7 +800,6 @@ class Cmssw(JobType):
             txt += 'echo ">>> tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
             txt += 'tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
-            #### FEDE FOR BUG 78585 ##########
             if  self.debug_wrapper==1 :
                 txt += 'echo "----------------" \n'
                 txt += 'ls -AlR $RUNTIME_AREA \n'
@@ -813,7 +816,6 @@ class Cmssw(JobType):
                 txt += '   echo "changed in a+w the permission of $RUNTIME_AREA "\n'
                 txt += '   ls -AlR $RUNTIME_AREA \n'
             txt += 'fi \n'
-            ###########################
             txt += '\n'
             txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
             txt += 'if [ -z "$PYTHONPATH" ]; then\n'
@@ -837,15 +839,11 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsBuildExe\n'
         txt += 'echo ">>> moving CMSSW software directories in `pwd`" \n'
         
-        ############ FEDE FOR BUG 78585 #####################
         txt += 'rm -rf lib/ module/ \n'
-        #######################################
         txt += 'mv $RUNTIME_AREA/lib/ . \n'
         txt += 'mv $RUNTIME_AREA/module/ . \n'
         if self.dataExist == True:
-            ############ FEDE FOR BUG 78585 #####################
             txt += 'rm -rf src/ \n'
-            ######################################
             txt += 'mv $RUNTIME_AREA/src/ . \n'
         if len(self.additional_inbox_files)>0:
             for file in self.additional_inbox_files:
