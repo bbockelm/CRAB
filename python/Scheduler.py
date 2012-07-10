@@ -127,7 +127,6 @@ class Scheduler :
 
         # Time padding for minimal job duration.
         self.minimal_job_duration = 10
-        self.minimal_job_duration = 1
 
         return
 
