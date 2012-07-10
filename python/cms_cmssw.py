@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.384 2012/06/17 15:38:50 belforte Exp $"
-__version__ = "$Revision: 1.384 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.385 2012/07/09 16:19:53 fanzago Exp $"
+__version__ = "$Revision: 1.385 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -662,8 +662,7 @@ class Cmssw(JobType):
                 msg  = 'Input sandbox size of ' + str(float(tarballinfo.st_size)/1024.0/1024.0) + ' MB is larger than the allowed ' + \
                          str(self.MaxTarBallSize) +'MB input sandbox limit \n'
                 msg += '      and not supported by the direct GRID submission system.\n'
-                msg += '      Please use the CRAB server mode by setting server_name=<NAME> in section [CRAB] of your crab.cfg.\n'
-                msg += '      For further infos please see https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabServerForUsers#Server_available_for_users'
+                msg += '      Please use the CRAB server mode by setting use_server=1 in section [CRAB] of your crab.cfg.\n'
                 msg += '      Content of your default.tgz archive is \n'
                 msg += cmdOut
             else:
@@ -925,7 +924,9 @@ class Cmssw(JobType):
         """
 
         txt = '\n#Written by cms_cmssw::wsRenameOutput\n'
-        txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
+        txt += 'echo ">>> current directory $PWD" \n'
+        txt += 'echo ">>>  (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
+        txt += 'echo ">>> (WORKING_DIR): $WORKING_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
         #if self.debug_wrapper==1:
         txt += 'ls -Al\n'
@@ -957,7 +958,9 @@ class Cmssw(JobType):
 
         txt += 'file_list="'+string.join(file_list,',')+'"\n'
         txt += '\n'
-        txt += 'echo ">>> current directory (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
+        txt += 'echo ">>> current directory $PWD" \n'
+        txt += 'echo ">>> (SOFTWARE_DIR): $SOFTWARE_DIR" \n'
+        txt += 'echo ">>> (WORKING_DIR): $WORKING_DIR" \n'
         txt += 'echo ">>> current directory content:"\n'
         #if self.debug_wrapper==1:
         txt += 'ls -Al\n'
