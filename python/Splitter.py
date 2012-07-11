@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: Splitter.py,v 1.54 2012/03/06 19:22:59 spiga Exp $"
-__version__ = "$Revision: 1.54 $"
+__revision__ = "$Id: Splitter.py,v 1.55 2012/03/13 21:49:55 belforte Exp $"
+__version__ = "$Revision: 1.55 $"
 
 import common
 from crab_exceptions import *
@@ -575,7 +575,7 @@ class JobSplitter:
 
         managedGenerators =self.args['managedGenerators']
         generator = self.args['generator']
-        firstLumi = self.cfg_params.get('CMSSW.first_lumi', 1)
+        firstLumi = int(self.cfg_params.get('CMSSW.first_lumi', 1))
 
         self.prepareSplittingNoInput()
 
