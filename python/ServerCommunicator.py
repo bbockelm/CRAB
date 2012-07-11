@@ -33,8 +33,11 @@ else:
     try:
         from lib64.CRAB_Server_API_311X_amd64 import CRAB_Server_Session as C_AS_Session
     except:
-        from lib64.CRAB_Server_API_5X_amd64 import CRAB_Server_Session as C_AS_Session
-
+        try:
+            from lib64.CRAB_Server_API_5X_amd64 import CRAB_Server_Session as C_AS_Session
+        except: 
+            from lib64.CRAB_Server_API_6X_amd64 import CRAB_Server_Session as C_AS_Session
+ 
 class ServerCommunicator:
     """
     Common interface for the interaction between the Crab client and the server Web Service
