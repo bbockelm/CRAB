@@ -358,6 +358,11 @@ class Submitter(Actor):
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
                 rb = common.scheduler.name()
                 msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
+            elif common.scheduler.name().upper() in ['RCONDOR']:
+                taskHash = sha1(common._db.queryTask('name')).hexdigest()
+                jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
+                rb = common.scheduler.name()
+                msg += ('JobID for ML monitoring is created for RCONDOR scheduler: %s\n'%str(jobId))
             elif common.scheduler.name().upper() in ['ARC']:
                 jobId = str(jj) + '_' + str(jid)
                 msg += ('JobID for ML monitoring is created for ARC scheduler: %s\n'%str(jobId))

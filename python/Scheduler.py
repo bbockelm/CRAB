@@ -42,6 +42,7 @@ class Scheduler :
                               'GLITE'    : 'srm-lcg' , \
                               'GLIDEIN'  : 'srm-lcg' , \
                               'CONDOR'   : 'srm-lcg',  \
+                              'RCONDOR'  : 'srm-lcg',  \
                               'SGE'      : 'srm-lcg', \
                               'ARC'      : 'srm-lcg'
                             }
@@ -127,6 +128,7 @@ class Scheduler :
 
         # Time padding for minimal job duration.
         self.minimal_job_duration = 10
+        self.minimal_job_duration = 1
 
         return
 
