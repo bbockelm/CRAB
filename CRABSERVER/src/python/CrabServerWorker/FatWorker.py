@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.223 2011/07/01 15:16:14 belforte Exp $"
-__version__ = "$Revision: 1.223 $"
+__revision__ = "$Id: FatWorker.py,v 1.224 2012/04/03 13:25:46 fanzago Exp $"
+__version__ = "$Revision: 1.224 $"
 
 import string
 import sys, os
@@ -395,7 +395,10 @@ class FatWorker(Thread):
                 # backup for job output (tgz files only, less load)
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
-                        check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
+                       if self.bossSchedName in ['SchedulerGlidein']:
+                          self.log.nfo("FatWorker : No need to back up osb for glideins") 
+                       else:
+                          check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
                     except Exception, ex:
                         logMsg = "FW %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                         j['name'], self.taskName)
@@ -1023,18 +1026,25 @@ class FatWorker(Thread):
         ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
         ceString = ','.join(ceDest)
         seString = ','.join(seDest)
+        cmsver=re.split('_', version)
+        mcmsver = "%s%.2d%.2d" %(cmsver[1], int(cmsver[2]), int(cmsver[3]))
+
+
         myschedName = getfqdn()
         schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
         schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
         schedParam += '+DESIRED_SEs = "' + seString + '"; '
-        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
+        schedParam += '+DESIRED_CMSVersion = "' + version + '"; '
+        schedParam += '+DESIRED_CMSVersionNr = ' + mcmsver + '; '
+#        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
         schedParam += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
 
         if self.cfg_params['EDG.max_wall_time']:
             schedParam += '+MaxWallTimeMins = %s; ' % \
                           self.cfg_params['EDG.max_wall_time']
         else:
-            schedParam += '+MaxWallTimeMins = 1440; '
+            schedParam += '+MaxWallTimeMins = 1300; '
+            schedParam += '+NormMaxWallTimeMins = 600; '
 
         return schedParam, ceDest
 
