@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.225 2012/07/12 09:25:54 spadhi Exp $"
-__version__ = "$Revision: 1.225 $"
+__revision__ = "$Id: FatWorker.py,v 1.226 2012/07/12 10:43:42 spadhi Exp $"
+__version__ = "$Revision: 1.226 $"
 
 import string
 import sys, os
@@ -396,7 +396,8 @@ class FatWorker(Thread):
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
                        if self.bossSchedName in ['SchedulerGlidein']:
-                          self.log.info("FatWorker : No need to back up osb for glideins") 
+                          self.log.info("FatWorker : No need to back up osb for glideins")
+                          check=0
                        else:
                           check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
                     except Exception, ex:
