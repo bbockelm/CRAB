@@ -19,8 +19,8 @@ _NotificationComponent_
 
 """
 
-__version__ = "$Revision: 1.31 $"
-__revision__ = "$Id: NotificationComponent.py,v 1.31 2010/08/10 21:55:56 spiga Exp $"
+__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: NotificationComponent.py,v 1.32 2011/11/25 16:10:04 belforte Exp $"
 
 import os
 import socket
@@ -273,6 +273,7 @@ class NotificationComponent:
             return
 	
 	C = CreateXmlJobReport()#.CreateXmlJobReport()
+        logging.info("NotificationComponent parsing the file : %s" %pathfile)  
         try:
             C.fromFile( pathfile )
         except RuntimeError, r:
