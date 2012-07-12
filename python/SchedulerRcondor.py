@@ -5,6 +5,9 @@ Implements the vanilla (local) Remote Condor scheduler
 from SchedulerGrid  import SchedulerGrid
 from crab_exceptions import CrabException
 from crab_util import runCommand
+#from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+
 
 
 import common
@@ -29,7 +32,7 @@ class SchedulerRcondor(SchedulerGrid) :
         SchedulerGrid.__init__(self,"RCONDOR")
         self.datasetPath   = None
         self.selectNoInput = None
-        self.OSBsize = 100*1000*1000 # 100 MB
+        self.OSBsize = 50*1000*1000 # 50 MB
 
         self.environment_unique_identifier = None
         return
@@ -86,21 +89,35 @@ class SchedulerRcondor(SchedulerGrid) :
 
     def sched_parameter(self, i, task):
         """
-        Return scheduler-specific parameters
+        Return scheduler-specific parameters. Used at crab -submit time
         """
-        req = ''
-        if self.EDG_addJdlParam:
-            if self.EDG_addJdlParam[-1] == '':
-                self.EDG_addJdlParam = self.EDG_addJdlParam[:-1]
-            for p in self.EDG_addJdlParam:
-                req += p.strip()+';\n'
 
-        return req
+#SB paste from crab ScheduerGlidein
+
+        jobParams = ""
+
+        seDest = task.jobs[i-1]['dlsDestination']
+
+        seString=self.blackWhiteListParser.cleanForBlackWhiteList(seDest)
+        print "SB: SE destinations AfterBlak and White: ", seString
+
+        jobParams += '+DESIRED_SEs = "'+seString+'"; '
+
+        if (self.EDG_clock_time):
+            jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
+        else:
+            jobParams += '+MaxWallTimeMins = %d; ' % (60*24)
+
+        common._db.updateTask_({'jobType':jobParams})
+
+
+        return jobParams
 
 
     def realSchedParams(self, cfg_params):
         """
         Return dictionary with specific parameters, to use with real scheduler
+        is called when scheduler is initialized in Boss, i.e. at each crab command
         """
 
         tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
@@ -115,6 +132,7 @@ class SchedulerRcondor(SchedulerGrid) :
         
         params = {'tmpDir':tmpDir,
                   'jobDir':jobDir}
+
         return params
 
 
@@ -159,8 +177,39 @@ class SchedulerRcondor(SchedulerGrid) :
         txt += 'func_exit() { \n'
         txt += self.wsExitFunc_common()
 
-        txt += '    cp  ${out_files}.tgz $_CONDOR_SCRATCH_DIR/\n'
-        txt += '    cp  crab_fjr_$NJob.xml $_CONDOR_SCRATCH_DIR/\n'
+        #txt += '    cp  ${out_files}.tgz $_CONDOR_SCRATCH_DIR/\n'
+        #txt += '    cp  CMSSW_$NJob.stdout $_CONDOR_SCRATCH_DIR/\n'
+        #txt += '    cp  CMSSW_$NJob.stderr $_CONDOR_SCRATCH_DIR/\n'
+        #txt += '    cp  Watchdog_$NJob.log.gz  $_CONDOR_SCRATCH_DIR/\n'
+        #txt += '    cp  crab_fjr_$NJob.xml $_CONDOR_SCRATCH_DIR/\n'
+
+        
+        ### specific Glite check for OSB
+        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    tmp_size=`ls -gGrta ${out_files}.tgz | awk \'{ print $3 }\'`\n'
+        txt += '    rm ${out_files}.tgz\n'
+        txt += '    size=`expr $tmp_size`\n'
+        txt += '    echo "Total Output dimension: $size"\n'
+        txt += '    limit='+str(self.OSBsize) +' \n'
+        txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
+        txt += '    if [ "$limit" -lt "$size" ]; then\n'
+        txt += '        exceed=1\n'
+        txt += '        job_exit_code=70000\n'
+        txt += '        echo "Output Sanbox too big. Produced output is lost "\n'
+        txt += '    else\n'
+        txt += '        exceed=0\n'
+        txt += '        echo "Total Output dimension $size is fine."\n'
+        txt += '    fi\n'
+
+        txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
+        txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
+        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+        txt += '    if [ $exceed -ne 1 ]; then\n'
+        txt += '        tar zcvf ${out_files}.tgz  ${final_list}\n'
+        txt += '    else\n'
+        txt += '        tar zcvf ${out_files}.tgz CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr\n'
+        txt += '    fi\n'
+        txt += '    python $RUNTIME_AREA/fillCrabFjr.py $RUNTIME_AREA/crab_fjr_$NJob.xml --errorcode $job_exit_code \n'
 
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
