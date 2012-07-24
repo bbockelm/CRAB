@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.226 2012/07/12 10:43:42 spadhi Exp $"
-__version__ = "$Revision: 1.226 $"
+__revision__ = "$Id: FatWorker.py,v 1.227 2012/07/12 15:51:40 fanzago Exp $"
+__version__ = "$Revision: 1.227 $"
 
 import string
 import sys, os
@@ -224,6 +224,7 @@ class FatWorker(Thread):
     def parseCommandXML(self):
         status = 0
         cmdSpecFile = os.path.join(self.wdir, self.taskName + '_spec/cmd.xml' )
+        self.log.info("FW FEDE file %s"%cmdSpecFile)
         try:
             doc = minidom.parse(cmdSpecFile)
         except Exception, e:
@@ -249,6 +250,8 @@ class FatWorker(Thread):
             self.type = str( cmdXML.getAttribute('Type') )
             self.owner = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
+            self.log.info('FW FEDE %s self.cfg_params'%self.cfg_params)
+          
             # FEDE for savannah 75255
             self.client_version = str( cmdXML.getAttribute('ClientVersion') )
             self.log.info('FW %s self.client_version'%self.client_version)
@@ -1071,17 +1074,27 @@ class FatWorker(Thread):
             i = 0
 
         sched_param = 'Requirements = ' + task['jobType']
+        
+        self.log.info("FW FEDE sched_param: %s"%sched_param)
+         
         req = ''
 
         if self.cfg_params['EDG.max_wall_time']:
+            if (not req == ' '):
+                req = req + ' && '
             req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
+        
         if self.cfg_params['EDG.max_cpu_time']:
             if (not req == ' '):
                 req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
+        
+        self.log.info("FW FEDE req: %s"%req)
+         
         seReq = self.se_list(i, task.jobs[i]['dlsDestination'])
         ceReq = self.ce_list()
         sched_param += req + seReq + ceReq + ';\n'
+        self.log.info("FW FEDE sched_param_fin: %s"%sched_param)
 
         sched_param += 'MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
         sched_param += 'VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
