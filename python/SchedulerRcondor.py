@@ -125,8 +125,7 @@ class SchedulerRcondor(SchedulerGrid) :
         jobDir = common.work_space.jobDir()
 
         taskDir=common.work_space.topDir().split('/')[-2]
-        rcondorDir = "/afs/cern.ch/user/b/belforte/w0/crabtest/rc/igor/"
-        rcondorDir ='%s/.rcondor/mount/' % os.getenv('HOME')
+        rcondorDir ='%s/.rcondor/%s/mount/' % (os.getenv('HOME'),os.getenv('RCONDOR_HOST'))
         tmpDir = os.path.join(rcondorDir,taskDir)
         tmpDir = os.path.join(tmpDir,'condor_temp')
         
