@@ -98,8 +98,10 @@ class SchedulerRcondor(SchedulerGrid) :
 
         seDest = task.jobs[i-1]['dlsDestination']
 
+        if seDest == [''] :
+            seDest = self.blackWhiteListParser.expandList("T") # all of SiteDB
+
         seString=self.blackWhiteListParser.cleanForBlackWhiteList(seDest)
-        print "SB: SE destinations AfterBlak and White: ", seString
 
         jobParams += '+DESIRED_SEs = "'+seString+'"; '
 
