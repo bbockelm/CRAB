@@ -100,6 +100,7 @@ componentFields = {
     "CrabServerWorker" : {
     'ComponentDir':None,
     'glexec':'/full/path/to/glexec',
+    'glexecPath':'/full/path/to/glexec',
     'glexecWrapper':'/full/path/to/glexec wrapper script',
     'renewProxy':'/full/path/to/proxy renewal script',
     'maxThreads':'5',
