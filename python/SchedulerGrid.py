@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.142 2012/03/13 21:14:48 belforte Exp $"
-__version__ = "$Revision: 1.142 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.143 2012/05/02 21:08:25 belforte Exp $"
+__version__ = "$Revision: 1.143 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -195,58 +195,81 @@ class SchedulerGrid(Scheduler):
         txt += 'echo ">>> GridFlavour discovery: " \n'
         txt += 'if [ $OSG_GRID ]; then \n'
         txt += '    middleware=OSG \n'
-        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        SyncCE="$OSG_JOB_CONTACT"; \n'
-        txt += '        echo "SyncCE=$SyncCE" >> $RUNTIME_AREA/$repo ;\n'
-        txt += '    else\n'
-        txt += '        echo "not reporting SyncCE";\n'
-        txt += '    fi\n';
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += '    echo "source OSG GRID setup script" \n'
         txt += '    source $OSG_GRID/setup.sh \n'
         txt += 'elif [ $NORDUGRID_CE ]; then \n' # We look for $NORDUGRID_CE before $VO_CMS_SW_DIR,
         txt += '    middleware=ARC \n'           # because the latter is defined for ARC too
-        txt += '    echo "SyncCE=${NORDUGRID_CE}:2811/nordugrid-GE-${QUEUE:-queue}" >> $RUNTIME_AREA/$repo \n'
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'elif [ $VO_CMS_SW_DIR ]; then \n'
         txt += '    middleware=LCG \n'
-        txt += '    if  [ $GLIDEIN_Gatekeeper ]; then \n'
-        txt += '        echo "SyncCE=`echo $GLIDEIN_Gatekeeper | sed -e s/:2119//`" >> $RUNTIME_AREA/$repo \n'
-        txt += '    else \n'
-        txt += '        echo "SyncCE=`glite-brokerinfo getCE`" >> $RUNTIME_AREA/$repo \n'
-        txt += '    fi \n'
-        txt += '    echo "GridFlavour=$middleware" | tee -a $RUNTIME_AREA/$repo \n'
         txt += 'else \n'
         txt += '    echo "ERROR ==> GridFlavour not identified" \n'
         txt += '    job_exit_code=10030 \n'
         txt += '    func_exit \n'
         txt += 'fi \n'
+        txt += 'echo "GridFlavour=$middleware" \n'
+        txt += 'echo "GridFlavour=$middleware" >> $RUNTIME_AREA/$repo \n'
 
+        txt += '\n'
+
+        txt += 'echo ">>> SyncSite discovery: " \n'
+        txt += 'if [ $GLIDEIN_CMSSite ]; then \n'
+        txt += '    SyncSite=$GLIDEIN_CMSSite \n'
+        txt += '    echo "SyncSite=$SyncSite" \n'
+        txt += '    echo "SyncSite=$SyncSite" >> $RUNTIME_AREA/$repo ;\n'
+        txt += 'else\n'
+        txt += '    echo "not reporting SyncSite"\n'
+        txt += 'fi\n';
+        
+        txt += '\n'
+        
+        txt += 'echo ">>> SyncCE discovery: " \n'
+        txt += 'if [ $OSG_JOB_CONTACT ]; then \n'
+        txt += '    echo "getting SyncCE from OSG_JOB_CONTACT" \n'
+        txt += '    SyncCE="$OSG_JOB_CONTACT"; \n'
+        txt += 'elif [ $NORDUGRID_CE ]; then \n'
+        txt += '    echo "getting SyncCE from NORDUGRID_CE" \n'
+        txt += '    SyncCE="${NORDUGRID_CE}:2811/nordugrid-GE-${QUEUE:-queue}"\n '
+        txt += 'elif [ $CE_ID ]; then \n'
+        txt += '    echo "getting SyncCE from CE_ID" \n'
+        txt += '    SyncCE="${CE_ID}" \n'
+        txt += 'elif [ "$GLIDEIN_Gatekeeper" ]; then \n'        # beware: GLIDEIN_gatekeeper may have blanks
+        txt += '    echo "getting SyncCE from GLIDEIN_Gaekeeper" \n'
+        txt += '    GKtmp="`echo $GLIDEIN_Gatekeeper | sed -e s,https://,,`"\n' # remove leagind https:// if any
+        txt += '    SyncCE="`echo $GKtmp | cut -d: -f1`" \n'
+        txt += 'else \n'
+        txt += '    echo "getting SyncCE glite-brokerinfo" \n'
+        txt += '    SyncCE="`glite-brokerinfo getCE`" \n'
+        txt += 'fi \n'
+        txt += 'echo "SyncCE=$SyncCE" \n'
+        txt += 'echo "SyncCE=$SyncCE" >> $RUNTIME_AREA/$repo ;\n'
+        
         txt += 'dumpStatus $RUNTIME_AREA/$repo \n'
-        txt += '\n\n'
+        txt += '\n'
 
 
         txt += 'export VO='+self.VO+'\n'
-        txt += 'if [ $middleware == LCG ]; then\n'
-        txt += '   if  [ $GLIDEIN_Gatekeeper ]; then\n'
-        txt += '       CloseCEs=$GLIDEIN_Gatekeeper \n'
-        txt += '   else\n'
-        txt += '       CloseCEs=`glite-brokerinfo getCE`\n'
-        txt += '   fi\n'
-        txt += '   echo "CloseCEs = $CloseCEs"\n'
-        txt += '   CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
-        txt += '   echo "CE = $CE"\n'
-        txt += 'elif [ $middleware == OSG ]; then \n'
-        txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
-        txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
-        txt += '    else \n'
-        txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
-        txt += '        job_exit_code=10099\n'
-        txt += '        func_exit\n'
-        txt += '    fi \n'
-        txt += 'elif [ $middleware == ARC ]; then \n'
-        txt += '    echo "CE = $NORDUGRID_CE"\n'
-        txt += 'fi \n'
+        ### SB START following stuff appear totally useless ##############
+        #txt += 'if [ $middleware == LCG ]; then\n'
+        #txt += '   if  [ $GLIDEIN_Gatekeeper ]; then\n'
+        #txt += '       CloseCEs=$GLIDEIN_Gatekeeper \n'
+        #txt += '   else\n'
+        #txt += '       CloseCEs=`glite-brokerinfo getCE`\n'
+        #txt += '   fi\n'
+        #txt += '   echo "CloseCEs = $CloseCEs"\n'
+        #txt += '   CE=`echo $CloseCEs | sed -e "s/:.*//"`\n'
+        #txt += '   echo "CE = $CE"\n'
+        #txt += 'elif [ $middleware == OSG ]; then \n'
+        #txt += '    if [ $OSG_JOB_CONTACT ]; then \n'
+        #txt += '        CE=`echo $OSG_JOB_CONTACT | /usr/bin/awk -F\/ \'{print $1}\'` \n'
+        #txt += '    else \n'
+        #txt += '        echo "ERROR ==> OSG mode in setting CE name from OSG_JOB_CONTACT" \n'
+        #txt += '        job_exit_code=10099\n'
+        #txt += '        func_exit\n'
+        #txt += '    fi \n'
+        #txt += 'elif [ $middleware == ARC ]; then \n'
+        #txt += '    echo "CE = $NORDUGRID_CE"\n'
+        #txt += 'fi \n'
+        ### SB END ###############################################
 
         return txt
 
