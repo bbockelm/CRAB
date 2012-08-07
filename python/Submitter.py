@@ -348,6 +348,10 @@ class Submitter(Actor):
                 rb = common.scheduler.name()
                 jobId = str(jj) + '_https://' + str(jid)
                 msg += ('JobID for ML monitoring is created for GLIDEIN scheduler: %s \n'%str(jobId))
+            elif common.scheduler.name().upper() in ['RCONDOR']:
+                rb = common.scheduler.name()
+                jobId = str(jj) + '_https://' + str(jid)
+                msg += ('JobID for ML monitoring is created for RCONDOR scheduler: %s\n'%str(jobId))
             elif common.scheduler.name().upper() in ['LSF', 'CAF', 'PBS']:
                 jobId= str(jj) + "_https://"+common.scheduler.name().upper()+":/"+jid+"-"+string.replace(str(task['name']),"_","-")
                 msg += ('JobID for ML monitoring is created for %s scheduler: %s\n'%(common.scheduler.name().upper(), str(jobId)) )
@@ -358,11 +362,6 @@ class Submitter(Actor):
                 jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
                 rb = common.scheduler.name()
                 msg += ('JobID for ML monitoring is created for CONDOR scheduler: %s\n'%str(jobId))
-            elif common.scheduler.name().upper() in ['RCONDOR']:
-                taskHash = sha1(common._db.queryTask('name')).hexdigest()
-                jobId = str(jj) + '_https://' + socket.gethostname() + '/' + taskHash + '/' + str(jj)
-                rb = common.scheduler.name()
-                msg += ('JobID for ML monitoring is created for RCONDOR scheduler: %s\n'%str(jobId))
             elif common.scheduler.name().upper() in ['ARC']:
                 jobId = str(jj) + '_' + str(jid)
                 msg += ('JobID for ML monitoring is created for ARC scheduler: %s\n'%str(jobId))
@@ -394,7 +393,7 @@ class Submitter(Actor):
 
             msg +=('Submission DashBoard report: %s\n'%str(params))
             common.apmon.sendToML(params)
-        common.logger.log(10-1,msg)
+        common.logger.debug(msg)
         return
 
 
