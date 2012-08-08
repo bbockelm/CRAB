@@ -262,7 +262,7 @@ class Scheduler :
 
         return remoteList
 
-    def checkProxy(self, minTime=120):
+    def checkProxy(self, minTime=168):
         """
         Function to check the Globus proxy.
         """
