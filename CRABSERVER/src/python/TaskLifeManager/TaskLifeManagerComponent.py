@@ -4,8 +4,8 @@ _TaskLifeManager_
 
 """
 
-__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.48 2011/05/19 14:13:08 belforte Exp $"
-__version__ = "$Revision: 1.48 $"
+__revision__ = "$Id: TaskLifeManagerComponent.py,v 1.49 2011/06/23 12:15:22 belforte Exp $"
+__version__ = "$Revision: 1.49 $"
 
 # Message service import
 from MessageService.MessageService import MessageService
@@ -327,7 +327,7 @@ class TaskLifeManagerComponent:
         # delete the osb files, but first get the 'all' range for the task
         task = mySession.loadTaskByName(taskName)
         rng = str( range(1, len(task.jobs) + 1) )
-        #self.deleteRetrievedOSB(taskName, rng )
+        self.deleteRetrievedOSB(taskName, rng )
 
         # once the poll will execut then the task will be cleaned silently
         pass
