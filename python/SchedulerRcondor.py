@@ -13,6 +13,7 @@ from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import common
 import os
 import socket
+import re
 
 # FUTURE: for python 2.4 & 2.6
 try:
@@ -38,6 +39,7 @@ class SchedulerRcondor(SchedulerGrid) :
         self.OSBsize = 50*1000*1000 # 50 MB
 
         self.environment_unique_identifier = None
+
         return
 
 
@@ -55,6 +57,9 @@ class SchedulerRcondor(SchedulerGrid) :
         self.group = cfg_params.get("GRID.group", None)
         self.role = cfg_params.get("GRID.role", None)
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
+        
+        self.cmsswVer  = os.environ["CMSSW_VERSION"]
+        self.scramArch = os.environ["SCRAM_ARCH"]
 
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
@@ -99,6 +104,14 @@ class SchedulerRcondor(SchedulerGrid) :
         seString=self.blackWhiteListParser.cleanForBlackWhiteList(seDest)
 
         jobParams += '+DESIRED_SEs = "'+seString+'"; '
+
+        cmsVersion=self.cmsswVer
+        cmsver=re.split('_', cmsVersion)
+        numericCmsVersion = "%s%.2d%.2d" %(cmsver[1], int(cmsver[2]), int(cmsver[3]))
+
+        jobParams += '+DESIRED_CMSVersion ="' +cmsVersion+'";'
+        jobParams += '+DESIRED_CMSVersionNr ="' +numericCmsVersion+'";'
+        
         myschedName = self.rcondorHost
         jobParams += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
 
