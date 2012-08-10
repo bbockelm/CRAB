@@ -7,6 +7,7 @@ from crab_exceptions import CrabException
 from crab_util import runCommand
 #from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+import Scram
 
 
 
@@ -58,9 +59,6 @@ class SchedulerRcondor(SchedulerGrid) :
         self.role = cfg_params.get("GRID.role", None)
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
         
-        self.cmsswVer  = os.environ["CMSSW_VERSION"]
-        self.scramArch = os.environ["SCRAM_ARCH"]
-
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
             if tmp.lower() == 'none':
@@ -105,12 +103,16 @@ class SchedulerRcondor(SchedulerGrid) :
 
         jobParams += '+DESIRED_SEs = "'+seString+'"; '
 
-        cmsVersion=self.cmsswVer
+        scram = Scram.Scram(None)
+        cmsVersion = scram.getSWVersion()
+        scramArch  = scram.getArch()
+        
         cmsver=re.split('_', cmsVersion)
         numericCmsVersion = "%s%.2d%.2d" %(cmsver[1], int(cmsver[2]), int(cmsver[3]))
 
         jobParams += '+DESIRED_CMSVersion ="' +cmsVersion+'";'
         jobParams += '+DESIRED_CMSVersionNr ="' +numericCmsVersion+'";'
+        jobParams += '+DESIRED_CMSScramArch ="' +scramArch+'";'
         
         myschedName = self.rcondorHost
         jobParams += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
