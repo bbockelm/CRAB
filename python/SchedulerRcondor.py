@@ -31,6 +31,8 @@ class SchedulerRcondor(SchedulerGrid) :
     def __init__(self):
         SchedulerGrid.__init__(self,"RCONDOR")
         self.rcondorHost   = os.getenv('RCONDOR_HOST')
+        if self.rcondorHost == None:
+            raise CrabException('FATAL ERROR: env.var RCONDOR_HOST not defined')
         self.datasetPath   = None
         self.selectNoInput = None
         self.OSBsize = 50*1000*1000 # 50 MB
@@ -124,42 +126,19 @@ class SchedulerRcondor(SchedulerGrid) :
         Return dictionary with specific parameters, to use with real scheduler
         is called when scheduler is initialized in Boss, i.e. at each crab command
         """
+        #SB this method is used to pass directory names to Boss Scheduler
+        # via params dictionary
 
-        tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
-        tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
         jobDir = common.work_space.jobDir()
-
         taskDir=common.work_space.topDir().split('/')[-2]
-        rcondorDir ='%s/.rcondor/%s/mount/' % (os.getenv('HOME'),self.rcondorHost)
-
-        if (self.EDG_clock_time):
-            jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
-        else:
-            jobParams += '+MaxWallTimeMins = %d; ' % (60*24)
-
-        common._db.updateTask_({'jobType':jobParams})
-
-
-        return jobParams
-
-
-    def realSchedParams(self, cfg_params):
-        """
-        Return dictionary with specific parameters, to use with real scheduler
-        is called when scheduler is initialized in Boss, i.e. at each crab command
-        """
-
-        tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
-        tmpDir = os.path.join(common.work_space.shareDir(),'.condor_temp')
-        jobDir = common.work_space.jobDir()
-
-        taskDir=common.work_space.topDir().split('/')[-2]
-        rcondorDir ='%s/.rcondor/%s/mount/' % (os.getenv('HOME'),self.rcondorHost)
-        tmpDir = os.path.join(rcondorDir,taskDir)
-        tmpDir = os.path.join(tmpDir,'condor_temp')
+        shareDir = common.work_space.shareDir()
+        #SBtmpDir = common.work_space.tmpDir()
         
-        params = {'tmpDir':tmpDir,
-                  'jobDir':jobDir}
+        params = {'rcondorHost':self.rcondorHost,
+                  'shareDir':shareDir,
+                  #SB'tmpDir':tmpDir,
+                  'jobDir':jobDir,
+                  'taskDir':taskDir}
 
         return params
 
