@@ -22,6 +22,7 @@ wdLogFile=Watchdog_${NJob}.log
 let rssLimit=23*100*1000    #   2.3GB (unit = KB)
 let vszLimit=100*1000*1000  # 100GB (unit = KB) = no limit
 let diskLimit=19*1000       #  19GB (unit = MB)
+let diskLimit=1000*1000*1000  #  nolimit until bug:95465 is fixed
 let cpuLimit=47*3600+40*60  #  47:40h  (unit = sec)
 let wallLimit=47*3600+40*60 #  47:40h  (unit = sec)
 
