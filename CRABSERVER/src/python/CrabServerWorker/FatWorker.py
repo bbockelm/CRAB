@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.227 2012/07/12 15:51:40 fanzago Exp $"
-__version__ = "$Revision: 1.227 $"
+__revision__ = "$Id: FatWorker.py,v 1.228 2012/07/24 14:35:38 fanzago Exp $"
+__version__ = "$Revision: 1.228 $"
 
 import string
 import sys, os
@@ -999,7 +999,7 @@ class FatWorker(Thread):
         """
         Parameters specific to CondorG scheduler
         """
-        from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
+        #from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
 
         # shift due to BL ranges
         i = i - 1
@@ -1014,30 +1014,32 @@ class FatWorker(Thread):
         arch = arch.replace('"','')
 
         # Get list of SEs and clean according to white/black list
-        seList = task.jobs[i]['dlsDestination']
         seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
                                           self.log, self.serviceconfig)
-        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
+        seList = task.jobs[i]['dlsDestination']
+        if  (seList == ['']) or (not seList):
+            seList = seParser.expandList("T") # start with all of SiteDB
+        seString = seParser.cleanForBlackWhiteList(seList)
 
         # Convert to list of CEs and clean according to white/black list
-        onlyOSG = False
-        if (seList == ['']) or (not seList):
-            availCEs = listAllCEs(version, arch, onlyOSG=onlyOSG)
-        else:
-            availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
-        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
-                                          self.log, self.serviceconfig)
-        ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
-        ceString = ','.join(ceDest)
-        seString = ','.join(seDest)
+        #onlyOSG = False
+        #if (seList == ['']) or (not seList):
+        #    availCEs = listAllCEs(version, arch, onlyOSG=onlyOSG)
+        #else:
+        #    availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        #ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+        #                                  self.log, self.serviceconfig)
+        #ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
+        #ceString = ','.join(ceDest)
+        #seString = ','.join(seDest)
         cmsver=re.split('_', version)
         mcmsver = "%s%.2d%.2d" %(cmsver[1], int(cmsver[2]), int(cmsver[3]))
 
 
         myschedName = getfqdn()
-        schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
-        schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
-        schedParam += '+DESIRED_SEs = "' + seString + '"; '
+        #schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
+        #schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
+        schedParam  = '+DESIRED_SEs = "' + seString + '"; '
         schedParam += '+DESIRED_CMSVersion = "' + version + '"; '
         schedParam += '+DESIRED_CMSVersionNr = ' + mcmsver + '; '
 #        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
@@ -1050,7 +1052,7 @@ class FatWorker(Thread):
             schedParam += '+MaxWallTimeMins = 1300; '
             schedParam += '+NormMaxWallTimeMins = 600; '
 
-        return schedParam, ceDest
+        return schedParam, seString
 
 
     def sched_parameter_Lsf(self, i, task):
