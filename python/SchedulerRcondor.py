@@ -5,10 +5,8 @@ Implements the vanilla (local) Remote Condor scheduler
 from SchedulerGrid  import SchedulerGrid
 from crab_exceptions import CrabException
 from crab_util import runCommand
-#from WMCore.SiteScreening.BlackWhiteListParser import CEBlackWhiteListParser
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import Scram
-
 
 
 import common
@@ -69,6 +67,13 @@ class SchedulerRcondor(SchedulerGrid) :
                 self.selectNoInput = 0
         except KeyError:
             msg = "Error: datasetpath not defined "
+            raise CrabException(msg)
+
+        if cfg_params.get('GRID.ce_black_list', None) or \
+           cfg_params.get('GRID.ce_white_list', None) :
+            msg="BEWARE: scheduler RGLIDEIN ignores CE black/white lists."
+            msg+="\n Remove them from crab configuration to proceed."
+            msg+="\n Use GRID.se_white_list and/or GRID.se_black_list instead"
             raise CrabException(msg)
 
         self.checkProxy()
