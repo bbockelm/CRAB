@@ -100,16 +100,6 @@ repo=jobreport.txt
 #CRAB untar_software
 
 #
-# fork watchdog
-#
-export NJob=$1
-./crabWatchdog.sh &
-export WatchdogPID=$!
-echo "crabWatchdog started as process $WatchdogPID"
-trap outOfBound SIGUSR2
-trap outOfBound SIGTERM
-
-#
 # SETUP ENVIRONMENT
 #
 
@@ -125,6 +115,15 @@ dumpStatus $RUNTIME_AREA/$repo
 #
 # END OF SETUP ENVIRONMENT
 #
+
+#
+# fork watchdog
+#
+${RUNTIME_AREA}/crabWatchdog.sh &
+export WatchdogPID=$!
+echo "crabWatchdog started as process $WatchdogPID"
+trap outOfBound SIGUSR2
+trap outOfBound SIGTERM
 
 #
 # PREPARE AND RUN EXECUTABLE
