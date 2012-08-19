@@ -426,6 +426,7 @@ class Crab:
             return result
         else:
             common.logger.info( "Error " +str(result) )
+            raise CrabException ("Invalid range, contains duplicates")
             return []
 
     def checkUniqueness_(self, list):
