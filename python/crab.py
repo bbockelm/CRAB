@@ -372,6 +372,9 @@ class Crab:
             elif ( opt == '-scheduler' ):
                 pass
 
+            elif ( opt == '-submit_host' ):
+                pass
+
             ### for CopyData option
             elif ( opt == '-dest_se' ):
                 pass
