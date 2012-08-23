@@ -41,9 +41,9 @@ class Boss:
         ## Add here the map for others Schedulers (LSF/CAF/CondorG)
         SchedMap = {'glite':     schedulerGlite(),
                     'condor':   'SchedulerCondor',\
-                    'rcondor':  'SchedulerRcondor',\
                     'condor_g': 'SchedulerCondorG',\
                     'glidein':  'SchedulerGlidein',\
+                    'remoteglidein': 'SchedulerRemoteglidein',\
                     'lsf':      'SchedulerLsf',\
                     'caf':      'SchedulerLsf',\
                     'sge':      'SchedulerSge',\
@@ -72,8 +72,10 @@ class Boss:
         Istantiate BossLiteApi session
         '''
         if not self.session:
+
             try:
                 self.session =  BossLiteAPISched( common.bossSession, self.schedulerConfig)
+
             except Exception, e :
                 common.logger.debug("Istantiate SchedSession: " +str(traceback.format_exc()))
                 raise CrabException('Scheduler Session: '+str(e))

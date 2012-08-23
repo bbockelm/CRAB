@@ -42,7 +42,7 @@ class Scheduler :
                               'GLITE'    : 'srm-lcg' , \
                               'GLIDEIN'  : 'srm-lcg' , \
                               'CONDOR'   : 'srm-lcg',  \
-                              'RCONDOR'  : 'srm-lcg',  \
+                              'REMOTEGLIDEIN'  : 'srm-lcg',  \
                               'SGE'      : 'srm-lcg', \
                               'ARC'      : 'srm-lcg'
                             }

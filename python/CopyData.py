@@ -1,5 +1,5 @@
-__revision__ = "$Id: CopyData.py,v 1.28 2010/10/07 12:18:02 fanzago Exp $"
-__version__  = "$Revision: 1.28 $"
+__revision__ = "$Id: CopyData.py,v 1.29 2012/07/11 15:53:30 belforte Exp $"
+__version__  = "$Revision: 1.29 $"
 
 from Actor import *
 from crab_util import *
@@ -47,7 +47,7 @@ class CopyData(Actor):
                          'GLITE'    : 'srm-lcg',
                          'GLIDEIN'  : 'srm-lcg',
                          'CONDOR'   : 'srmv2',
-                         'RCONDOR'  : 'srm-lcg',
+                         'REMOTEGLIDEIN'  : 'srm-lcg',
                          'SGE'      : 'srmv2',
                          'ARC'      : 'srmv2',
                        }
