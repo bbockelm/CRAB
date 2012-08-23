@@ -5,6 +5,7 @@ Implements the vanilla (local) Remote Condor scheduler
 from SchedulerGrid  import SchedulerGrid
 from crab_exceptions import CrabException
 from crab_util import runCommand
+from ServerConfig import *
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import Scram
 
@@ -13,6 +14,7 @@ import common
 import os
 import socket
 import re
+import commands
 
 # FUTURE: for python 2.4 & 2.6
 try:
@@ -22,7 +24,7 @@ except:
 
 class SchedulerRcondor(SchedulerGrid) :
     """
-    Class to implement the vanilla (local) Condor scheduler
+    Class to implement the vanilla remote Condor scheduler
      Naming convention:  Methods starting with 'ws' provide
      the corresponding part of the job script
      ('ws' stands for 'write script').
@@ -30,9 +32,7 @@ class SchedulerRcondor(SchedulerGrid) :
 
     def __init__(self):
         SchedulerGrid.__init__(self,"RCONDOR")
-        self.rcondorHost   = os.getenv('RCONDOR_HOST')
-        if self.rcondorHost == None:
-            raise CrabException('FATAL ERROR: env.var RCONDOR_HOST not defined')
+
         self.datasetPath   = None
         self.selectNoInput = None
         self.OSBsize = 50*1000*1000 # 50 MB
@@ -46,6 +46,38 @@ class SchedulerRcondor(SchedulerGrid) :
         """
         Configure the scheduler with the config settings from the user
         """
+        
+#        task  = common._db.getTask()
+#        #print task.__dict__
+#
+#        if task['serverName']!=None and task['serverName']!="":
+#            # cast to string to avoid issues with unicode :-(
+#            self.rcondorUserHost=str(task['serverName'])
+#            common.logger.info("serverName from Task DB is %s" %
+#                               self.rcondorUserHost)
+#        else :
+#            # get an rcondor host from config and save
+#            common.logger.info("no serverName in Task DB, use env.var.")
+#
+#            self.rcondorHost   = os.getenv('RCONDOR_HOST')
+#            if not self.rcondorHost :
+#                raise CrabException('FATAL ERROR: env.var RCONDOR_HOST not defined')
+#            self.rcondorUser = os.getenv('RCONDOR_USER')
+#            if not self.rcondorUser :
+#                common.logger.info("$RCONDOR_USER not defined, try to find out via uberftp ...")
+#                command="uberftp $RCONDOR_HOST pwd|grep User|awk '{print $3}'"
+#                (status, output) = commands.getstatusoutput(command)
+#                if status == 0:
+#                    self.rcondorUser = output
+#                    common.logger.info("rcondorUser set to %s" % self.rcondorUser)
+#                if self.rcondorUser==None:
+#                    raise CrabException('FATAL ERROR: RCONDOR_USER not defined')
+#
+#                self.rcondorUserHost = self.rcondorUser + '@' + self.rcondorHost
+#
+#            print "will set server name to : ", self.rcondorUserHost
+#            common._db.updateTask_({'serverName':self.rcondorUserHost})
+#            print "ok"
 
         SchedulerGrid.configure(self, cfg_params)
 
@@ -56,7 +88,10 @@ class SchedulerRcondor(SchedulerGrid) :
         self.group = cfg_params.get("GRID.group", None)
         self.role = cfg_params.get("GRID.role", None)
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
-        
+
+        self.checkProxy()
+
+
         try:
             tmp =  cfg_params['CMSSW.datasetpath']
             if tmp.lower() == 'none':
@@ -76,8 +111,6 @@ class SchedulerRcondor(SchedulerGrid) :
             msg+="\n Use GRID.se_white_list and/or GRID.se_black_list instead"
             raise CrabException(msg)
 
-        self.checkProxy()
-
         return
     
     def userName(self):
@@ -93,11 +126,14 @@ class SchedulerRcondor(SchedulerGrid) :
     def sched_parameter(self, i, task):
         """
         Return scheduler-specific parameters. Used at crab -submit time
+        by $CRABPYTHON/Scheduler.py
         """
 
 #SB paste from crab ScheduerGlidein
 
         jobParams = ""
+
+        (self.rcondorHost,self.rcondorUserHost) = self.pickRcondorSubmissionHost(task)
 
         seDest = task.jobs[i-1]['dlsDestination']
 
@@ -119,8 +155,8 @@ class SchedulerRcondor(SchedulerGrid) :
         jobParams += '+DESIRED_CMSVersionNr ="' +numericCmsVersion+'";'
         jobParams += '+DESIRED_CMSScramArch ="' +scramArch+'";'
         
-        myschedName = self.rcondorHost
-        jobParams += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
+        myscheddName = self.rcondorHost
+        jobParams += '+Glidein_MonitorID = "https://'+ myscheddName  + '//$(Cluster).$(Process)"; '
 
         if (self.EDG_clock_time):
             jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
@@ -144,11 +180,8 @@ class SchedulerRcondor(SchedulerGrid) :
         jobDir = common.work_space.jobDir()
         taskDir=common.work_space.topDir().split('/')[-2]
         shareDir = common.work_space.shareDir()
-        #SBtmpDir = common.work_space.tmpDir()
         
-        params = {'rcondorHost':self.rcondorHost,
-                  'shareDir':shareDir,
-                  #SB'tmpDir':tmpDir,
+        params = {'shareDir':shareDir,
                   'jobDir':jobDir,
                   'taskDir':taskDir}
 
@@ -238,4 +271,56 @@ class SchedulerRcondor(SchedulerGrid) :
             taskReq = {'commonRequirements':req}
             common._db.updateTask_(taskReq)
 
+    def pickRcondorSubmissionHost(self, task):
+    
+        task  = common._db.getTask()
 
+        if task['serverName']!=None and task['serverName']!="":
+            # rcondorHost is already defined and stored for this task
+            # so pick it from DB
+            # cast to string to avoid issues with unicode :-(
+            rcondorUserHost=str(task['serverName'])
+            common.logger.info("serverName from Task DB is %s" %
+                               rcondorUserHost)
+            if '@' in rcondorUserHost:
+                rcondorHost = rcondorUserHost.split('@')[1]
+            else:
+                rcondorHost = rcondorUserHost
+        else:
+            if self.cfg_params.has_key('CRAB.submit_host'):
+                # get an rcondor host from crab config file 
+                srvCfg=ServerConfig(self.cfg_params['CRAB.submit_host']).config()
+                rcondorHost=srvCfg['serverName']
+                common.logger.info("rcondorhost from crab.cfg = %s" % rcondorHost)
+            else:
+                # pick from Available Servers List
+                srvCfg=ServerConfig('default').config()
+                print srvCfg
+                rcondorHost = srvCfg['serverName']
+                common.logger.info("rcondorhost from Avail.List = %s" % rcondorHost)
+
+            if not rcondorHost:
+                raise CrabException('FATAL ERROR: condorHost not defined')
+                # fall back to env.
+                #common.logger.info("no serverName in Task DB, use env.var.")
+                #rcondorHost   = os.getenv('RCONDOR_HOST')
+                #if not rcondorHost :
+                #    raise CrabException('FATAL ERROR: env.var RCONDOR_HOST not defined')
+            
+            #rcondorUser = os.getenv('RCONDOR_USER')
+            #if not rcondorUser :
+            common.logger.info("try to find out RCONDOR_USER via uberftp ...")
+            command="uberftp %s pwd|grep User|awk '{print $3}'" % rcondorHost
+            (status, output) = commands.getstatusoutput(command)
+            if status == 0:
+                rcondorUser = output
+                common.logger.info("rcondorUser set to %s" % rcondorUser)
+                if rcondorUser==None:
+                    raise CrabException('FATAL ERROR: RCONDOR_USER not defined')
+
+            rcondorUserHost = rcondorUser + '@' + rcondorHost
+
+        print "will set server name to : ", rcondorUserHost
+        common._db.updateTask_({'serverName':rcondorUserHost})
+
+        return (rcondorHost, rcondorUserHost)
