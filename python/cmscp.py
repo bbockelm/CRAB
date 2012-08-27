@@ -805,7 +805,7 @@ class cmscp:
         fp = open(outFile, "w")
 
         cmscp_exit_status = 0
-        txt = ''
+        txt = '#!/bin/bash\n'
         for file, dict in results.iteritems():
             reason = str(dict['reason'])
             if str(reason).find("'") > -1:
