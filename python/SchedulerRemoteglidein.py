@@ -264,7 +264,6 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             else:
                 # pick from Available Servers List
                 srvCfg=ServerConfig('default').config()
-                print srvCfg
                 remoteHost = srvCfg['serverName']
                 common.logger.info("remotehost from Avail.List = %s" % remoteHost)
 
