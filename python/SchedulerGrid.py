@@ -1,8 +1,8 @@
 """
 Base class for all grid schedulers
 """
-__revision__ = "$Id: SchedulerGrid.py,v 1.143 2012/05/02 21:08:25 belforte Exp $"
-__version__ = "$Revision: 1.143 $"
+__revision__ = "$Id: SchedulerGrid.py,v 1.144 2012/08/07 23:06:47 belforte Exp $"
+__version__ = "$Revision: 1.144 $"
 
 from Scheduler import Scheduler
 from crab_exceptions import *
@@ -339,9 +339,11 @@ class SchedulerGrid(Scheduler):
             txt += 'fi\n'
             ################################
 
-            txt += 'if [ -f cmscpReport.sh ] ;then\n'
-            txt += '    cat cmscpReport.sh\n'
-            txt += '    source cmscpReport.sh\n'
+            txt += 'if [ -f ${RUNTIME_AREA}/cmscpReport.sh ] ;then\n'
+            txt += '    echo "-------- cat ${RUNTIME_AREA}/cmscpReport.sh "\n'
+            txt += '    cat ${RUNTIME_AREA}/cmscpReport.sh\n'
+            txt += '    echo "-------- end of ${RUNTIME_AREA}/cmscpReport.sh "\n'
+            txt += '    source ${RUNTIME_AREA}/cmscpReport.sh\n'
             txt += '    source_result=$? \n'
             txt += '    if [ $source_result -ne 0 ]; then\n'
             txt += '        echo "problem with the source of cmscpReport.sh file"\n'
