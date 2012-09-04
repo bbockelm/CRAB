@@ -14,7 +14,7 @@ class PhEDExDatasvcInfo:
         self.datasvc_url="https://cmsweb.cern.ch/phedex/datasvc/xml/prod"
 
         self.FacOps_savannah = 'https://savannah.cern.ch/support/?func=additem&group=cmscompinfrasup'
-        self.stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabHowTo#Stageout_and_publication' 
+        self.stage_out_faq='https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideCrabFaq#Stageout_and_publication' 
         self.dataPub_faq = 'https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideCrabForPublication'
 
         self.usePhedex = True 
