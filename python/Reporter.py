@@ -24,6 +24,71 @@ class Reporter(Actor):
                                            common.work_space.resDir()) + '/'
         return
 
+    def getInputRunLumi(self, file):
+        import xml.dom.minidom
+
+        dom = xml.dom.minidom.parse(file)
+        ll=[]
+
+        for elem in dom.getElementsByTagName("Job"):
+            nJob = int(elem.getAttribute("JobID"))
+            #print "---> nJob = ", nJob
+            lumis          = elem.getAttribute('Lumis')
+            #print "--->>> lumis = ", str(lumis)
+            #lumis = '193752:1'
+            #lumis = '193752:1-193752:5,193774:1-193774:5,193775:1'
+            if lumis:
+                tmp=str.split(str(lumis), ",")
+                #print "tmp = ", tmp
+            else:
+                return
+                
+
+            #tmp = [193752:1-193752:5] [193774:1-193774:5]
+            for entry in tmp:
+                run_lumi=str.split(entry, "-")
+                # run_lumi = [193752:1] [193752:5] 
+                #print"run_lumi = ", run_lumi
+                if len(run_lumi) == 0: pass
+                if len(run_lumi) == 1:
+                    lumi = str.split(run_lumi[0],":")[1]
+                    run = str.split(run_lumi[0],":")[0]
+                    ll.append((run,int(lumi)))
+    
+                if len(run_lumi) == 2:
+                    lumi_max = str.split(run_lumi[1],":")[1]
+                    lumi_min = str.split(run_lumi[0],":")[1]
+                    #print "lumi_min = ", lumi_min
+                    #print "lumi_max = ", lumi_max
+                    run = str.split(run_lumi[1],":")[0]
+                    #print "run = ", run
+                    for count in range(int(lumi_min),int(lumi_max) + 1): 
+                        ll.append((run,count))
+
+        #print "alla fine ll = ", ll  
+
+        if len(ll):
+            lumiList = LumiList(lumis = ll)
+            #print "lumiList = ", lumiList
+            compactList = lumiList.getCompactList()
+            #print "compactList = ", compactList
+
+            totalLumiFilename = self.fjrDirectory + 'InputLumiSummaryOfTask.json'
+            totalLumiSummary = open(totalLumiFilename, 'w')
+            json.dump(compactList, totalLumiSummary)
+            totalLumiSummary.write('\n')
+            totalLumiSummary.close()
+        return totalLumiFilename 
+
+    def compareJsonFile(self,inputJsonFile):
+
+        #if (self.fjrDirectory + 'lumiSummary.json'):
+        reportFileName = self.fjrDirectory + 'lumiSummary.json'
+        command = 'compareJSON.py --sub ' + inputJsonFile + ' ' + reportFileName + ' ' + self.fjrDirectory + 'missingLumiSummary.json'
+        #common.logger.info(command)
+        os.system(command)
+        return
+
     def run(self):
         """
         The main method of the class: report status of a task
@@ -122,6 +187,27 @@ class Reporter(Actor):
             pass
         msg+=  "\n----------------------------\n"
         common.logger.info(msg)
-        return
 
+
+        file = common.work_space.shareDir() + 'arguments.xml'
+        #print "file = ", file
+        
+        ### starting from the arguments.xml file, a json file containing the run:lumi
+        ### that should be analyzed with the task
+        inputRunLumiFileName = self.getInputRunLumi(file)
+
+        
+        ### missing lumi to analyze: starting from lumimask or from argument file
+        ### calculate the difference with report.json
+        ### if a lumimask is used in the crab.cfg
+        if (self.cfg_params.get('CMSSW.lumi_mask')): 
+            lumimask=self.cfg_params.get('CMSSW.lumi_mask')
+            #print "lumimask = ", lumimask 
+            self.compareJsonFile(lumimask)
+        ### without lumimask    
+        elif (inputRunLumiFileName):
+            self.compareJsonFile(inputRunLumiFileName)
+        else:
+            common.logger.info("no json file to compare")
+        return
 
