@@ -184,9 +184,11 @@ class SchedulerLocal(Scheduler) :
             txt += 'fi\n'
             ##########################################
 
-            txt += 'if [ -f cmscpReport.sh ] ;then\n'
-            txt += '    cat cmscpReport.sh\n'
-            txt += '    source cmscpReport.sh\n'
+            txt += 'if [ -f ${RUNTIME_AREA}/cmscpReport.sh ] ;then\n'
+            txt += '    echo "-------- cat ${RUNTIME_AREA}/cmscpReport.sh "\n'
+            txt += '    cat ${RUNTIME_AREA}/cmscpReport.sh\n'
+            txt += '    echo "-------- end of ${RUNTIME_AREA}/cmscpReport.sh "\n'
+            txt += '    source ${RUNTIME_AREA}/cmscpReport.sh\n'
             txt += '    source_result=$? \n'
             txt += '    if [ $source_result -ne 0 ]; then\n'
             txt += '        echo "problem with the source of cmscpReport.sh file"\n'
