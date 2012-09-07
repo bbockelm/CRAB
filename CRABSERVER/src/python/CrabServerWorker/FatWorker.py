@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.229 2012/08/17 22:25:13 belforte Exp $"
-__version__ = "$Revision: 1.229 $"
+__revision__ = "$Id: FatWorker.py,v 1.230 2012/08/28 20:07:15 belforte Exp $"
+__version__ = "$Revision: 1.230 $"
 
 import string
 import sys, os
@@ -48,6 +48,7 @@ class FatWorker(Thread):
 
         ## Worker Properties
         self.tInit = time.time()
+        self.submissionDay = time.strftime("%y%m%d",time.localtime())
         self.log = logger
         self.myName = FWname
         self.configs = threadAttributes
@@ -915,20 +916,20 @@ class FatWorker(Thread):
         taskId = task['name']
 
         for job in task.jobs:
-            jj, jobId, localId , jid = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
+            jj, jobId, localId , schedulerId = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
             if self.bossSchedName in ['SchedulerCondorG']:
                 hash = self.cfg_params['cfgFileNameCkSum'] #makeCksum(common.work_space.cfgFileName())
                 rb = 'OSG'
-                jobId = str(jj) + '_' + hash + '_' + jid
+                jobId = str(jj) + '_' + hash + '_' + schedulerId
             elif self.bossSchedName == 'SchedulerGlidein':
                 rb = self.schedName
-                jobId = str(jj) + '_https://' + str(jid)
+                jobId = str(jj) + '_https://' + str(schedulerId)
             elif self.bossSchedName == 'SchedulerLsf':
-                jobId = str(jj) +"_https://"+self.schedName+":/" + jid + "-" + taskId.replace("_", "-")
+                jobId = str(jj) +"_https://"+self.schedName+":/" + schedulerId + "-" + taskId.replace("_", "-")
                 rb = self.schedName
-                localId = jid
+                localId = schedulerId
             else:
-                jobId = str(jj) + '_' + str(jid)
+                jobId = str(jj) + '_' + str(schedulerId)
                 rb = str(job.runningJob['service'])
 
             if len(job['dlsDestination']) == 1:
@@ -939,7 +940,7 @@ class FatWorker(Thread):
                 T_SE = str(len(job['dlsDestination']))+'_Selected_SE'
 
             infos = { 'jobId': jobId, \
-                      'sid': jid, \
+                      'sid': schedulerId, \
                       'broker': rb, \
                       'bossId': jj, \
                       'SubmissionType': 'Server', \
@@ -1043,7 +1044,9 @@ class FatWorker(Thread):
         schedParam += '+DESIRED_CMSVersion = "' + version + '"; '
         schedParam += '+DESIRED_CMSVersionNr = ' + mcmsver + '; '
 #        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
-        schedParam += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
+        schedParam += '+submissionDay = "' + self.submissionDay + '";'
+        schedParam += '+Glidein_MonitorID = "https://'+ myschedName + '//' \
+            + self.submissionDay + '//$(Cluster).$(Process)"; '
 
         if self.cfg_params['EDG.max_wall_time']:
             schedParam += '+MaxWallTimeMins = %s; ' % \
