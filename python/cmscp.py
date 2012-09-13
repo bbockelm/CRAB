@@ -680,7 +680,10 @@ class cmscp:
             if self.debug :
                 dbgmsg  = '\t'+msg+'\n\t'+str(ex.detail)+'\n'
                 dbgmsg += '\t'+str(ex.output)+'\n'
-                print dbgmsg 
+                print dbgmsg
+            ### FEDE added for savannah 97460###     
+            ErCode = '60307'
+            ####################################
         except SizeZeroException, ex:
             msg  = "Problem copying %s file" % filetocopy
             msg += str(ex)
