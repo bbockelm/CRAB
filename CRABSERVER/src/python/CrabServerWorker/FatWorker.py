@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.231 2012/09/07 15:46:19 belforte Exp $"
-__version__ = "$Revision: 1.231 $"
+__revision__ = "$Id: FatWorker.py,v 1.232 2012/09/14 14:51:20 belforte Exp $"
+__version__ = "$Revision: 1.232 $"
 
 import string
 import sys, os
@@ -1078,8 +1078,6 @@ class FatWorker(Thread):
 
         sched_param = 'Requirements = ' + task['jobType']
         
-        self.log.info("FW FEDE sched_param: %s"%sched_param)
-         
         req = ''
 
         if self.cfg_params['EDG.max_wall_time']:
@@ -1092,12 +1090,9 @@ class FatWorker(Thread):
                 req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
         
-        self.log.info("FW FEDE req: %s"%req)
-         
         seReq = self.se_list(i, task.jobs[i]['dlsDestination'])
         ceReq = self.ce_list()
         sched_param += req + seReq + ceReq + ';\n'
-        self.log.info("FW FEDE sched_param_fin: %s"%sched_param)
 
         sched_param += 'MyProxyServer = "' + self.cfg_params['proxyServer'] + '";\n'
         sched_param += 'VirtualOrganisation = "' + self.cfg_params['VO'] + '";\n'
