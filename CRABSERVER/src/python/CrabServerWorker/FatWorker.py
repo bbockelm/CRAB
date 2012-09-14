@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.230 2012/08/28 20:07:15 belforte Exp $"
-__version__ = "$Revision: 1.230 $"
+__revision__ = "$Id: FatWorker.py,v 1.231 2012/09/07 15:46:19 belforte Exp $"
+__version__ = "$Revision: 1.231 $"
 
 import string
 import sys, os
@@ -225,7 +225,6 @@ class FatWorker(Thread):
     def parseCommandXML(self):
         status = 0
         cmdSpecFile = os.path.join(self.wdir, self.taskName + '_spec/cmd.xml' )
-        self.log.info("FW FEDE file %s"%cmdSpecFile)
         try:
             doc = minidom.parse(cmdSpecFile)
         except Exception, e:
@@ -251,7 +250,6 @@ class FatWorker(Thread):
             self.type = str( cmdXML.getAttribute('Type') )
             self.owner = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
-            self.log.info('FW FEDE %s self.cfg_params'%self.cfg_params)
           
             # FEDE for savannah 75255
             self.client_version = str( cmdXML.getAttribute('ClientVersion') )
