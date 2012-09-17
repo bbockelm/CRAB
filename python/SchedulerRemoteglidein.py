@@ -149,10 +149,12 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         jobDir = common.work_space.jobDir()
         taskDir=common.work_space.topDir().split('/')[-2]
         shareDir = common.work_space.shareDir()
+        submissionDay = time.strftime("%y%m%d",time.localtime())
         
         params = {'shareDir':shareDir,
                   'jobDir':jobDir,
-                  'taskDir':taskDir}
+                  'taskDir':taskDir,
+                  'submissionDay':submissionDay}
 
         return params
 
@@ -270,16 +272,17 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             if not remoteHost:
                 raise CrabException('FATAL ERROR: remoteHost not defined')
             
-            common.logger.info("try to find out username for remote Host via uberftp ...")
-            command="uberftp %s pwd|grep User|awk '{print $3}'" % remoteHost
-            (status, output) = commands.getstatusoutput(command)
-            if status == 0:
-                remoteUser = output
-                common.logger.info("remoteUser set to %s" % remoteUser)
-                if remoteUser==None:
-                    raise CrabException('FATAL ERROR: REMOTE USER not defined')
+            #common.logger.info("try to find out username for remote Host via uberftp ...")
+            #command="uberftp %s pwd|grep User|awk '{print $3}'" % remoteHost
+            #(status, output) = commands.getstatusoutput(command)
+            #if status == 0:
+            #    remoteUser = output
+            #    common.logger.info("remoteUser set to %s" % remoteUser)
+            #    if remoteUser==None:
+            #        raise CrabException('FATAL ERROR: REMOTE USER not defined')
 
-            remoteUserHost = remoteUser + '@' + remoteHost
+            #remoteUserHost = remoteUser + '@' + remoteHost
+            remoteUserHost = remoteHost
 
         common._db.updateTask_({'serverName':remoteUserHost})
 
