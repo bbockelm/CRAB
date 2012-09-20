@@ -26,10 +26,12 @@ let cpuLimit=47*3600+40*60  #  47:40h  (unit = sec)
 let wallLimit=47*3600+40*60 #  47:40h  (unit = sec)
 
 # for test purposes allow limits to be lowered
+# needing users (HI e.g.) can also increase RSS limit
 
 if [ -f ${RUNTIME_AREA}/rssLimit ] ; then
   rssLimitUser=`cat ${RUNTIME_AREA}/rssLimit`
-  if [ ${rssLimitUser} -lt ${rssLimit} ] ; then rssLimit=${rssLimitUser}; fi
+  #if [ ${rssLimitUser} -lt ${rssLimit} ] ; then rssLimit=${rssLimitUser}; fi
+  rssLimit=${rssLimitUser}
 fi
 if [ -f ${RUNTIME_AREA}/vszLimit ] ; then
   vszLimitUser=`cat ${RUNTIME_AREA}/vszLimit`
