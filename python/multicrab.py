@@ -152,17 +152,18 @@ class MultiCrab:
         self.cfg_params_dataset = {}
         common_opts = {}
         # first get common sections
+        crab_cfg='crab.cfg' # this is the default
         for sec in cfg_params:
             if sec in ['MULTICRAB']:
                 if 'cfg' in cfg_params[sec]:
                     common_opts['cfg']=cfg_params[sec]['cfg']
+                    crab_cfg=common_opts['cfg'];
                 continue
             if sec in ['COMMON']:
                 common_opts.update(cfg_params[sec])
                 continue
             pass
 
-        crab_cfg='crab.cfg'
         # read crab.cfg file and search for storage_path
         crab_cfg_params = loadConfig(crab_cfg,{})
         # also USER.ui_working_dir USER.outputdir and USER.logdir need special treatment
@@ -178,7 +179,6 @@ class MultiCrab:
             self.logdir = crab_cfg_params.get("USER.logdir",None)
             self.ui_working_dir = crab_cfg_params.get("USER.ui_working_dir",None)
             self.publish_data_name = crab_cfg_params.get("USER.publish_data_name",None)
-        print "self.publish_data_name ",self.publish_data_name
 
         if common_opts.has_key('cfg') : crab_cfg=common_opts['cfg']
 
@@ -202,7 +202,6 @@ class MultiCrab:
                 if not self.cfg_params_dataset[sec].has_key(key):
                     self.cfg_params_dataset[sec][key]=common_opts[key]
             pass
-
 
         return
 
