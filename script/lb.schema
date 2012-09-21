@@ -1,4 +1,0 @@
-# schema definition file for scheduler specific parameters
-
-DEST_CE : string,SCHED_STATUS : string,STATUS_REASON : string,DEST_QUEUE : string
-
