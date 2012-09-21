@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.385 2012/07/09 16:19:53 fanzago Exp $"
-__version__ = "$Revision: 1.385 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.386 2012/07/10 14:44:07 belforte Exp $"
+__version__ = "$Revision: 1.386 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -449,11 +449,16 @@ class Cmssw(JobType):
 
         if njobs == 0:
             raise CrabException("Asked to split zero jobs: aborting")
-        if not self.server and not self.local and njobs > 500:
-            msg =  "Error: this task contains more than 500 jobs. \n"
-            msg += "     The CRAB SA does not submit more than 500 jobs.\n"
-            msg += "     Use the server mode. \n"
-            raise CrabException(msg)
+        if not self.server and not self.local :
+            if common.scheduler.name().upper() == 'REMOTEGLIDEIN' :
+                if njobs > 5000 :
+                    raise CrabException("too many jobs. remoteGlidein has a limit at 5000")
+            else :
+                if njobs > 500:
+                    msg =  "Error: this task contains more than 500 jobs. \n"
+                    msg += "     The CRAB SA does not submit more than 500 jobs.\n"
+                    msg += "     Use the server mode. \n"
+                    raise CrabException(msg)
         # create the empty structure
         for i in range(njobs):
             jobParams.append("")
