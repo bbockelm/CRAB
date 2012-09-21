@@ -18,7 +18,7 @@ PRODCOMMONtag="PRODCOMMON_0_12_18_CRAB_42"
 WMCOREtag="WMCORE_0_1_1_pre26"
 
 CVSrepo=":pserver:anonymous@cmscvs.cern.ch:/cvs_server/repositories"
-export CVSROOT=${CVSrepo}"/CMSSW"
+#export CVSROOT=${CVSrepo}"/CMSSW"
 #repo_url="https://cmsweb.cern.ch/crabconf"
 repo_url='http://cmsdoc.cern.ch/cms/ccs/wm/www/Crab/Repository/'
 
