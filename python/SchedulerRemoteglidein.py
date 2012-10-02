@@ -39,6 +39,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         self.OSBsize = 50*1000*1000 # 50 MB
 
         self.environment_unique_identifier = None
+        self.submissionDay = time.strftime("%y%m%d",time.localtime())
 
         return
 
@@ -125,7 +126,8 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         jobParams += '+DESIRED_CMSScramArch ="' +scramArch+'";'
         
         myscheddName = self.remoteHost
-        jobParams += '+Glidein_MonitorID = "https://'+ myscheddName  + '//$(Cluster).$(Process)"; '
+        jobParams += '+Glidein_MonitorID = "https://'+ myscheddName + \
+                     '//' + self.submissionDay + '//$(Cluster).$(Process)"; '
 
         if (self.EDG_clock_time):
             jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
@@ -149,12 +151,11 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         jobDir = common.work_space.jobDir()
         taskDir=common.work_space.topDir().split('/')[-2]
         shareDir = common.work_space.shareDir()
-        submissionDay = time.strftime("%y%m%d",time.localtime())
         
         params = {'shareDir':shareDir,
                   'jobDir':jobDir,
                   'taskDir':taskDir,
-                  'submissionDay':submissionDay}
+                  'submissionDay':self.submissionDay}
 
         return params
 
