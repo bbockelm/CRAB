@@ -248,7 +248,7 @@ def setPgid():
 
     os.setpgid( os.getpid(), 0 )
 
-def runCommand(command, printout=0, timeout=None,errorCode=False):
+def runCommand(command, printout=0, timeout=30.,errorCode=False):
     """
     _executeCommand_
 
@@ -283,6 +283,7 @@ def runCommand(command, printout=0, timeout=None,errorCode=False):
             break
 
     if timedOut :
+        common.logger.info('Command %s timed out after %d sec' % (command, int(timeout)))
         stop = time.time()
         try:
             os.killpg( os.getpgid(p.pid), signal.SIGTERM)
@@ -294,7 +295,8 @@ def runCommand(command, printout=0, timeout=None,errorCode=False):
                 'Warning: an error occurred killing subprocess [%s]' \
                 % str(err) )
 
-        raise CrabException( command, ''.join(outc), timeout, start, stop )
+        #raise CrabException( command, 'TIMEOUT'+''.join(outc), timeout, start, stop )
+        raise CrabException("Timeout")
 
     try:
         p.wait()
@@ -313,7 +315,7 @@ def runCommand(command, printout=0, timeout=None,errorCode=False):
     if errorCode:
         if returncode is None :returncode=-66666
         return returncode,''.join(outc) 
- 
+
     return ''.join(outc)
 
 
@@ -614,6 +616,7 @@ def getLocalDomain(self):
 #
 
 def has_freespace(dir_name, needed_space_kilobytes):
+    
      enough_unix_quota = False
      enough_quota = False
      enough_partition = False
@@ -621,25 +624,30 @@ def has_freespace(dir_name, needed_space_kilobytes):
      try:
          enough_mount = check_mount(dir_name, needed_space_kilobytes)
      except Exception,e :
+         common.logger.info(str(e)+" while checking mount. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_mount = True
      try:
          enough_quota = check_quota(dir_name, needed_space_kilobytes)
      except Exception, e:
+         common.logger.info(str(e)+" while checking AFS quota. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_quota = True
      try:
          enough_partition = check_partition(dir_name,
              needed_space_kilobytes)
      except Exception, e:
+         common.logger.info(str(e)+" while checking partition. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_partition = True
      try:
          enough_unix_quota = check_unix_quota(dir_name,
              needed_space_kilobytes)
      except Exception, e:
+         common.logger.info(str(e)+" while checking unix_quota. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_unix_quota = True
+         
      return enough_mount and enough_quota and enough_partition \
          and enough_unix_quota
 
@@ -680,7 +688,7 @@ def check_unix_quota(dir_name, needed_space_kilobytes):
      err0, results0 = runCommand("df %s" % dir_name,errorCode=True)
      if results0 and err0==0:
          fs = results0.split('\n')[1].split()[0]
-         err,results = runCommand("quota -Q -u -g",errorCode=True)
+         err,results = runCommand("sleep 20; quota -Q -u -g",errorCode=True)
          if err != 0:
              raise Exception(results)
          has_info = False
