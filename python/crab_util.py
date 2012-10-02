@@ -688,7 +688,7 @@ def check_unix_quota(dir_name, needed_space_kilobytes):
      err0, results0 = runCommand("df %s" % dir_name,errorCode=True)
      if results0 and err0==0:
          fs = results0.split('\n')[1].split()[0]
-         err,results = runCommand("sleep 20; quota -Q -u -g",errorCode=True)
+         err,results = runCommand("quota -Q -u -g",errorCode=True)
          if err != 0:
              raise Exception(results)
          has_info = False
