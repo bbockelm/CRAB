@@ -282,6 +282,9 @@ class Submitter(Actor):
 
         taskId = common._db.queryTask('name')
         gridName = string.strip(common.scheduler.userName())
+        gridScheduler = common.scheduler.name()
+        if gridScheduler.upper() == 'REMOTEGLIDEIN' :
+            gridScheduler = 'GLIDEIN'
         common.logger.debug("GRIDNAME: %s "%gridName)
         #### FEDE for taskType (savannah 76950)
         taskType = self.cfg_params.get('USER.tasktype','analysis') 
@@ -294,7 +297,7 @@ class Submitter(Actor):
                   'SubmissionType':'direct',
                   'JSToolVersion': common.prog_version_str,
                   'tool_ui': os.environ.get('HOSTNAME',''),
-                  'scheduler': common.scheduler.name(),
+                  'scheduler': gridScheduler,
                   'GridName': gridName,
                   'ApplicationVersion': self.scram.getSWVersion(),
                   'taskType': taskType,
