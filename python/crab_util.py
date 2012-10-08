@@ -295,7 +295,6 @@ def runCommand(command, printout=0, timeout=30.,errorCode=False):
                 'Warning: an error occurred killing subprocess [%s]' \
                 % str(err) )
 
-        #raise CrabException( command, 'TIMEOUT'+''.join(outc), timeout, start, stop )
         raise CrabException("Timeout")
 
     try:
