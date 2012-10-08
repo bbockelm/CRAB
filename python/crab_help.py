@@ -382,7 +382,7 @@ Dump technical information about jobs: for developers only.
 
 =head2 B<-report>
 
-Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the dataset path, a summary of the status of the jobs, and so on. A summary file of the runs and luminosity sections processed is written to res subdirecttory as lumiSummary.json and can be used as input to tools that compute the luminosity like lumiCalc.py
+Print a short report about the task, namely the total number of events and files processed/requested/available, the name of the dataset path, a summary of the status of the jobs, and so on. A summary file of the runs and luminosity sections processed is written to res subdirecttory as lumiSummary.json and can be used as input to tools that compute the luminosity like lumiCalc.py. In the same subdirectory also a file containing all the input runs and lumis, called InputLumiSummaryOfTask.json and the file containing the missing runs and lumis due to failed jobs, called missingLumiSummary.json are produced. The missingLumiSummary.json can be use as lumimask file to create a new task in order to analyse the missing data (instead of failure jobs resubmission).      
 
 =head2 B<-clean [dir]>
 
