@@ -32,15 +32,15 @@ class Reporter(Actor):
 
         for elem in dom.getElementsByTagName("Job"):
             nJob = int(elem.getAttribute("JobID"))
-            #print "---> nJob = ", nJob
-            lumis          = elem.getAttribute('Lumis')
-            #print "--->>> lumis = ", str(lumis)
+            lumis = elem.getAttribute('Lumis')
             #lumis = '193752:1'
             #lumis = '193752:1-193752:5,193774:1-193774:5,193775:1'
             if lumis:
                 tmp=str.split(str(lumis), ",")
                 #print "tmp = ", tmp
             else:
+                msg = "The summary file inputLumiSummaryOfTask.json about input run and lumi isn't created"
+                common.logger.info(msg)
                 return
                 
 
@@ -48,7 +48,6 @@ class Reporter(Actor):
             for entry in tmp:
                 run_lumi=str.split(entry, "-")
                 # run_lumi = [193752:1] [193752:5] 
-                #print"run_lumi = ", run_lumi
                 if len(run_lumi) == 0: pass
                 if len(run_lumi) == 1:
                     lumi = str.split(run_lumi[0],":")[1]
@@ -58,39 +57,34 @@ class Reporter(Actor):
                 if len(run_lumi) == 2:
                     lumi_max = str.split(run_lumi[1],":")[1]
                     lumi_min = str.split(run_lumi[0],":")[1]
-                    #print "lumi_min = ", lumi_min
-                    #print "lumi_max = ", lumi_max
                     run = str.split(run_lumi[1],":")[0]
-                    #print "run = ", run
                     for count in range(int(lumi_min),int(lumi_max) + 1): 
                         ll.append((run,count))
-
-        #print "alla fine ll = ", ll  
-
         if len(ll):
             lumiList = LumiList(lumis = ll)
-            #print "lumiList = ", lumiList
             compactList = lumiList.getCompactList()
-            #print "compactList = ", compactList
 
             totalLumiFilename = self.fjrDirectory + 'inputLumiSummaryOfTask.json'
             totalLumiSummary = open(totalLumiFilename, 'w')
             json.dump(compactList, totalLumiSummary)
             totalLumiSummary.write('\n')
             totalLumiSummary.close()
-            msg = "Summary file of input run and lumi to be analize with this task: %s\n" % totalLumiFilename
+            msg = "Summary file of input run and lumi to be analize with this task: %s\n" %totalLumiFilename
+            common.logger.info(msg)
+        else:    
+            msg = "The summary file inputLumiSummaryOfTask.json about input run and lumi isn't created"
             common.logger.info(msg)
         return totalLumiFilename 
 
     def compareJsonFile(self,inputJsonFile):
 
-        #if (self.fjrDirectory + 'lumiSummary.json'):
         reportFileName = self.fjrDirectory + 'lumiSummary.json'
         missingLumiFile=self.fjrDirectory + 'missingLumiSummary.json'
         command = 'compareJSON.py --sub ' + inputJsonFile + ' ' + reportFileName + ' ' + missingLumiFile
         #common.logger.info(command)
         os.system(command)
-        msg = "json file containing the difference in run and lumi between input and analyzed files: %s\n" % missingLumiFile
+        msg = "json file containing the difference in run and lumi between input and analyzed files: %s\n" %missingLumiFile
+        msg = "to complete your analysis, you have to analyze the run and lumi reported in the %s file\n" %missingLumiFile
         common.logger.info(msg)
         return
 
@@ -213,6 +207,6 @@ class Reporter(Actor):
         elif (inputRunLumiFileName):
             self.compareJsonFile(inputRunLumiFileName)
         else:
-            common.logger.info("no json file to compare")
+            common.logger.info("No json file to compare")
         return
 
