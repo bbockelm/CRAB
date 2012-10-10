@@ -81,6 +81,30 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             msg+="\n Use GRID.se_white_list and/or GRID.se_black_list instead"
             raise CrabException(msg)
 
+
+        # make sure proxy FQAN has not changed since last time
+        command =  "voms-proxy-info -identity -fqan 2>/dev/null"
+        command += " | head -2"
+        identity = runCommand(command)
+        idfile = common.work_space.shareDir() + "GridIdentity"
+        if os.access(idfile, os.F_OK) :
+            # identity file exists from previous commands
+            f=open(idfile, 'r')
+            idFromFile=f.read()
+            f.close()
+        else :
+            # create it
+            f=open(idfile, 'w')
+            f.write(identity)
+            f.close()
+            idFromFile = identity
+
+        if identity != idFromFile:
+            msg =  "Wrong Grid Credentials:\n%s" % identity
+            msg += "\nMake sure you have "
+            msg += " DN, FQAN =\n%s" % idFromFile
+            raise CrabException(msg)
+
         return
     
     def userName(self):
