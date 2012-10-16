@@ -28,7 +28,12 @@ else
   if [[ "$SCRAM_ARCH" =~ "32" ]]; then
     export PYTHONPATH=${CRABPYSQLITE}:${PYTHONPATH}
   elif [[ "$SCRAM_ARCH" =~ "64" ]]; then
-    export PYTHONPATH=${CRABPYSQLITE64}:${PYTHONPATH}
+    ret=`python -c 'import sys; print("%i" % (sys.hexversion<0x020700F0))'`
+    if [ $ret -ne 0 ]; then
+      export PATH=${CRABSQLITE_ROOT}/bin:${PATH}
+      export LD_LIBRARY_PATH=${CRABSQLITE_ROOT}/lib:${LD_LIBRARY_PATH}
+      export PYTHONPATH=${CRABPYSQLITE64}:${PYTHONPATH} 
+    fi
   fi
   python $CRABPYTHON/crab.py $*
 fi
