@@ -58,6 +58,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         self.group = cfg_params.get("GRID.group", None)
         self.role = cfg_params.get("GRID.role", None)
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
+        self.allowOverflow = cfg_params.get('GRID.allow_overflow', 1)
 
         self.checkProxy()
 
@@ -157,6 +158,9 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
         else:
             jobParams += '+MaxWallTimeMins = %d; ' % (60*24)
+
+        if self.allowOverflow == "0":
+            jobParams += '+CMS_ALLOW_OVERFLOW = False; '
 
         common._db.updateTask_({'jobType':jobParams})
 
