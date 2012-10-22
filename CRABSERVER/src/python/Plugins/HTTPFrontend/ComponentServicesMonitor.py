@@ -242,10 +242,22 @@ class ShowCompStatus:
 	    msgs[str(to)] = 1
 
 	for comp in msgs.keys():
-#	  html += "<br/>%s : %d" % (comp,msgs[comp])
 	  html += "<tr><td>%s : </td><td>%d</td></tr>" % (comp,msgs[comp])
 
 	html += "<br/></table>"
+
+        html += '\n<br/><br/> <b>MySql DB size in MBytes</b><br/>\n<table Class="DBSize" >'
+
+	path=os.environ.get("PRODAGENT_WORKDIR")
+	dbsize1 = os.stat(path + "/mysqldata/ibdata1").st_size
+	dbsize2 = os.stat(path + "/mysqldata/ibdata1").st_size
+	dbsize = (dbsize1 + dbsize2) / 1024 / 1024
+
+        html += "<tr><td>Size : </td><td>%d</td></tr>" % (dbsize)
+
+        html += "<br/></table>"
+
+
 
         html += "</body></html>"
 
