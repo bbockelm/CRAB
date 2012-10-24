@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.232 2012/09/14 14:51:20 belforte Exp $"
-__version__ = "$Revision: 1.232 $"
+__revision__ = "$Id: FasterWorker.py,v 1.1 2012/09/14 14:59:23 belforte Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import string
 import sys, os
@@ -389,7 +389,7 @@ class FatWorker(Thread):
             # fix candidate for empty submission range issue # Fabio
             # if the submission request is related to a "Done(failed)" job, then close and regenerate it
             # see https://savannah.cern.ch/bugs/?68702
-            if j.runningJob['status'] != 'C' or j.runningJob['state'] != 'Created': 
+            if j.runningJob['status'] != 'C' : 
                 j.runningJob['closed'] = 'Y'
             ###
 
@@ -422,19 +422,23 @@ class FatWorker(Thread):
                     else:
                         self.log.debug("FW %s No need to back up osb"%self.myName)
 
-                # reproduce closed runningJob instances
-                try:
-                    self.blDBsession.updateDB(j)
-                    self.blDBsession.getNewRunningInstance(j)
-                except Exception, e:
-                    logMsg = ("FW %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
-                            self.taskName, j['name']) )
-                    logMsg += str(e)
-                    self.log.info( logMsg )
-                    self.log.debug( traceback.format_exc() )
-                    newRange.remove(j['jobId'])
-                    skippedSubmissions.append(j['jobId'])
-                    continue
+                    # reproduce closed runningJob instances
+                    jn=j['jobId']
+                    if jn%1 == 0 :
+                        self.log.info("FW %s pSC create new db entry for job %s task %s" % \
+                                      (self.myName,j['jobId'],self.taskName))
+                    try:
+                        self.blDBsession.updateDB(j)
+                        self.blDBsession.getNewRunningInstance(j)
+                    except Exception, e:
+                        logMsg = ("FW %s. Problem regenerating RunningJob %s.%s. Skipped"% \
+                                  (self.myName, self.taskName, j['name']) )
+                        logMsg += str(e)
+                        self.log.info( logMsg )
+                        self.log.debug( traceback.format_exc() )
+                        newRange.remove(j['jobId'])
+                        skippedSubmissions.append(j['jobId'])
+                        continue
 
                 j.runningJob['status'] = 'C'
                 j.runningJob['statusScheduler'] = 'Created'
@@ -449,17 +453,14 @@ class FatWorker(Thread):
                     skippedSubmissions.append(j['jobId'])
                     continue
 
-            # request for submission
-            j.runningJob['state'] = 'SubRequested'
-            try:
-                self.blDBsession.updateDB(task)
-            except Exception, e:
-                logMsg = "FW %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
-                logMsg += str(e)
-                self.log.info( logMsg )
-                newRange.remove(j['jobId'])
-                skippedSubmissions.append(j['jobId'])
-                continue
+                # request for submission
+                j.runningJob['state'] = 'SubRequested'
+        try:
+            self.blDBsession.updateDB(task)
+        except Exception, e:
+            logMsg = "FW %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
+            logMsg += str(e)
+            self.log.info( logMsg )
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
