@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.386 2012/07/10 14:44:07 belforte Exp $"
-__version__ = "$Revision: 1.386 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.387 2012/09/21 14:40:29 belforte Exp $"
+__version__ = "$Revision: 1.387 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -17,6 +17,8 @@ except:
 
 from IMProv.IMProvNode import IMProvNode
 from IMProv.IMProvLoader import loadIMProvFile
+from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
+
 import os, string, glob
 from xml.dom import pulldom
 
@@ -236,11 +238,22 @@ class Cmssw(JobType):
 #wmbs
         self.automation = int(self.cfg_params.get('WMBS.automation',0))
         if self.automation == 0:
+            self.seListParser= SEBlackWhiteListParser(logger=common.logger())
             if self.datasetPath:
                 blockSites = self.DataDiscoveryAndLocation(cfg_params)
             #DBSDLS-end
-            self.conf['blockSites']=blockSites
+            # insert here site override from crab.cfg
+            # note that b/w lists will still be applied
+            if cfg_params.has_key('GRID.data_location_override'):
+                sitesOverride = cfg_params['GRID.data_location_override'].split(',')
+                common.logger.info("DataSite overridden by user to: %s" % sitesOverride)
+                seOverride = self.seListParser.expandList(sitesOverride)
+                common.logger.info("DataLocation overridden by user to: %s\n" % seOverride)
+                for block in blockSites.keys():
+                    blockSites[block] = seOverride
 
+            self.conf['blockSites']=blockSites
+            
             ## Select Splitting
             splitByRun = int(cfg_params.get('CMSSW.split_by_run',0))
 
