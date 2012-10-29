@@ -623,27 +623,27 @@ def has_freespace(dir_name, needed_space_kilobytes):
      try:
          enough_mount = check_mount(dir_name, needed_space_kilobytes)
      except Exception,e :
-         common.logger.info(str(e)+" while checking mount. Treat as check OK")
+         common.logger.debug(str(e)+" while checking mount. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_mount = True
      try:
          enough_quota = check_quota(dir_name, needed_space_kilobytes)
      except Exception, e:
-         common.logger.info(str(e)+" while checking AFS quota. Treat as check OK")
+         common.logger.debug(str(e)+" while checking AFS quota. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_quota = True
      try:
          enough_partition = check_partition(dir_name,
              needed_space_kilobytes)
      except Exception, e:
-         common.logger.info(str(e)+" while checking partition. Treat as check OK")
+         common.logger.debug(str(e)+" while checking partition. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_partition = True
      try:
          enough_unix_quota = check_unix_quota(dir_name,
              needed_space_kilobytes)
      except Exception, e:
-         common.logger.info(str(e)+" while checking unix_quota. Treat as check OK")
+         common.logger.debug(str(e)+" while checking unix_quota. Treat as check OK")
          common.logger.log(10-1,e) 
          enough_unix_quota = True
          
