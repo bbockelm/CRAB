@@ -363,7 +363,7 @@ If using the server modality, this command allows to delegate a valid credential
 
 Check if the job can find compatible resources. It is equivalent of doing I<glite-wms-job-list-match> on edg.
 
-=head2 B<-printId 
+=head2 B<-printId>
 
 Just print the Scheduler Job Identifierb (Grid job identifier e.g.) of the jobs in the task.
 
