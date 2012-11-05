@@ -162,6 +162,12 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         if self.allowOverflow == "0":
             jobParams += '+CMS_ALLOW_OVERFLOW = False; '
 
+        if self.EDG_addJdlParam:
+            if self.EDG_addJdlParam[-1] == '':
+                self.EDG_addJdlParam = self.EDG_addJdlParam[:-1]
+            for p in self.EDG_addJdlParam:
+                jobParams += p.strip()+';\n'
+
         common._db.updateTask_({'jobType':jobParams})
 
 
