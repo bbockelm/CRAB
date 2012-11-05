@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.387 2012/09/21 14:40:29 belforte Exp $"
-__version__ = "$Revision: 1.387 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.388 2012/10/26 20:45:17 belforte Exp $"
+__version__ = "$Revision: 1.388 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -472,6 +472,8 @@ class Cmssw(JobType):
                     msg += "     The CRAB SA does not submit more than 500 jobs.\n"
                     msg += "     Use the server mode. \n"
                     raise CrabException(msg)
+        if self.server and njobs > 5000 :
+            raise CrabException("too many jobs. CrabServer has a limit at 5000")
         # create the empty structure
         for i in range(njobs):
             jobParams.append("")
