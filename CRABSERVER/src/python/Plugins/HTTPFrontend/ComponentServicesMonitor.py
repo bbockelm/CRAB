@@ -234,7 +234,7 @@ class ShowCompStatus:
 
         path=os.environ.get("PRODAGENT_WORKDIR")
         dbsize1 = os.stat(path + "/mysqldata/ibdata1").st_size
-        dbsize2 = os.stat(path + "/mysqldata/ibdata1").st_size
+        dbsize2 = os.stat(path + "/mysqldata/ibdata2").st_size
         dbsize = (dbsize1 + dbsize2) / 1024 / 1024
 
         html += "<tr><td>Size : </td><td>%d</td></tr>" % (dbsize)
