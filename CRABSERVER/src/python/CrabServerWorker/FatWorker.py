@@ -6,8 +6,8 @@ Implements thread logic used to perform the actual Crab task submissions.
 
 """
 
-__revision__ = "$Id: FatWorker.py,v 1.222 2011/05/19 07:21:49 spiga Exp $"
-__version__ = "$Revision: 1.222 $"
+__revision__ = "$Id: FasterWorker.py,v 1.1 2012/09/14 14:59:23 belforte Exp $"
+__version__ = "$Revision: 1.1 $"
 
 import string
 import sys, os
@@ -48,6 +48,7 @@ class FatWorker(Thread):
 
         ## Worker Properties
         self.tInit = time.time()
+        self.submissionDay = time.strftime("%y%m%d",time.localtime())
         self.log = logger
         self.myName = FWname
         self.configs = threadAttributes
@@ -249,6 +250,12 @@ class FatWorker(Thread):
             self.type = str( cmdXML.getAttribute('Type') )
             self.owner = str( cmdXML.getAttribute('Subject') )
             self.cfg_params = eval( cmdXML.getAttribute("CfgParamDict"), {}, {} )
+          
+            # FEDE for savannah 75255
+            self.client_version = str( cmdXML.getAttribute('ClientVersion') )
+            self.log.info('FW %s self.client_version'%self.client_version)
+            ############
+
 
             # se related
             if 'EDG.se_white_list' in self.cfg_params:
@@ -382,7 +389,7 @@ class FatWorker(Thread):
             # fix candidate for empty submission range issue # Fabio
             # if the submission request is related to a "Done(failed)" job, then close and regenerate it
             # see https://savannah.cern.ch/bugs/?68702
-            if j.runningJob['status'] != 'C' or j.runningJob['state'] != 'Created': 
+            if j.runningJob['status'] != 'C' : 
                 j.runningJob['closed'] = 'Y'
             ###
 
@@ -390,7 +397,11 @@ class FatWorker(Thread):
                 # backup for job output (tgz files only, less load)
                 for orig in [ basePath+'/'+f for f in j['outputFiles'] if 'tgz' in f ]:
                     try:
-                        check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
+                       if self.bossSchedName in ['SchedulerGlidein']:
+                          # self.log.info("FatWorker : No need to back up osb for glideins")
+                          check=0
+                       else:
+                          check=bk_sbi.checkExists(source=orig, proxy=task['user_proxy'])
                     except Exception, ex:
                         logMsg = "FW %s. Problem backupping OSB for job %s of task %s.\n"%(self.myName, \
                         j['name'], self.taskName)
@@ -411,19 +422,23 @@ class FatWorker(Thread):
                     else:
                         self.log.debug("FW %s No need to back up osb"%self.myName)
 
-                # reproduce closed runningJob instances
-                try:
-                    self.blDBsession.updateDB(j)
-                    self.blDBsession.getNewRunningInstance(j)
-                except Exception, e:
-                    logMsg = ("FW %s. Problem regenerating RunningJob %s.%s. Skipped"%(self.myName, \
-                            self.taskName, j['name']) )
-                    logMsg += str(e)
-                    self.log.info( logMsg )
-                    self.log.debug( traceback.format_exc() )
-                    newRange.remove(j['jobId'])
-                    skippedSubmissions.append(j['jobId'])
-                    continue
+                    # reproduce closed runningJob instances
+                    jn=j['jobId']
+                    if jn%1 == 0 :
+                        self.log.info("FW %s pSC create new db entry for job %s task %s" % \
+                                      (self.myName,j['jobId'],self.taskName))
+                    try:
+                        self.blDBsession.updateDB(j)
+                        self.blDBsession.getNewRunningInstance(j)
+                    except Exception, e:
+                        logMsg = ("FW %s. Problem regenerating RunningJob %s.%s. Skipped"% \
+                                  (self.myName, self.taskName, j['name']) )
+                        logMsg += str(e)
+                        self.log.info( logMsg )
+                        self.log.debug( traceback.format_exc() )
+                        newRange.remove(j['jobId'])
+                        skippedSubmissions.append(j['jobId'])
+                        continue
 
                 j.runningJob['status'] = 'C'
                 j.runningJob['statusScheduler'] = 'Created'
@@ -438,17 +453,14 @@ class FatWorker(Thread):
                     skippedSubmissions.append(j['jobId'])
                     continue
 
-            # request for submission
-            j.runningJob['state'] = 'SubRequested'
-            try:
-                self.blDBsession.updateDB(task)
-            except Exception, e:
-                logMsg = "FW %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
-                logMsg += str(e)
-                self.log.info( logMsg )
-                newRange.remove(j['jobId'])
-                skippedSubmissions.append(j['jobId'])
-                continue
+                # request for submission
+                j.runningJob['state'] = 'SubRequested'
+        try:
+            self.blDBsession.updateDB(task)
+        except Exception, e:
+            logMsg = "FW %s. Problem saving regenerated RunningJobs for %s"%(self.myName, self.taskName)
+            logMsg += str(e)
+            self.log.info( logMsg )
 
         # consider only those jobs that are in a submittable status
         for j in task.jobs:
@@ -863,16 +875,9 @@ class FatWorker(Thread):
         """
         Prepare DashBoard information
         """
-       # gridName = self.owner
         
-        #self.log.info(gridName)
-      #  gridName = '/'+"/".join(gridName.split('/')[1:-1])
         VO = self.cfg_params['VO']
-        ##########################
-        ### FEDE for savannah 76950, default value = "analysis"
-        ##########################
         taskType = self.cfg_params.get('USER.tasktype','analysis')
-        #taskType = self.cfg_params['USER.tasktype']
         datasetPath = self.cfg_params['CMSSW.datasetpath']
         if datasetPath.lower() == 'none': datasetPath = None
         executable = self.cfg_params.get('CMSSW.executable','cmsRun')
@@ -880,7 +885,9 @@ class FatWorker(Thread):
 
         params = {'tool': 'crab',\
                   'SubmissionType':'server',\
-                  'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
+                  #'JSToolVersion': os.environ['CRAB_SERVER_VERSION'], \
+                  # FEDE for savannah 75255
+                  'JSToolVersion':self.client_version, \
                   'tool_ui': os.environ['HOSTNAME'], \
                   'scheduler': self.schedName, \
                   'GridName': str(self.owner), \
@@ -908,20 +915,20 @@ class FatWorker(Thread):
         taskId = task['name']
 
         for job in task.jobs:
-            jj, jobId, localId , jid = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
+            jj, jobId, localId , schedulerId = (job['jobId'], '', '', str(job.runningJob['schedulerId']) )
             if self.bossSchedName in ['SchedulerCondorG']:
                 hash = self.cfg_params['cfgFileNameCkSum'] #makeCksum(common.work_space.cfgFileName())
                 rb = 'OSG'
-                jobId = str(jj) + '_' + hash + '_' + jid
+                jobId = str(jj) + '_' + hash + '_' + schedulerId
             elif self.bossSchedName == 'SchedulerGlidein':
                 rb = self.schedName
-                jobId = str(jj) + '_https://' + str(jid)
+                jobId = str(jj) + '_https://' + str(schedulerId)
             elif self.bossSchedName == 'SchedulerLsf':
-                jobId = str(jj) +"_https://"+self.schedName+":/" + jid + "-" + taskId.replace("_", "-")
+                jobId = str(jj) +"_https://"+self.schedName+":/" + schedulerId + "-" + taskId.replace("_", "-")
                 rb = self.schedName
-                localId = jid
+                localId = schedulerId
             else:
-                jobId = str(jj) + '_' + str(jid)
+                jobId = str(jj) + '_' + str(schedulerId)
                 rb = str(job.runningJob['service'])
 
             if len(job['dlsDestination']) == 1:
@@ -932,7 +939,7 @@ class FatWorker(Thread):
                 T_SE = str(len(job['dlsDestination']))+'_Selected_SE'
 
             infos = { 'jobId': jobId, \
-                      'sid': jid, \
+                      'sid': schedulerId, \
                       'broker': rb, \
                       'bossId': jj, \
                       'SubmissionType': 'Server', \
@@ -992,7 +999,7 @@ class FatWorker(Thread):
         """
         Parameters specific to CondorG scheduler
         """
-        from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
+        #from ProdCommon.BDII.Bdii import getJobManagerList, listAllCEs
 
         # shift due to BL ranges
         i = i - 1
@@ -1007,36 +1014,47 @@ class FatWorker(Thread):
         arch = arch.replace('"','')
 
         # Get list of SEs and clean according to white/black list
-        seList = task.jobs[i]['dlsDestination']
         seParser = SEBlackWhiteListParser(self.se_whiteL, self.se_blackL,
                                           self.log, self.serviceconfig)
-        seDest   = seParser.cleanForBlackWhiteList(seList, 'list')
+        seList = task.jobs[i]['dlsDestination']
+        if  (seList == ['']) or (not seList):
+            seList = seParser.expandList("T") # start with all of SiteDB
+        seString = seParser.cleanForBlackWhiteList(seList)
 
         # Convert to list of CEs and clean according to white/black list
-        onlyOSG = False
-        if (seList == ['']) or (not seList):
-            availCEs = listAllCEs(version, arch, onlyOSG=onlyOSG)
-        else:
-            availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
-        ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
-                                          self.log, self.serviceconfig)
-        ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
-        ceString = ','.join(ceDest)
-        seString = ','.join(seDest)
+        #onlyOSG = False
+        #if (seList == ['']) or (not seList):
+        #    availCEs = listAllCEs(version, arch, onlyOSG=onlyOSG)
+        #else:
+        #    availCEs = getJobManagerList(seDest, version, arch, onlyOSG=onlyOSG)
+        #ceParser = CEBlackWhiteListParser(self.ce_whiteL, self.ce_blackL,
+        #                                  self.log, self.serviceconfig)
+        #ceDest   = ceParser.cleanForBlackWhiteList(availCEs, 'list')
+        #ceString = ','.join(ceDest)
+        #seString = ','.join(seDest)
+        cmsver=re.split('_', version)
+        mcmsver = "%s%.2d%.2d" %(cmsver[1], int(cmsver[2]), int(cmsver[3]))
+
+
         myschedName = getfqdn()
-        schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
-        schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
-        schedParam += '+DESIRED_SEs = "' + seString + '"; '
-        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
-        schedParam += '+Glidein_MonitorID = "https://'+ myschedName + '//$(Cluster).$(Process)"; '
+        #schedParam  = '+DESIRED_Gatekeepers = "' + ceString + '"; '
+        #schedParam += '+DESIRED_Archs = "INTEL,X86_64"; '
+        schedParam  = '+DESIRED_SEs = "' + seString + '"; '
+        schedParam += '+DESIRED_CMSVersion = "' + version + '"; '
+        schedParam += '+DESIRED_CMSVersionNr = ' + mcmsver + '; '
+#        schedParam += "Requirements = stringListMember(GLIDEIN_Gatekeeper,DESIRED_Gatekeepers) &&  stringListMember(Arch,DESIRED_Archs); "
+        schedParam += '+submissionDay = "' + self.submissionDay + '";'
+        schedParam += '+Glidein_MonitorID = "https://'+ myschedName + '//' \
+            + self.submissionDay + '//$(Cluster).$(Process)"; '
 
         if self.cfg_params['EDG.max_wall_time']:
             schedParam += '+MaxWallTimeMins = %s; ' % \
                           self.cfg_params['EDG.max_wall_time']
         else:
-            schedParam += '+MaxWallTimeMins = 1440; '
+            schedParam += '+MaxWallTimeMins = 1300; '
+            schedParam += '+NormMaxWallTimeMins = 600; '
 
-        return schedParam, ceDest
+        return schedParam, seString
 
 
     def sched_parameter_Lsf(self, i, task):
@@ -1060,14 +1078,19 @@ class FatWorker(Thread):
             i = 0
 
         sched_param = 'Requirements = ' + task['jobType']
+        
         req = ''
 
         if self.cfg_params['EDG.max_wall_time']:
+            if (not req == ' '):
+                req = req + ' && '
             req += 'other.GlueCEPolicyMaxWallClockTime>=' + self.cfg_params['EDG.max_wall_time']
+        
         if self.cfg_params['EDG.max_cpu_time']:
             if (not req == ' '):
                 req = req + ' && '
             req += ' other.GlueCEPolicyMaxCPUTime>=' + self.cfg_params['EDG.max_cpu_time']
+        
         seReq = self.se_list(i, task.jobs[i]['dlsDestination'])
         ceReq = self.ce_list()
         sched_param += req + seReq + ceReq + ';\n'

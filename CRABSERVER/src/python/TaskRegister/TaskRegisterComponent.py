@@ -4,8 +4,8 @@ _CrabServerWorkerComponent_
 
 """
 
-__version__ = "$Revision: 1.24 $"
-__revision__ = "$Id: TaskRegisterComponent.py,v 1.24 2010/05/24 12:31:01 farinafa Exp $"
+__version__ = "$Revision: 1.25 $"
+__revision__ = "$Id: TaskRegisterComponent.py,v 1.25 2010/08/10 21:58:14 spiga Exp $"
 
 import os
 import pickle
@@ -236,7 +236,11 @@ class TaskRegisterComponent:
         logging.info("Checking it: %s"%(str(payload)) )
         taskUniqName, TotJobs, cmdRng =  payload.split('::')
         thrName = self.availWorkersIds.pop(0)
-        
+
+        if int(TotJobs) > 5000 :
+            logging.info("TASK HAS TOO MANY JOBS [%s] SKIP IT" % TotJobs)
+            return False
+
         actionType = "registerNewTask"
         workerCfg = self.prepareWorkerBaseStatus(taskUniqName, thrName, actionType)
         workerCfg['ProxiesDir'] = self.args['ProxiesDir']
