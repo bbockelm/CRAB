@@ -52,13 +52,14 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         SchedulerGrid.configure(self, cfg_params)
 
         self.proxyValid=0
-        self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",0))
+        self.dontCheckProxy=int(cfg_params.get("GRID.dont_check_proxy",'0'))
         self.space_token = cfg_params.get("USER.space_token",None)
         self.proxyServer= 'myproxy.cern.ch'
         self.group = cfg_params.get("GRID.group", None)
         self.role = cfg_params.get("GRID.role", None)
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
-        self.allowOverflow = cfg_params.get('GRID.allow_overflow', 1)
+        self.allowOverflow = cfg_params.get('GRID.allow_overflow', '1')
+        self.max_rss = cfg_params.get('GRID.max_rss','2300')
 
         self.checkProxy()
 
@@ -124,7 +125,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         by $CRABPYTHON/Scheduler.py
         """
 
-#SB paste from crab ScheduerGlidein
+#SB paste from crab SchedulerGlidein
 
         jobParams = ""
 
@@ -158,6 +159,9 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
         else:
             jobParams += '+MaxWallTimeMins = %d; ' % (60*24)
+
+        if self.max_rss :
+            jobParams += 'request_memory = '+self.max_rss+';'
 
         if self.allowOverflow == "0":
             jobParams += '+CMS_ALLOW_OVERFLOW = False; '

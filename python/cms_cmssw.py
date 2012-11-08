@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.388 2012/10/26 20:45:17 belforte Exp $"
-__version__ = "$Revision: 1.388 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.389 2012/11/05 23:44:26 belforte Exp $"
+__version__ = "$Revision: 1.389 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -846,6 +846,14 @@ class Cmssw(JobType):
             txt += '\n'
 
             pass
+
+        # add the rssLimit file for the watchdog
+        if common.scheduler.name().upper() == 'REMOTEGLIDEIN' :
+            if self.cfg_params.get('GRID.max_rss'):
+                max_rss = int(self.cfg_params.get('GRID.max_rss')) * 1000
+                txt += 'echo "%d" > rssLimit\n' %  max_rss
+                txt += 'maxrss=`cat rssLimit`\n'
+                txt += 'echo "RSS limit set to: ${maxrss} KBytes"\n'
 
         return txt
 
