@@ -33,6 +33,11 @@ class SubmitterServer( Submitter ):
             self.credentialType = 'Token'
             self.copyTout= ' '
 
+        if common.scheduler.name().upper() == 'REMOTEGLIDEIN':
+            msg = "FATAL ERROR: remoteGlidein scheduler requires use_server=0"
+            raise CrabException(msg)
+
+
         Submitter.__init__(self, cfg_params, parsed_range, val)
 
         # init client server params...
