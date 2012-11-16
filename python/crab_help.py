@@ -801,15 +801,15 @@ Overrides the data location list obtained from DLS/PhEDEx with the list of sites
 
 Tells glidein wether it can overlow this job, i.e. run at another site and access data via xrootds if the sites were data are located are full. Set to 0 to disallow overflow. Default value = 1.
 
-=head3 B<virtual_organization>
+=head3 B<virtual_organization - OBSOLETE DO NOT USE> 
 
 You do not want to change this: it is cms!
 
-=head3 B<maxtarballsize>
+=head3 B<maxtarballsize - OBSOLETE DO NOT USE>
 
 Maximum size of tar-ball in Mb. If bigger, an error will be generated. The actual limit is that on the RB input sandbox. Default is 9.5 Mb (sandbox limit is 10 Mb)
 
-=head3 B<skipwmsauth>
+=head3 B<skipwmsauth - OBSOLETE DO NOT USE>
 
 Temporary useful parameter to allow the WMSAuthorisation handling. Specifying I<skipwmsauth> = 1 the pyopenssl problems  will disappear. It is needed working on gLite UI outside of CERN.
 
