@@ -722,16 +722,18 @@ Expert only parameter. Not to be used. Default value = analysis.
 
 =head2 B<[GRID]>
 
-=head3 B<RB>
+in square brackets the name of the schedulers this parameter applies to in case it does not apply to all
+
+=head3 B<RB [glite]>
 
 Which WMS you want to use instead of the default one, as defined in the configuration file automatically downloaded by CRAB from CMSDOC web page. You can use any other WMS which is available, if you provide the proper configuration files. E.g., for gLite WMS XYZ, you should provide I< 0_GET_glite_wms_XXX.conf> where XXX is the RB value. These files are searched for in the cache dir (~/.cms_crab), and, if not found, on cmsdoc web page. So, if you put your private configuration files in the cache dir, they will be used, even if they are not available on crab web page. 
 Please get in contact with crab team if you wish to provide your WMS as a service to the CMS community.
 
-=head3 B<role>
+=head3 B<role [glite]>
 
 The role to be set in the VOMS. Beware that simultaneus use of I<role> and I<group> is not supported. See VOMS documentation for more info. No default value.
 
-=head3 B<group>
+=head3 B<group [glite]>
 
 The group to be set in the VOMS. Beware that simultaneus use of I<role> and I<group> is not supported. See VOMS documentation for more info. No default value.
 
@@ -743,16 +745,17 @@ If you do not want CRAB to check your proxy. The creation of the proxy (with pro
 
 If you want to to switch off only the proxy renewal set I<dont_check_myproxy>=1. The proxy delegation to a myproxyserver is your responsibility. Default value = 0.
 
-=head3 B<requirements>
+=head3 B<requirements [glite]>
 
 Any other requirements to be add to JDL. Must be written in compliance with JDL syntax (see LCG user manual for further info). No requirement on Computing element must be set. No default value.
 
-=head3 B<additional_jdl_parameters:>
+=head3 B<additional_jdl_parameters [glite, remoteGlidein]>
 
 Any other parameters you want to add to jdl file:semicolon separated list, each
-head3 B<must> be complete, including the closing ";". No default value.
+item in the list must, including the closing ";". No default value.
+  Works both for gLite and remoteGlidein
 
-=head3 B<wms_service>
+=head3 B<wms_service [glite]>
 
 With this field it is also possible to specify which WMS you want to use (https://hostname:port/pathcode) where "hostname" is WMS name, the "port" generally is 7443 and the "pathcode" should be something like "glite_wms_wmproxy_server". No default value.
 
@@ -764,27 +767,39 @@ Maximum CPU time needed to finish one job. It will be used to select a suitable 
 
 Same as previous, but with real time, and not CPU one. No default value.
 
-=head3 B<ce_black_list>
+=head3 B<max_rss [remoteGlidein]>
+
+Maximum Resident Set Size (memory)  needed for one job. It will be used to select a suitable queue on the CE and to adjust the crab watchdog. Memory need in Mbytes. Default value = 2300
+
+=head3 B<ce_black_list [glite]>
 
 All the CE (Computing Element) whose name contains the following strings (comma separated list) will not be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 By default T0 and T1s site are in blacklist. 
 
-=head3 B<ce_white_list>
+=head3 B<ce_white_list[glite]>
 
 Only the CE (Computing Element) whose name contains the following strings (comma separated list) will be considered for submission.  Use the dns domain (e.g. fnal, cern, ifae, fzk, cnaf, lnl,....). You may use hostnames or CMS Site names (T2_DE_DESY) or substrings. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place.
 
-=head3 B<se_black_list>
+=head3 B<se_black_list [glite,glidein,remoteGlidein]>
 
 All the SE (Storage Element) whose name contains the following strings (comma separated list) will not be considered for submission.It works only if a datasetpath is specified. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 By default T0 and T1s site are in blacklist. 
 
-=head3 B<se_white_list>
+=head3 B<se_white_list [glite,glidein,remoteGlidein]>
 
 Only the SE (Storage Element) whose name contains the following strings (comma separated list) will be considered for submission.It works only if a datasetpath is specified. Please note that if the selected CE(s) does not contain the data you want to access, no submission can take place. You may use hostnames or CMS Site names (T2_DE_DESY) or substrings.
 
-=head3 B<remove_default_blacklist>
+=head3 B<remove_default_blacklist [glite]>
 
 CRAB enforce the T1s Computing Eelements Black List. By default it is appended to the user defined I<CE_black_list>. To remove the enforced T1 black lists set I<remove_default_blacklist>=1. Default value = 0.
+
+=head3 B<data_location_override [remoteGlidein]>
+
+Overrides the data location list obtained from DLS/PhEDEx with the list of sites indicated. Same syntax as se_white_list. Up to the user to make sure that needed data can be read nevertheless.
+
+=head3 B<allow_overflow [remoteGlidein]>
+
+Tells glidein wether it can overlow this job, i.e. run at another site and access data via xrootds if the sites were data are located are full. Set to 0 to disallow overflow. Default value = 1.
 
 =head3 B<virtual_organization>
 
