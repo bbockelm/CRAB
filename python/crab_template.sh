@@ -193,6 +193,14 @@ else
 fi
 echo ">>> END OF printout of $exeOutLines lines from stdout+stderr"
 
+grep -q 'Fatal Exception' executable.out
+fatal=$?
+if [ ${fatal} == "0" ]
+then
+    echo ">>> ERROR: Fatal Exception from CMSSW:"
+    awk '/Begin .* Exception/ { printing =1 } /End .* Exception/ { print $0; printing = 0 } printing { print $0 } ' executable.out 
+fi
+
 #
 # if Watchdog killed executable, make sure we
 # do not go on before Watchdog completes the cleanup
