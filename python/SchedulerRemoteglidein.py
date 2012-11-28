@@ -158,7 +158,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         if (self.EDG_clock_time):
             jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
         else:
-            jobParams += '+MaxWallTimeMins = %d; ' % (60*24)
+            jobParams += '+MaxWallTimeMins = %d; ' % (60*22)
 
         if self.max_rss :
             jobParams += 'request_memory = '+self.max_rss+';'
