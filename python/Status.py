@@ -140,7 +140,8 @@ class Status(Actor):
                          'Retrieved',
                          'NotSubmitted',
                          'CannotSubmit',
-                         'Cancelled by user'
+                         'Cancelled by user',
+                         'Cancelled'
                           ]
 
         jobs = common._db.nJobs('list')
