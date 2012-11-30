@@ -265,8 +265,8 @@ Use xrsl code instead of jdl for these parameters.
 
 =item B<max_cpu_time>, B<max_wall_clock_time:>
 
-For parameters max_cpu_time and max_wall_clock_time, you can use
-units, e.g.  "72 hours" or "3 days", just like with the xrsl attributes
+When using ARC scheduler, for parameters max_cpu_time and max_wall_clock_time,
+you can use units, e.g.  "72 hours" or "3 days", just like with the xrsl attributes
 cpuTime and wallTime. If no unit is given, minutes is assumed by default.
 
 =back
