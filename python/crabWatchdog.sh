@@ -141,9 +141,9 @@ do
    [[ $cpu =~ "-" ]] && cpuDays=`echo $cpu|cut -d- -f1`*86400
    [[ ! $cpu =~ "-" ]] && cpuDays=0
    cpuHMS=`echo $cpu|cut -d- -f2` # works even if there's no -
-   cpuSeconds=10\#`echo $cpu|cut -d: -f3`
-   cpuMinutes=10\#`echo $cpu|cut -d: -f2`*60
-   cpuHours=10\#`echo $cpu|cut -d: -f1`*3600
+   cpuSeconds=10\#`echo ${cpuHMS}|cut -d: -f3`
+   cpuMinutes=10\#`echo ${cpuHMS}|cut -d: -f2`*60
+   cpuHours=10\#`echo ${cpuHMS}|cut -d: -f1`*3600
    let cpuTime=$cpuSeconds+$cpuMinutes+$cpuHours+$cpuDays
    
    rss=`echo $metrics|awk '{print $4}'`
