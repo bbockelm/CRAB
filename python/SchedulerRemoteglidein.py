@@ -156,7 +156,8 @@ class SchedulerRemoteglidein(SchedulerGrid) :
                      '//' + self.submissionDay + '//$(Cluster).$(Process)"; '
 
         if (self.EDG_clock_time):
-            jobParams += '+MaxWallTimeMins = '+self.EDG_clock_time+'; '
+            glideinTime = "%d" % (int(self.EDG_clock_time)+5) # 5 min to wrapup
+            jobParams += '+MaxWallTimeMins = '+ glideinTime + '; '
         else:
             jobParams += '+MaxWallTimeMins = %d; ' % (60*22)
 
