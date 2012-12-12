@@ -30,25 +30,27 @@ let wallLimit=47*3600+40*60 #  47:40h  (unit = sec)
 
 if [ -f ${RUNTIME_AREA}/rssLimit ] ; then
   rssLimitUser=`cat ${RUNTIME_AREA}/rssLimit`
-  #if [ ${rssLimitUser} -lt ${rssLimit} ] ; then rssLimit=${rssLimitUser}; fi
   rssLimit=${rssLimitUser}
 fi
 if [ -f ${RUNTIME_AREA}/vszLimit ] ; then
   vszLimitUser=`cat ${RUNTIME_AREA}/vszLimit`
-  if [ ${vszLimitUser} -lt ${vszLimit} ] ; then vszLimit=${vszLimitUser}; fi
+  vszLimit=${vszLimitUser}
 fi
 if [ -f ${RUNTIME_AREA}/diskLimit ] ; then
   diskLimitUser=`cat ${RUNTIME_AREA}/diskLimit`
-  if [ ${diskLimitUser} -lt ${diskLimit} ] ; then diskLimit=${diskLimitUser}; fi
+  diskLimit=${diskLimitUser}
 fi
 if [ -f ${RUNTIME_AREA}/cpuLimit ] ; then
   cpuLimitUser=`cat ${RUNTIME_AREA}/cpuLimit`
-  if [ ${cpuLimitUser} -lt ${cpuLimit} ] ; then cpuLimit=${cpuLimitUser}; fi
+  cpuLimit=${cpuLimitUser}
 fi
 if [ -f ${RUNTIME_AREA}/wallLimit ] ; then
   wallLimitUser=`cat ${RUNTIME_AREA}/wallLimit`
-  if [ ${wallLimitUser} -lt ${wallLimit} ] ; then wallLimit=${wallLimitUser}; fi
+  wallLimit=${wallLimitUser}
 fi
+
+cpuLimitDHMS=`printf "%dh:%dm:%ds" $(($cpuLimit/3600)) $(($cpuLimit%3600/60)) $(($cpuLimit%60))`
+wallLimitDHMS=`printf "%dh:%dm:%ds" $(($wallLimit/3600)) $(($wallLimit%3600/60)) $(($wallLimit%60))`
 
 CrabJobID=`ps -o ppid -p $$|tail -1` # id of the parent process
 
@@ -59,11 +61,11 @@ ps u -ww -p ${CrabJobID} >> ${wdLogFile}
 echo " "  >> ${wdLogFile}
 
 echo "# LIMITS USED BY THIS WATCHDOG:" >> ${wdLogFile}
-echo "# RSS  (KBytes)  : ${rssLimit}"  >> ${wdLogFile}
-echo "# VSZ  (KBytes)  : ${vszLimit}"  >> ${wdLogFile}
-echo "# DISK (MBytes)  : ${diskLimit}" >> ${wdLogFile}
-echo "# CPU  (seconds) : ${cpuLimit}"  >> ${wdLogFile}
-echo "# WALL (seconds) : ${wallLimit}" >> ${wdLogFile}
+echo "# RSS  (KBytes)   : ${rssLimit}"  >> ${wdLogFile}
+echo "# VSZ  (KBytes)   : ${vszLimit}"  >> ${wdLogFile}
+echo "# DISK (MBytes)   : ${diskLimit}" >> ${wdLogFile}
+echo "# CPU TIME        : ${cpuLimitDHMS}"  >> ${wdLogFile}
+echo "# WALL CLOCK TIME : ${wallLimitDHMS}" >> ${wdLogFile}
 
 echo " "  >> ${wdLogFile}
 
@@ -199,13 +201,13 @@ do
      break
  fi
  if [ $cpuTime -gt $cpuLimit ] ; then
-     exceededResource=CPU
+     exceededResource="CPU TIME"
      resVal=$maxCpu
      resLim=$cpuLimit
      break
  fi
  if [ $wallTime -gt $wallLimit ] ; then
-     exceededResource=WALL
+     exceededResource="WALL TIME"
      resVal=$maxWall
      resLim=$wallLimit
      break
