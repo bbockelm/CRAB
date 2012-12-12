@@ -93,8 +93,13 @@ maxWall=0
 
 iter=0
 nLogLines=0
+
+startTime=`date +%s`
+
+# start infinite loop of watching what job is doing
 while true
 do
+
  let residue=${nLogLines}%30    # print a header line every 30 lines
  if [ ${residue} = 0 ]; then
   echo -e "# TIME\t\t\tPID\tRSS(KB)\tVSZ(KB)\tDsk(MB)\ttCPU(s)\ttWALL(s)\tCOMMAND" >>  ${wdLogFile}
@@ -106,39 +111,16 @@ do
  for pid in ${processes}
  do
    maxChanged=0
-   metrics=`ps --no-headers -o pid,etime,cputime,rss,vsize,args  -ww -p ${pid}`
+   metrics=`ps --no-headers -o pid,cputime,rss,vsize,args  -ww -p ${pid}`
    if [ $? -ne 0 ] ; then continue ; fi # make sure process is still alive
 
    [ $debug ] && echo metrics = ${metrics}
 
-   wall=`echo ${metrics}|awk '{print $2}'` # in the form [[dd-]hh:]mm:ss
-   
-   [ $debug ] && echo wall from PS = ${wall}
-   
-   # convert to seconds
-   [[ ${wall} =~ "-" ]] && wallDays=`echo ${wall}|cut -d- -f1`*86400
-   [[ ! ${wall} =~ "-" ]] && wallDays=0
-   wallHMS=`echo ${wall}|cut -d- -f2` # works even if there's no -
-   longFormat=0     # format mm:ss
-   [[ ${wallHMS} =~ ".*:.*:.*" ]] && longFormat=1 # format hh:mm:ss
-   if [ ${longFormat} == 1 ] ; then
-     # since these will be used by "let" protect against leading 0 indicating octal
-     wallSeconds=10\#`echo ${wallHMS}|cut -d: -f3`
-     wallMinutes=10\#`echo ${wallHMS}|cut -d: -f2`*60
-     wallHours=10\#`echo ${wallHMS}|cut -d: -f1`*3600
-   else
-     wallSeconds=10\#`echo ${wallHMS}|cut -d: -f2`
-     wallMinutes=10\#`echo ${wallHMS}|cut -d: -f1`*60
-     wallHours=0
-   fi
-   let wallTime=$wallSeconds+$wallMinutes+$wallHours+$wallDays
+   let wallTime=`date +%s`-${startTime}
 
-   [ $debug ] && echo wallHMS = ${wallHMS}
-   [ $debug ] && echo longFormat = ${longFormat}
-   [ $debug ] && echo wallDays-Hours-Minutes-Seconds = ${wallDays}-${wallHours}-${wallMinutes}-${wallSeconds}
    [ $debug ] && echo wallTime = ${wallTime}
 
-   cpu=`echo $metrics|awk '{print $3}'`  # in the form [dd-]hh:mm:ss
+   cpu=`echo $metrics|awk '{print $2}'`  # in the form [dd-]hh:mm:ss
    #convert to seconds
    [[ $cpu =~ "-" ]] && cpuDays=`echo $cpu|cut -d- -f1`*86400
    [[ ! $cpu =~ "-" ]] && cpuDays=0
@@ -148,11 +130,11 @@ do
    cpuHours=10\#`echo ${cpuHMS}|cut -d: -f1`*3600
    let cpuTime=$cpuSeconds+$cpuMinutes+$cpuHours+$cpuDays
    
-   rss=`echo $metrics|awk '{print $4}'`
+   rss=`echo $metrics|awk '{print $3}'`
 
-   vsize=`echo $metrics|awk '{print $5}'`
+   vsize=`echo $metrics|awk '{print $4}'`
 
-   cmd=`echo $metrics|awk '{print $6" "$7" "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15}'`
+   cmd=`echo $metrics|awk '{print "$5" "$6" "$7" "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15}'`
 
    # track max for the metrics
    if [ $rss -gt $maxRss ]; then maxChanged=1; maxRss=$rss; fi
