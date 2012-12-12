@@ -64,11 +64,11 @@ else
   exceededResource=`cat  ${RUNTIME_AREA}/WATCHDOG-SAYS-EXCEEDED-RESOURCE`
   echo "********** because usage of resource ${exceededResource} was excessive"
   case ${exceededResource} in 
-    RSS   ) job_exit_code=50660 ;;
-    VSIZE ) job_exit_code=50661 ;;
-    DISK  ) job_exit_code=50662 ;;
-    CPU   ) job_exit_code=50663 ;;
-    WALL  ) job_exit_code=50664 ;;
+    "RSS"        ) job_exit_code=50660 ;;
+    "VSIZE"      ) job_exit_code=50661 ;;
+    "DISK"       ) job_exit_code=50662 ;;
+    "CPU TIME"   ) job_exit_code=50663 ;;
+    "WALL TIME"  ) job_exit_code=50664 ;;
     * ) echo "watchdog kill reason not given, set generic exit code"; job_exit_code=50669 ;;
   esac
   echo "************** JOB EXIT CODE set to: ${job_exit_code}"
