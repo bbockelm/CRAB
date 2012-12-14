@@ -396,7 +396,7 @@ class Submitter(Actor):
 
             msg +=('Submission DashBoard report: %s\n'%str(params))
             common.apmon.sendToML(params)
-        common.logger.debug(msg)
+        #common.logger.debug(msg)
         return
 
 
