@@ -1,2 +1,0 @@
-#pluginname=lcas_userban.mod,pluginargs=ban_users.db
-pluginname=lcas_voms.mod,pluginargs="-vomsdir /etc/grid-security/vomsdir -certdir /etc/grid-security/certificates -authfile /etc/grid-security/grid-mapfile -authformat simple -use_user_dn"
