@@ -159,7 +159,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             glideinTime = "%d" % (int(self.EDG_clock_time)+5) # 5 min to wrapup
             jobParams += '+MaxWallTimeMins = '+ glideinTime + '; '
         else:
-            jobParams += '+MaxWallTimeMins = %d; ' % (60*22)
+            jobParams += '+MaxWallTimeMins = %d; ' % (60*22 - 5) # 22h default in glidein, 5min to wrap
 
         if self.max_rss :
             jobParams += 'request_memory = '+self.max_rss+';'
