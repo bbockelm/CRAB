@@ -134,7 +134,7 @@ do
 
    vsize=`echo $metrics|awk '{print $4}'`
 
-   cmd=`echo $metrics|awk '{print "$5" "$6" "$7" "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15}'`
+   cmd=`echo $metrics|awk '{print "$5" "$6" "$7" "$8" "$9" "$10" "$11" "$12" "$13" "$14" "$15"}'`
 
    # track max for the metrics
    if [ $rss -gt $maxRss ]; then maxChanged=1; maxRss=$rss; fi
