@@ -94,6 +94,8 @@ echo ">>> current directory (RUNTIME_AREA): `pwd`"
 echo ">>> current user: `id`"
 echo ">>> voms proxy information:"
 voms-proxy-info -all
+umask 077
+echo ">>> umask set to: " `umask -S`
 
 repo=jobreport.txt
 
