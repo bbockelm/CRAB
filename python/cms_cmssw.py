@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.391 2012/11/28 16:03:58 belforte Exp $"
-__version__ = "$Revision: 1.391 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.392 2012/12/19 16:02:14 belforte Exp $"
+__version__ = "$Revision: 1.392 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -816,8 +816,8 @@ class Cmssw(JobType):
         txt = '\n#Written by cms_cmssw::wsUntarSoftware\n'
 
         if os.path.isfile(self.tgzNameWithPath):
-            txt += 'echo ">>> tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
-            txt += 'tar xzf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
+            txt += 'echo ">>> tar --no-same-permissions -xf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+' :" \n'
+            txt += 'tar --no-same-permissions -xf $RUNTIME_AREA/'+os.path.basename(self.tgzNameWithPath)+'\n'
             txt += 'untar_status=$? \n'
             if  self.debug_wrapper==1 :
                 txt += 'echo "----------------" \n'
@@ -829,11 +829,6 @@ class Cmssw(JobType):
             txt += '   func_exit\n'
             txt += 'else \n'
             txt += '   echo "Successful untar" \n'
-            txt += '   chmod +w -R $RUNTIME_AREA \n'
-            txt += '   chmod 600 $X509_USER_PROXY \n'
-            if  self.debug_wrapper==1 :
-                txt += '   echo "changed in a+w the permission of $RUNTIME_AREA "\n'
-                txt += '   ls -AlR $RUNTIME_AREA \n'
             txt += 'fi \n'
             txt += '\n'
             txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
