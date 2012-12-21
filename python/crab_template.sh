@@ -94,7 +94,7 @@ echo ">>> current directory (RUNTIME_AREA): `pwd`"
 echo ">>> current user: `id`"
 echo ">>> voms proxy information:"
 voms-proxy-info -all
-chmod 0700 -R
+chmod 0700 -R .
 echo ">>> directory permission set to 0700"
 umask 077
 echo ">>> umask set to: " `umask -S`
