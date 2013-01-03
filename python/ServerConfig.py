@@ -70,8 +70,9 @@ class ServerConfig:
  
         common.logger.debug('All avaialble servers compatible with %s: '%common.prog_version_str +str(compatibleServerList))
         if len(compatibleServerList)==0: 
-            msg = "No compatible server available with client version %s\n"%common.prog_version_str
+            msg = "No compatible server for client version %s and scheduler %s\n"%(common.prog_version_str,common.scheduler.name())
             msg += "Exiting"
+            common.logger.info(msg)
             raise CrabException(msg)
  
         # if more than one, pick up a random one, waiting for something smarter (SiteDB)
