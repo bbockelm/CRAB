@@ -239,7 +239,12 @@ class SchedulerRemoteglidein(SchedulerGrid) :
 
         txt += 'func_exit() { \n'
         txt += self.wsExitFunc_common()
-
+        txt += '#Check for stdout/err in new location as of condor 7.7\n'
+        txt += '    if [ -s _condor_stdout ]; then\n'
+        txt += '      echo "Found _condor_stdout/err, rename for OSB"\n'
+        txt += '      cp -pfv _condor_stdout CMSSW_${NJob}.stdout\n'
+        txt += '      cp -pfv _condor_stderr CMSSW_${NJob}.stderr\n'
+        txt += '    fi\n'
         txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
         txt += '    tmp_size=`ls -gGrta ${out_files}.tgz | awk \'{ print $3 }\'`\n'
         txt += '    rm ${out_files}.tgz\n'
