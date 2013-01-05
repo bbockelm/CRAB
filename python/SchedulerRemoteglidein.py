@@ -59,7 +59,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         self.role = cfg_params.get("GRID.role", None)
         self.VO = cfg_params.get('GRID.virtual_organization','cms')
         self.allowOverflow = cfg_params.get('GRID.allow_overflow', '1')
-        self.max_rss = cfg_params.get('GRID.max_rss','2300')
+        self.max_rss = cfg_params.get('GRID.max_rss','2000')
 
         self.checkProxy()
 
