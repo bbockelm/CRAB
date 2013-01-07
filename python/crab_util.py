@@ -511,42 +511,18 @@ def gethnUserNameFromSiteDB():
     from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
     hnUserName = None
     userdn = getDN()
-    #firs try  with the development SiteDB which is fed from CERN's SSO
     params = { 'cacheduration' : 24,
-               'use-cmsweb-dev' : True,
                'logger' : common.logger() }
     mySiteDB = SiteDBJSON(params)
     msg_ = "there is no user name associated to DN %s in SiteDB.\n" % userdn
     msg_ += "You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
-    except Exception:
-        params['use-cmsweb-dev'] = False
-        #try again with production SiteDB which is fed from old DB
-        mySiteDB = SiteDBJSON(params)
-        try:
-            hnUserName = mySiteDB.dnUserName(dn=userdn)
-        #now exception goes to error
-        except Exception, text:
-            msg = "Error extracting user name from SiteDB: %s\n" % text
-            msg += " Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB\n"
-            msg += ' or %s' % msg_
-            raise CrabException(msg)
-        #if OK then user has not migrated yet.
-        fiveLines=''
-        for i in range(5) : fiveLines += '\n'
-        for i in range(10)  : print fiveLines
-        msg =  "WARNING: your DN : \n%s\n" % userdn
-        msg += "         is not associated to your CERN username yet\n"
-        msg += "         Crab will stop working for you on March 12 unless you act\n\n"
-        msg += "         Find more details and information here:\n"
-        msg += "         https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB#Adding_your_DN_to_your_profile"
-        common.logger.info (msg)
-        prompt = fiveLines
-        prompt += 'Press Enter to acknowledge that you read this message'
-        prompt += fiveLines
-        x = raw_input(prompt)
-
+    except Exception, text:
+        msg = "Error extracting user name from SiteDB: %s\n" % text
+        msg += " Check that you are registered in SiteDB, see https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB\n"
+        msg += ' or %s' % msg_
+        raise CrabException(msg)
     if not hnUserName:
         msg = "Error. %s" % msg_
         raise CrabException(msg)
