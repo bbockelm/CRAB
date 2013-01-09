@@ -8,6 +8,8 @@ except:
 from ProdCommon.Storage.SEAPI.SElement import SElement, FullPath
 from ProdCommon.Storage.SEAPI.SBinterface import *
 from ProdCommon.Storage.SEAPI.Exceptions import *
+from ProdCommon.FwkJobRep.SiteLocalConfig import loadSiteLocalConfig
+
 
 
 class cmscp:
@@ -179,6 +181,15 @@ class cmscp:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
             pass
+        
+        # force lstore protocol for Vanderbilt, waiting for better
+        # long term solution
+        if os.path.exists('/usr/local/cms-stageout') and \
+           ( os.uname()[1].endswith('.vampire') or \
+             os.uname()[1].endwith('vanderbilt.edu') ):
+            print "*** I am at Vanderbilt. Trying lstore first ***"
+            supported_protocol.insert(0, ('lstore','') )
+            
         return supported_protocol
 
 
@@ -460,7 +471,7 @@ class cmscp:
             return results
 
         self.hostname = Destination_SE.hostname
-        if Destination_SE.protocol in ['gridftp','rfio','srmv2','hadoop','local']:
+        if Destination_SE.protocol in ['gridftp','rfio','srmv2','hadoop','lstore','local']:
             try:
                 self.createDir( Destination_SE, Destination_SE.protocol )
             except OperationException, ex:
