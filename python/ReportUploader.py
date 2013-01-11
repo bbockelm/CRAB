@@ -60,11 +60,20 @@ class ReportUploader( Actor ):
 
         self.taskname = common._db.queryTask('name')
 
+        self.task = common._db.getTask()
+
         self.hostname = socket.getfqdn()
 
         self.username = getUserName()
 
         self.scheduler = common.scheduler.name()
+
+        if (self.scheduler.upper() in 'REMOTEGLIDEIN') :
+            self.server_name = str(self.task['serverName'])
+            cmd = "gsissh %s pwd" % self.server_name
+            self.remote_path = runCommand(cmd).rstrip()
+        else :
+            self.remote_path=''
 
         val = getCentralConfigLink('reportLogURL')
         if val is not None and len(val) > 0:
@@ -89,7 +98,8 @@ class ReportUploader( Actor ):
                   'version:%s\n' % '%s_%s' % (common.prog_name.upper(), common.prog_version_str) + \
                   'jobuuid:%s\n' % self.taskname + \
                   'monitoringlink:Dashboard Task Mon,%s%s \n' %(self.dashbtaskmon,self.taskname) # + \
-        if self.server_name != 'No server':
+        if self.server_name != 'No server' and \
+               self.scheduler.upper() != 'REMOTEGLIDEIN' :
             cserverStatus = 'http://%s:8888/visualog/?logtype=Status&taskname=%s\n' % (self.server_name, self.taskname)
             strmeta += 'monitoringlink:CrabServer Status,%s\n' % cserverStatus
             cserverLog = 'http://%s:8888/visualog/?logtype=Logging&taskname=%s\n' % (self.server_name, self.taskname)
@@ -120,7 +130,8 @@ class ReportUploader( Actor ):
                      'scheduler:        %s\n' % self.scheduler + \
                      'requested server: %s\n' % self.requestedserver + \
                      'used server:      %s\n' % self.server_name + \
-                     'task:             %s\n' % self.taskname
+                     'task:             %s\n' % self.taskname + \
+                     'remote path:      %s\n' % (self.remote_path+'/'+self.taskname)
                    )
         fsummary.close()
 
