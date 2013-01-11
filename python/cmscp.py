@@ -181,13 +181,21 @@ class cmscp:
             ## here we can add support for any kind of protocol,
             ## maybe some local schedulers need something dedicated
             pass
-        
+
+        # find out where we run and where we stageout
+        siteCfg = loadSiteLocalConfig()
+        localSeName = siteCfg.localStageOutSEName()
+        remoteSeName = self.params['se_name']
+        seIsLocal = localSeName == remoteSeName
+        print "******************************************************"
+        print "localSeName  = ",localSeName
+        print "remoteSeName = ", remoteSeName
+        print "******************************************************"
+
         # force lstore protocol for Vanderbilt, waiting for better
         # long term solution
-        if os.path.exists('/usr/local/cms-stageout') and \
-           ( os.uname()[1].endswith('.vampire') or \
-             os.uname()[1].endwith('vanderbilt.edu') ):
-            print "*** I am at Vanderbilt. Trying lstore first ***"
+        if seIsLocal and localSeName.endswith('vanderbilt.edu') :
+            print "*** I am at, and writing-to, Vanderbilt. Try lstore first ***"
             supported_protocol.insert(0, ('lstore','') )
             
         return supported_protocol
