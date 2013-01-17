@@ -627,6 +627,8 @@ class Crab:
                 if val:
                     if val=='all':
                         jobs = common._db.nJobs('list')
+                    if val=='bad':
+                        jobs = 'bad'
                     else:
                         jobs = self.parseRange_(val)
 
