@@ -24,8 +24,8 @@ try:
 except:
     from sha import sha as sha1
 
-__revision__ = "$Id: SchedulerCondorCommon.py,v 1.43 2010/01/20 16:22:26 ewv Exp $"
-__version__ = "$Revision: 1.43 $"
+__revision__ = "$Id: SchedulerCondorCommon.py,v 1.44 2010/08/19 15:03:57 ewv Exp $"
+__version__ = "$Revision: 1.44 $"
 
 class SchedulerCondorCommon(SchedulerGrid):
     """
@@ -204,10 +204,6 @@ class SchedulerCondorCommon(SchedulerGrid):
 
         txt += 'func_exit() { \n'
         txt += self.wsExitFunc_common()
-        txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
-        txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
-        txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
-        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
         txt += '    exit $job_exit_code\n'
         txt += '}\n'
         return txt

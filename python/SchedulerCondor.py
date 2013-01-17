@@ -2,8 +2,8 @@
 Implements the vanilla (local) Condor scheduler
 """
 
-__revision__ = "$Id: SchedulerCondor.py,v 1.32 2010/06/28 18:50:38 ewv Exp $"
-__version__ = "$Revision: 1.32 $"
+__revision__ = "$Id: SchedulerCondor.py,v 1.33 2012/06/14 15:47:28 belforte Exp $"
+__version__ = "$Revision: 1.33 $"
 
 from SchedulerLocal  import SchedulerLocal
 from crab_exceptions import CrabException
@@ -148,7 +148,6 @@ class SchedulerCondor(SchedulerLocal) :
         txt += 'func_exit() { \n'
         txt += self.wsExitFunc_common()
 
-        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
         txt += '    cp  ${out_files}.tgz $_CONDOR_SCRATCH_DIR/\n'
         txt += '    cp  crab_fjr_$NJob.xml $_CONDOR_SCRATCH_DIR/\n'
 
