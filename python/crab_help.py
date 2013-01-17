@@ -335,7 +335,7 @@ To be used only if you know why and you are of sure what you are doing, or if cr
 
 =head2 B<-resubmit range or all>
 
-Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax.
+Resubmit jobs which have been previously submitted and have been either I<killed> or are I<aborted>. See I<range> below for syntax. Also possible with key I<bad>, which will resubmit all jobs in I<killed> or I<aborted> or I<failed submission> or I<retrieved> but with exit status not 0 (with the exception for wrapper exit status equal 60307).
 
 =head2 B<-forceResubmit range or all>
 
