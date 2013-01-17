@@ -92,12 +92,17 @@ echo ">>> current directory (RUNTIME_AREA): `pwd`"
 #echo ">>> current directory content:"
 #ls -Al
 echo ">>> current user: `id`"
-echo ">>> voms proxy information:"
-voms-proxy-info -all
 chmod 0700 -R .
 echo ">>> directory permission set to 0700"
+# proxy file needs special setting
+proxyFile=`voms-proxy-info -path`
+chmod 0600 ${proxyFile}
+
 umask 077
 echo ">>> umask set to: " `umask -S`
+
+echo ">>> voms proxy information:"
+voms-proxy-info -all
 
 repo=jobreport.txt
 
@@ -212,7 +217,6 @@ fi
 if [ -f ${RUNTIME_AREA}/WATCHDOG-SAYS-EXCEEDED-RESOURCE ]; then wait ${WatchdogPID}; fi
 
 #CRAB parse_report
-
 
 #
 # PROCESS THE PRODUCED RESULTS
