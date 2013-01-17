@@ -96,7 +96,7 @@ chmod 0700 -R .
 echo ">>> directory permission set to 0700"
 # proxy file needs special setting
 proxyFile=`voms-proxy-info -path`
-chmod 0400 ${proxyFile}
+chmod 0600 ${proxyFile}
 
 umask 077
 echo ">>> umask set to: " `umask -S`
