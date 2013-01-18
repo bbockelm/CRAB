@@ -34,7 +34,10 @@ class CondorGLoggingInfo:
         msg = ''
         for line in input.splitlines() :
             if line.find('HoldReason') != -1 :
-                msg = line.split('\"')[-2]
+                msg = 'HoldReason=\n'+ line.split('\"')[-2]
+                break
+            if line.find('RemoveReason') != -1 :
+                msg = 'RemoveReason=\n'+line.split('\"')[-2]
                 break
 
         if msg.find('authentication with the remote server failed')>=0 :
