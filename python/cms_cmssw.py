@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.392 2012/12/19 16:02:14 belforte Exp $"
-__version__ = "$Revision: 1.392 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.393 2012/12/21 15:10:22 belforte Exp $"
+__version__ = "$Revision: 1.393 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -875,8 +875,13 @@ class Cmssw(JobType):
             txt += 'rm -rf src/ \n'
             txt += 'mv $RUNTIME_AREA/src/ . \n'
         if len(self.additional_inbox_files)>0:
+            #files used by Watchdog must not be moved
+            watchdogFiles=['rssLimit','vszLimit','diskLimit','cpuLimit','wallLimit']
             for file in self.additional_inbox_files:
-                txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
+                if file in watchdogFiles :
+                    pass
+                else:
+                    txt += 'mv $RUNTIME_AREA/'+os.path.basename(file)+' . \n'
 
         txt += 'echo ">>> Include $RUNTIME_AREA in PYTHONPATH:"\n'
         txt += 'if [ -z "$PYTHONPATH" ]; then\n'
