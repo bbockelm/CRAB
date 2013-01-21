@@ -504,6 +504,32 @@ def getDN():
     return userdn.split('\n')[0]
 
 
+def checkNewSiteDB():
+
+    """
+    check for new SiteDB 
+    """
+    hnUserName = None
+    userdn = getDN()
+
+    print "verify if user DN is mapped in CERN's SSO"
+    cmd='curl -s  --capath $X509_CERT_DIR --cert $X509_USER_PROXY --key $X509_USER_PROXY "https://cmsweb-testbed.cern.ch/sitedb/data/dev/people" | grep "`voms-proxy-info -identity`"'
+    DocUrl = "\nhttps://hypernews.cern.ch/HyperNews/CMS/get/cernCompAnnounce/820.html"
+    DocUrl += "\nhttps://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
+
+    try:
+        subprocess.check_call(cmd,shell=True)
+        print "OK. user ready for SiteDB switchover on March 12, 2013\n\n"
+    except:
+        print "********** ATTENTION !!!!  **************"
+        print "DN not registered in CERN's SSO"
+        print "need to follow instructions in %s" % DocUrl
+        print "or Crab will stop working for you on March 12, 2013"
+        print "*****************************************"
+        dummy=raw_input("\nHit Return to acknowlege that you read this message")
+
+    return
+
 def gethnUserNameFromSiteDB():
     """
     extract user name from SiteDB
@@ -516,6 +542,7 @@ def gethnUserNameFromSiteDB():
     mySiteDB = SiteDBJSON(params)
     msg_ = "there is no user name associated to DN %s in SiteDB.\n" % userdn
     msg_ += "You need to register in SiteDB with the instructions at https://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
+    
     try:
         hnUserName = mySiteDB.dnUserName(dn=userdn)
     except Exception, text:
