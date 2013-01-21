@@ -518,7 +518,7 @@ def checkNewSiteDB():
     DocUrl += "\nhttps://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
 
     try:
-        subprocess.check_call(cmd,shell=True)
+        runCommand(cmd)
         print "OK. user ready for SiteDB switchover on March 12, 2013\n\n"
     except:
         print "********** ATTENTION !!!!  **************"
