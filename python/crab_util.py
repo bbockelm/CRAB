@@ -509,18 +509,20 @@ def checkNewSiteDB():
     """
     check for new SiteDB 
     """
-    hnUserName = None
     userdn = getDN()
-
     print "verify if user DN is mapped in CERN's SSO"
-    cmd='curl -s  --capath $X509_CERT_DIR --cert $X509_USER_PROXY --key $X509_USER_PROXY "https://cmsweb-testbed.cern.ch/sitedb/data/dev/people" | grep "`voms-proxy-info -identity`"'
+    cmd='curl -s  --capath $X509_CERT_DIR --cert $X509_USER_PROXY --key $X509_USER_PROXY "https://cmsweb-testbed.cern.ch/sitedb/data/dev/people" | grep "' + userdn + '"'
+    common.logger.debug(str(cmd))
     DocUrl = "\nhttps://hypernews.cern.ch/HyperNews/CMS/get/cernCompAnnounce/820.html"
     DocUrl += "\nhttps://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
 
-    try:
-        runCommand(cmd)
+    error, out = runCommand(cmd, errorCode=True)
+    common.logger.debug(str(out))
+    common.logger.debug(str(error))
+
+    if out and error == 0 :
         print "OK. user ready for SiteDB switchover on March 12, 2013\n\n"
-    except:
+    else:
         print "********** ATTENTION !!!!  **************"
         print "DN not registered in CERN's SSO"
         print "need to follow instructions in %s" % DocUrl
