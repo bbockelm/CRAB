@@ -472,22 +472,26 @@ class Scheduler :
             txt += '    osb_size=`ls -gG ${out_files}.tgz | awk \'{ print $3 }\'`\n'
             txt += '    size=`expr $osb_size`\n'
             txt += '    echo "Total Output dimension: $size"\n'
+            txt += '        rm ${out_files}.tgz\n'
             txt += '    limit='+str(self.OSBsize) +' \n'
             txt += '    echo "WARNING: output files size limit is set to: $limit"\n'
             txt += '    if [ "$limit" -lt "$size" ]; then\n'
             txt += '        job_exit_code=70000\n'
             txt += '        echo "Output Sanbox too big. Produced output is lost "\n'
-            txt += '        rm ${out_files}.tgz\n'
-            txt += '        tar zcvf ${out_files}.tgz CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr\n'
+            txt += '        final_list="CMSSW_${NJob}.stdout CMSSW_${NJob}.stderr"\n'
             txt += '    else\n'
             txt += '        echo "Total Output dimension $size is fine."\n'
             txt += '    fi\n'
-        else:
-            txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
 
         txt += '    echo "JOB_EXIT_STATUS = $job_exit_code"\n'
         txt += '    echo "JobExitCode=$job_exit_code" >> $RUNTIME_AREA/$repo\n'
         txt += '    dumpStatus $RUNTIME_AREA/$repo\n'
+        
+        txt += '    if [ -s _condor_stdout ]; then\n' # update to latest stdout
+        txt += '      cp -pfv _condor_stdout CMSSW_${NJob}.stdout\n'
+        txt += '      cp -pfv _condor_stderr CMSSW_${NJob}.stderr\n'
+        txt += '    fi\n'
+        txt += '    tar zcvf ${out_files}.tgz  ${final_list}\n'
             
         return txt
 
