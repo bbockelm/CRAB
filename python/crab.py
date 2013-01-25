@@ -677,9 +677,10 @@ class Crab:
 
                 if val:
                     jobs = self.parseRange_(val)
-                    pass
+                    if len( jobs ) > 1:
+                        raise CrabException("Only single job id allowed for %s command!" % opt )
                 else:
-                    raise CrabException("Warning: please specify a job range")
+                    raise CrabException("Warning: please specify a job id")
                     pass
 
                 if (self.UseServer== 1):
