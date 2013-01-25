@@ -9,9 +9,11 @@ except:
 
 
 
+
 class Status(Actor):
-    def __init__(self, *args):
-        self.cfg_params = args[0]
+    def __init__(self, cfg_params, val):
+        self.cfg_params = cfg_params
+        self.val = str(val).split(",")
         self.xml = self.cfg_params.get("USER.xml_report",'')
         ## needed to check server name and difference from SA
         self.server_name = ''
@@ -26,8 +28,14 @@ class Status(Actor):
 
         start = time.time()
 
-        self.query()
-        self.PrintReport_()
+        display=True
+        if ('short' in self.val):
+            display=False
+        self.query(display)
+        color=False
+        if ('color' in self.val):
+            color=True
+        self.PrintReport_(color)
         ## TEMPORARY FIXME Ds
         msg = showWebMon(self.server_name)
         common.logger.info(msg)
@@ -118,8 +126,10 @@ class Status(Actor):
 
         return
 
-    def PrintReport_(self):
+    def PrintReport_(self,color=False):
 
+        from crab_util import Color
+        Color=Color(color)
 
         possible_status = [
                          'Created',
@@ -153,21 +163,25 @@ class Status(Actor):
         list_ID=[]
         for c in WrapExitCode:
             if c != 'None':
-                self.reportCodes(c)
+                self.reportCodes(c,Color)
             else:
                 terminatedListId = []
                 for st in possible_status:
                     list_ID = common._db.queryAttrRunJob({'statusScheduler':st},'jobId')
                     if len(list_ID)>0:
                         if st == 'killed':
+                            msg+=  Color.red
                             msg+=  " >>>>>>>>> %i Jobs %s \n" % (len(list_ID), str(st))
                             msg+=  "\tYou can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>\n"
                             msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
+                            msg+=  Color.end
 
                         elif st == 'Aborted':
+                            msg+=  Color.red
                             msg+=  " >>>>>>>>> %i Jobs %s\n" % (len(list_ID), str(st))
                             msg+=  "\tYou can resubmit them specifying JOB numbers: crab -resubmit <List of jobs>\n"
                             msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
+                            msg+=  Color.end
 
                         elif st == 'Done' or st == 'Done (Failed)' or st == 'Cleared':
                             cleanedListId=[]
@@ -185,6 +199,7 @@ class Status(Actor):
                                 else:
                                     notTerminatedListId.append(id)
                             if len(notTerminatedListId)>0:
+                                msg+=  Color.blue
                                 msg+=  " >>>>>>>>> %i Jobs %s\n" % (len(notTerminatedListId), str(st))
                                 msg+=  "\tJobs not completely processed: cannot retrieve them, yet (few minutes of delay can occur when using the server) \n"
                                 msg+=  "\tList of jobs: %s \n" % readableList(self,notTerminatedListId)
@@ -194,14 +209,18 @@ class Status(Actor):
                             #    msg+=  "\tJobs terminated: retrieve them with: crab -getoutput <List of jobs>\n"
                             #    msg+=  "\tList of jobs: %s \n" % readableList(self,terminatedListId)
                             if len(cleanedListId)>0:
+                                msg+=  Color.green
                                 msg+=  " >>>>>>>>> %i Jobs Cleaned\n" % (len(cleanedListId))
                                 msg+=  "\tJobs Cleaned by the server (because too old or the proxy was expired) \n"
                                 msg+=  "\tList of jobs: %s \n" % readableList(self,cleanedListId)
                             if len(clearedListId)>0:
+                                msg+=  Color.green
                                 msg+=  " >>>>>>>>> %i Jobs Cleared\n" % (len(clearedListId))
                                 msg+=  "\tList of jobs: %s \n" % (readableList(self,clearedListId))
+                            msg+=Color.end
 
                         elif st in ['NotSubmitted','CannotSubmit']:
+                            msg+=  Color.yellow
                             msg+=  " >>>>>>>>> %i Jobs %s\n" % (len(list_ID), str(st))
                             msg+=  "\tCheck if they match resources with: crab -match <List of jobs>\n"
                             msg+=  "\tIf not, check data location (eg your data is just on T1's)\n"
@@ -209,6 +228,7 @@ class Status(Actor):
                             msg+=  "\tList of jobs: %s \n" % readableList(self,list_ID)
 
                         elif st in ['Created']:
+                            msg+=  Color.yellow
                             submittingList = []
                             justCreatedList = []
                             for id in list_ID:
@@ -220,27 +240,40 @@ class Status(Actor):
                             if len(justCreatedList) > 0:
                                 msg+=  " >>>>>>>>> %i Jobs %s \n" % (len(list_ID), str(st))
 
+                        elif st in ['Cancelled']:
+                            msg+=  Color.yellow
+                            msg+=  " >>>>>>>>> %i Jobs %s \n" % (len(list_ID), str(st))
+                            msg+=  "\tList of jobs %s: %s \n" % (str(st),readableList(self,list_ID))
                         else:
                             msg+=  " >>>>>>>>> %i Jobs %s \n" % (len(list_ID), str(st))
                             msg+=  "\tList of jobs %s: %s \n" % (str(st),readableList(self,list_ID))
+                        msg+=Color.end
                 if len(terminatedListId)>0:
+                    msg+=  Color.blue
                     msg+=  " >>>>>>>>> %i Jobs Done\n" % (len(terminatedListId))
                     msg+=  "\tJobs terminated: retrieve them with: crab -getoutput <List of jobs>\n"
                     msg+=  "\tList of jobs: %s \n" % readableList(self,terminatedListId)
+                msg+=Color.end
+        msg+=Color.end
 	
         common.logger.info(msg)
         return
 
-    def reportCodes(self,code): 
+    def reportCodes(self,code,Color): 
         """
         """
         list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':code},'jobId')
         if len(list_ID)>0:
-            msg = 'ExitCodes Summary\n'
+            if (int(code)==0):
+                msg=Color.green
+            else:
+                msg=Color.red
+            msg += 'ExitCodes Summary\n'
             msg +=  " >>>>>>>>> %i Jobs with Wrapper Exit Code : %s \n" % (len(list_ID), str(code))
             msg +=  "\t List of jobs: %s \n" % readableList(self,list_ID)
             if (code!=0):
                 msg +=  "\tSee https://twiki.cern.ch/twiki/bin/view/CMS/JobExitCodes for Exit Code meaning\n"
+            msg +=Color.end
 
         common.logger.info(msg)
         return

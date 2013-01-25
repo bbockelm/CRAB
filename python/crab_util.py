@@ -825,6 +825,39 @@ def schedulerGlite():
 
     return scheduler
 
+class Color():
+    def __init__(self, docolor=False):
+        self.red= ''
+        self.blue= ''
+        self.green= ''
+        self.yellow= ''
+        self.magenta= ''
+        self.cyan= ''
+        self.bold= ''
+        self.end= ''
+        if (docolor & self.has_colours(sys.stdout)):
+            self.red= '\033[1;31m'
+            self.blue= '\033[1;34m'
+            self.green= '\033[1;32m'
+            self.yellow= '\033[93m'
+            self.magenta= '\033[1;35m'
+            self.cyan= '\033[1;36m'
+            self.bold= "\033[1m"
+            self.end= '\033[0m'
+        pass
+
+    def has_colours(self,stream):
+        if not hasattr(stream, "isatty"):
+            return False
+        if not stream.isatty():
+            return False # auto color only on TTYs
+        try:
+            import curses
+            curses.setupterm()
+            return curses.tigetnum("colors") > 2
+        except:
+            # guess false in case of error
+            return False
 ####################################
 if __name__ == '__main__':
     print 'sys.argv[1] =',sys.argv[1]

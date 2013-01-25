@@ -143,8 +143,10 @@ class Crab:
         args = string.join(sys.argv,' ')
 
         self.updateHistory_(args)
+        from crab_util import Color
+        Color=Color(True)
         common.logger = CrabLogger(args)
-        common.logger.info(self.headerString_())
+        common.logger.info(Color.yellow+Color.bold+self.headerString_()+Color.end)
 
         ## disallow old client releases
         if checkCRABVersion(self.version()) is False:
@@ -574,10 +576,10 @@ class Crab:
             elif ( opt == '-status' ):
                 if (self.UseServer== 1):
                     from StatusServer import StatusServer
-                    self.actions[opt] = StatusServer(self.cfg_params)
+                    self.actions[opt] = StatusServer(self.cfg_params, val)
                 else:
                     from Status import Status
-                    self.actions[opt] = Status(self.cfg_params)
+                    self.actions[opt] = Status(self.cfg_params, val)
 
             elif ( opt == '-kill' ):
 
@@ -922,11 +924,14 @@ if __name__ == '__main__':
 
     # Create, initialize, and run a Crab object
     crab = Crab()
+    
     try:
         crab.initialize_(options)
         crab.run()
         del crab
-        print 'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)
+        from crab_util import Color
+        Color=Color(True)
+        print Color.yellow+Color.bold+'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)+Color.end
     except CrabException, e:
         del crab
         print '\n' + common.prog_name + ': ' + str(e) + '\n'
