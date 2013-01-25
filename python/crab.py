@@ -927,7 +927,7 @@ if __name__ == '__main__':
         crab.run()
         del crab
         from crab_util import Color
-        Color=Color(True)
+        Color=Color(False)
         print Color.yellow+Color.bold+'Log file is %s%s.log'%(common.work_space.logDir(),common.prog_name)+Color.end
     except CrabException, e:
         del crab
