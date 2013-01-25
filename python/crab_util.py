@@ -511,7 +511,7 @@ def checkNewSiteDB():
     """
     userdn = getDN()
     print "verify if user DN is mapped in CERN's SSO"
-    cmd='curl -s  --capath $X509_CERT_DIR --cert $X509_USER_PROXY --key $X509_USER_PROXY "https://cmsweb-testbed.cern.ch/sitedb/data/dev/people" | grep "' + userdn + '"'
+    cmd='curl -s  --capath $X509_CERT_DIR --cert $X509_USER_PROXY --key $X509_USER_PROXY "https://cmsweb.cern.ch/sitedb/data/dev/people" | grep "' + userdn + '"'
     common.logger.debug(str(cmd))
     DocUrl = "\nhttps://hypernews.cern.ch/HyperNews/CMS/get/cernCompAnnounce/820.html"
     DocUrl += "\nhttps://twiki.cern.ch/twiki/bin/view/CMS/SiteDBForCRAB"
