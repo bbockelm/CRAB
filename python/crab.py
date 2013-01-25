@@ -144,7 +144,7 @@ class Crab:
 
         self.updateHistory_(args)
         from crab_util import Color
-        Color=Color(True)
+        Color=Color(False)
         common.logger = CrabLogger(args)
         common.logger.info(Color.yellow+Color.bold+self.headerString_()+Color.end)
 
@@ -676,13 +676,10 @@ class Crab:
             elif ( opt == '-postMortem' ):
 
                 if val:
-                    if val =='all':
-                        jobs = common._db.nJobs("list")
-                    else:
-                        jobs = self.parseRange_(val)
+                    jobs = self.parseRange_(val)
                     pass
                 else:
-                    raise CrabException("Warning: please specify a job range or 'all'")
+                    raise CrabException("Warning: please specify a job range")
                     pass
 
                 if (self.UseServer== 1):
