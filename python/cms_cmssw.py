@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.393 2012/12/21 15:10:22 belforte Exp $"
-__version__ = "$Revision: 1.393 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.394 2013/01/18 17:16:33 belforte Exp $"
+__version__ = "$Revision: 1.394 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -39,7 +39,8 @@ class Cmssw(JobType):
                       self.cfg_params.get('CRAB.use_server',0)
         self.local  = common.scheduler.name().upper() in ['LSF','CAF','CONDOR','SGE','PBS']
         size = 9.5
-        if self.server :
+        if self.server or \
+           common.scheduler.name().upper() == 'REMOTEGLIDEIN' :
             size = 100
         elif self.local:
             size = 9999999
