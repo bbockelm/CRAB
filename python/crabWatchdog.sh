@@ -59,16 +59,16 @@ echo "# RESOURCE USAGE SUMMARY FOR PROCESS ID ${CrabJobID}" >  ${wdLogFile}
 
 ps u -ww -p ${CrabJobID} >> ${wdLogFile}
 
-echo " "  >> ${wdLogFile}
+echo " "  | tee -a ${wdLogFile}
 
-echo "# LIMITS USED BY THIS WATCHDOG:" >> ${wdLogFile}
-echo "# RSS  (KBytes)   : ${rssLimit}"  >> ${wdLogFile}
-echo "# VSZ  (KBytes)   : ${vszLimit}"  >> ${wdLogFile}
-echo "# DISK (MBytes)   : ${diskLimit}" >> ${wdLogFile}
-echo "# CPU TIME        : ${cpuLimitDHMS}"  >> ${wdLogFile}
-echo "# WALL CLOCK TIME : ${wallLimitDHMS}" >> ${wdLogFile}
+echo "# LIMITS USED BY CRAB WATCHDOG:"  | tee -a ${wdLogFile}
+echo "# RSS  (KBytes)   : ${rssLimit}"  | tee -a ${wdLogFile}
+echo "# VSZ  (KBytes)   : ${vszLimit}"  | tee -a ${wdLogFile}
+echo "# DISK (MBytes)   : ${diskLimit}" | tee -a ${wdLogFile}
+echo "# CPU TIME        : ${cpuLimitDHMS}"  | tee -a ${wdLogFile}
+echo "# WALL CLOCK TIME : ${wallLimitDHMS}" | tee -a ${wdLogFile}
 
-echo " "  >> ${wdLogFile}
+echo " "  | tee -a ${wdLogFile}
 
 echo "# FOLLOWING PRINTOUT TRACKS MAXIMUM VALUES OF RESOURCES USE" >> ${wdLogFile}
 echo "# ONE LINE IS PRINTED EACH TIME A MAXIMUM CHANGES"  >> ${wdLogFile}
