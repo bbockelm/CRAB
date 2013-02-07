@@ -720,6 +720,10 @@ To avoid stage out failures CRAB checks the remote location content at the creat
 
 Expert only parameter. Not to be used. Default value = analysis.
 
+=head3 B<ssh_control_persist>
+
+Expert only parameter. Not to be used. Default value = 3600. Behaves like ControlPersist in ssh_config but time is only supported in seconds.
+
 =head2 B<[GRID]>
 
 in square brackets the name of the schedulers this parameter applies to in case it does not apply to all
