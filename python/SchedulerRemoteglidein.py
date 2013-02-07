@@ -40,7 +40,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
 
         self.environment_unique_identifier = None
         self.submissionDay = time.strftime("%y%m%d",time.localtime())
-
+        
         return
 
 
@@ -48,7 +48,20 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         """
         Configure the scheduler with the config settings from the user
         """
-        
+   
+        # this line needs to be before the call to SchedulerGrid.configure
+        # because that calls SchedulerRemoteglidin in turn and
+        # sshControlPersist needs to be defined then :-(
+        self.sshControlPersist =  cfg_params.get('USER.ssh_control_persist','3600')
+        if self.sshControlPersist.lower() == "no" or \
+                self.sshControlPersist.lower() == "yes" or \
+                self.sshControlPersist.isdigit() :
+            pass
+        else:
+            msg = "Error: invalid value '%s' for USER.ssh_control_persist " % \
+                self.sshControlPersist
+            raise CrabException(msg)
+
         SchedulerGrid.configure(self, cfg_params)
 
         self.proxyValid=0
@@ -152,6 +165,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         jobParams += '+DESIRED_CMSScramArch ="' +scramArch+'";'
         
         myscheddName = self.remoteHost
+
         jobParams += '+Glidein_MonitorID = "https://'+ myscheddName + \
                      '//' + self.submissionDay + '//$(Cluster).$(Process)"; '
 
@@ -175,7 +189,6 @@ class SchedulerRemoteglidein(SchedulerGrid) :
 
         common._db.updateTask_({'jobType':jobParams})
 
-
         return jobParams
 
 
@@ -184,7 +197,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         Return dictionary with specific parameters, to use with real scheduler
         is called when scheduler is initialized in Boss, i.e. at each crab command
         """
-        #SB this method is used to pass directory names to Boss Scheduler
+        #SB this method is used to pass informatinos to Boss Scheduler
         # via params dictionary
 
         jobDir = common.work_space.jobDir()
@@ -194,7 +207,8 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         params = {'shareDir':shareDir,
                   'jobDir':jobDir,
                   'taskDir':taskDir,
-                  'submissionDay':self.submissionDay}
+                  'submissionDay':self.submissionDay,
+                  'sshControlPersist':self.sshControlPersist}
 
         return params
 
@@ -266,36 +280,25 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             remoteUserHost=str(task['serverName'])
             common.logger.info("serverName from Task DB is %s" %
                                remoteUserHost)
-            if '@' in remoteUserHost:
-                remoteHost = remoteUserHost.split('@')[1]
-            else:
-                remoteHost = remoteUserHost
         else:
             if self.cfg_params.has_key('CRAB.submit_host'):
                 # get a remote submission host from crab config file 
                 srvCfg=ServerConfig(self.cfg_params['CRAB.submit_host']).config()
-                remoteHost=srvCfg['serverName']
-                common.logger.info("remotehost from crab.cfg = %s" % remoteHost)
+                remoteUserHost=srvCfg['serverName']
+                common.logger.info("remotehost from crab.cfg = %s" % remoteUserHost)
             else:
                 # pick from Available Servers List
                 srvCfg=ServerConfig('default').config()
-                remoteHost = srvCfg['serverName']
-                common.logger.info("remotehost from Avail.List = %s" % remoteHost)
+                remoteUserHost = srvCfg['serverName']
+                common.logger.info("remotehost from Avail.List = %s" % remoteUserHost)
 
-            if not remoteHost:
+            if not remoteUserHost:
                 raise CrabException('FATAL ERROR: remoteHost not defined')
-            
-            #common.logger.info("try to find out username for remote Host via uberftp ...")
-            #command="uberftp %s pwd|grep User|awk '{print $3}'" % remoteHost
-            #(status, output) = commands.getstatusoutput(command)
-            #if status == 0:
-            #    remoteUser = output
-            #    common.logger.info("remoteUser set to %s" % remoteUser)
-            #    if remoteUser==None:
-            #        raise CrabException('FATAL ERROR: REMOTE USER not defined')
 
-            #remoteUserHost = remoteUser + '@' + remoteHost
-            remoteUserHost = remoteHost
+        if '@' in remoteUserHost:
+            remoteHost = remoteUserHost.split('@')[1]
+        else:
+            remoteHost = remoteUserHost
 
         common._db.updateTask_({'serverName':remoteUserHost})
 
