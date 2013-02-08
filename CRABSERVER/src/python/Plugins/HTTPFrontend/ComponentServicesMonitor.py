@@ -9,6 +9,9 @@ import os
 import API
 from ProdAgentCore.Configuration import ProdAgentConfiguration
 from ProdAgentCore.DaemonDetails import DaemonDetails
+from os import popen
+import subprocess as sub
+
 
 AllServices = {'GridFTP':'globus-gridftp-server','mySQL':'mysqld'}
 AllResources = ['CPU','LOAD','LOAD-5m','LOAD-15m','MEM','SWAP','SWAPPING']
@@ -241,6 +244,15 @@ class ShowCompStatus:
 
         html += "<br/></table>"
 	
+
+        html += '\n<br/><br/> <b>Disk size in GBytes</b><br/>\n<table Class="DiskSize" >'
+        crabhomepath=os.environ.get("HOME")
+        stream = os.popen(crabhomepath+"/integration/diskSizePlot.sh").readlines()
+        diskSize = float(stream[0]) / 1024/ 1024/ 1024
+
+        html += "<tr><td>Size : </td><td>%d</td></tr>" % (diskSize)
+
+        html += "<br/></table>"
         html += '\n<br/><br/> <b>Messages by destination component</b><br/>\n<table Class="Messages" >'
 	
         query, data = API.messageListing("")
