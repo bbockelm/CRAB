@@ -263,12 +263,13 @@ class Status(Actor):
         """
         """
         list_ID = common._db.queryAttrRunJob({'wrapperReturnCode':code},'jobId')
+        msg = ''
         if len(list_ID)>0:
             if (code):
                 if (int(code)==0):
-                    msg=Color.green
+                    msg+=Color.green
                 else:
-                    msg=Color.red
+                    msg+=Color.red
             msg += 'ExitCodes Summary\n'
             msg +=  " >>>>>>>>> %i Jobs with Wrapper Exit Code : %s \n" % (len(list_ID), str(code))
             msg +=  "\t List of jobs: %s \n" % readableList(self,list_ID)
