@@ -80,8 +80,6 @@ class DBinterface:
         """
         opt={}
         if optsToSave.get('server_mode',0) == 1: opt['serverName']=optsToSave['server_name'] 
-        if common.scheduler.name().upper() not in ['LSF', 'CAF', 'SGE', 'PBS']:
-            checkNewSiteDB()
         opt['name']= getUserName()+ '_' + string.split(common.work_space.topDir(),'/')[-2]+'_'+common.work_space.task_uuid()
         task = Task( opt )
         try:
