@@ -1,6 +1,6 @@
 
-__revision__ = "$Id: cms_cmssw.py,v 1.394 2013/01/18 17:16:33 belforte Exp $"
-__version__ = "$Revision: 1.394 $"
+__revision__ = "$Id: cms_cmssw.py,v 1.395 2013/02/01 11:15:21 belforte Exp $"
+__version__ = "$Revision: 1.395 $"
 
 from JobType import JobType
 from crab_exceptions import *
@@ -843,20 +843,26 @@ class Cmssw(JobType):
 
             pass
 
-        # add the wallLimit and rssLimit file for the watchdog
-        if common.scheduler.name().upper() == 'REMOTEGLIDEIN' :
-            if self.cfg_params.get('GRID.max_rss'):
-                max_rss = int(self.cfg_params.get('GRID.max_rss')) * 1000
-                txt += 'echo "%d" > rssLimit\n' %  max_rss
-                txt += 'maxrss=`cat rssLimit`\n'
-                txt += 'echo "RSS limit set to: ${maxrss} KBytes"\n'
-            if self.cfg_params.get('GRID.max_wall_clock_time'):
-                max_wall_sec = int(self.cfg_params.get('GRID.max_wall_clock_time')) * 60
-                txt += 'echo "%d" > wallLimit\n' %  max_wall_sec
-                txt += 'maxwalls=`cat wallLimit`\n'
-                txt += 'maxwallhms=`printf "%dh:%dm:%ds" $(($maxwalls/3600)) $(($maxwalls%3600/60)) $(($maxwalls%60))`\n'
-                txt += 'echo "Wall Time limit set to: ${maxwalls} seconds '
-                txt += 'i.e. ${maxwallhms}"\n'
+        # add the cpuLimi, wallLimit and rssLimit file for the watchdog
+        if self.cfg_params.get('GRID.max_rss'):
+            max_rss = int(self.cfg_params.get('GRID.max_rss')) * 1000
+            txt += 'echo "%d" > rssLimit\n' %  max_rss
+            txt += 'maxrss=`cat rssLimit`\n'
+            txt += 'echo "RSS limit set to: ${maxrss} KBytes"\n'
+        if self.cfg_params.get('GRID.max_cpu_time'):
+            cpu_sec = int(self.cfg_params.get('GRID.max_cpu_time')) * 60
+            txt += 'echo "%d" > cpuLimit\n' %  cpu_sec
+            txt += 'maxcpus=`cat cpuLimit`\n'
+            txt += 'maxcpuhms=`printf "%dh:%dm:%ds" $(($maxcpus/3600)) $(($maxcpus%3600/60)) $(($maxcpus%60))`\n'
+            txt += 'echo "Cpu Time limit set to: ${maxcpus} seconds '
+            txt += 'i.e. ${maxcpuhms}"\n'
+        if self.cfg_params.get('GRID.max_wall_clock_time'):
+            max_wall_sec = int(self.cfg_params.get('GRID.max_wall_clock_time')) * 60
+            txt += 'echo "%d" > wallLimit\n' %  max_wall_sec
+            txt += 'maxwalls=`cat wallLimit`\n'
+            txt += 'maxwallhms=`printf "%dh:%dm:%ds" $(($maxwalls/3600)) $(($maxwalls%3600/60)) $(($maxwalls%60))`\n'
+            txt += 'echo "Wall Time limit set to: ${maxwalls} seconds '
+            txt += 'i.e. ${maxwallhms}"\n'
 
         return txt
 
