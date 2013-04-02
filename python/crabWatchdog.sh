@@ -23,11 +23,11 @@ wdLogFile=${RUNTIME_AREA}/Watchdog_${NJob}.log
 let rssLimit=23*100*1000    #   2.3GB (unit = KB)
 let vszLimit=100*1000*1000  # 100GB (unit = KB) = no limit
 let diskLimit=19*1000       #  19GB (unit = MB)
-let cpuLimit=21*3600+50*60  #  21:50h  (unit = sec)
+let cpuLimit=30*24*60*60    #  30d i.e. no limit  (unit = sec)
 let wallLimit=21*3600+50*60 #  21:50h  (unit = sec)
 
-# for test purposes allow limits to be lowered
-# needing users (HI e.g.) can also increase RSS limit
+# allow limits to be changed via ad hoc files for tests
+# or when indicated via crab.cfg
 
 if [ -f ${RUNTIME_AREA}/rssLimit ] ; then
   rssLimitUser=`cat ${RUNTIME_AREA}/rssLimit`
