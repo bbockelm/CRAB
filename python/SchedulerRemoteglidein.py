@@ -5,6 +5,7 @@ Implements the Remote Glidein scheduler
 from SchedulerGrid  import SchedulerGrid
 from crab_exceptions import CrabException
 from crab_util import runCommand
+from crab_util import gethnUserNameFromSiteDB
 from ServerConfig import *
 from WMCore.SiteScreening.BlackWhiteListParser import SEBlackWhiteListParser
 import Scram
@@ -121,12 +122,8 @@ class SchedulerRemoteglidein(SchedulerGrid) :
             raise CrabException(msg)
 
         return
-    
-    def userName(self):
-        """ return the user name """
-        tmp=runCommand("voms-proxy-info -identity 2>/dev/null")
-        return tmp.strip()
 
+#
     def envUniqueID(self):
         taskHash = sha1(common._db.queryTask('name')).hexdigest()
         id = "https://" + socket.gethostname() + '/' + taskHash + "/${NJob}"
@@ -163,6 +160,9 @@ class SchedulerRemoteglidein(SchedulerGrid) :
         jobParams += '+DESIRED_CMSVersion ="' +cmsVersion+'";'
         jobParams += '+DESIRED_CMSVersionNr ="' +numericCmsVersion+'";'
         jobParams += '+DESIRED_CMSScramArch ="' +scramArch+'";'
+
+        userName = gethnUserNameFromSiteDB()
+        jobParams += '+AccountingGroup ="' + userName+'";'
         
         myscheddName = self.remoteHost
 
@@ -170,7 +170,7 @@ class SchedulerRemoteglidein(SchedulerGrid) :
                      '//' + self.submissionDay + '//$(Cluster).$(Process)"; '
 
         if (self.EDG_clock_time):
-            glideinTime = "%d" % (int(self.EDG_clock_time)+5) # 5 min to wrapup
+            glideinTime = "%d" % (int(self.EDG_clock_time)+20) # 20 min to wrapup
             jobParams += '+MaxWallTimeMins = '+ glideinTime + '; '
         else:
             jobParams += '+MaxWallTimeMins = %d; ' % (21*60+55) #  21:55h  (unit = min)
