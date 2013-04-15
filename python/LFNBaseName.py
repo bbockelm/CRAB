@@ -29,9 +29,14 @@ def checkSlash(ProcessedDataset):
     """
     check if [USER].publish_data_name contains not allowed slash
     """
+    import re
     
-    if (str(ProcessedDataset).find("/") > -1):
-            raise CrabException("Warning: [USER] publication_data_name contains a '/' characters that is not allowed. Please change the publication_data_name value")
+    #if (str(ProcessedDataset).find("/") > -1):
+    #        raise CrabException("Warning: [USER] publication_data_name contains a '/' characters that is not allowed. Please change the publication_data_name value")
+    m = re.findall("[^-\w_\.%]+", str(ProcessedDataset))
+    if (m != []):
+        common.logger.debug("check not allowed characters in the publication_data_name  = " + str(m))
+        raise CrabException("Warning: [USER] publication_data_name contains not allowed characters %s . Please change the publication_data_name value" % str(m))
 
 def checkLength(lfnbase, forced_path, PrimaryDataset, ProcessedDataset):
     """
